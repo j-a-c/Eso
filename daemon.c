@@ -1,5 +1,8 @@
 #include <unistd.h>
 
+/**
+ * Starts the daemon that will run on the end hosts.
+ */
 int main(void)
 {
     pid_t pid;
