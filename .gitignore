@@ -2,6 +2,9 @@
 Notes/*
 Papers/*
 
+# Executables
+host/esod
+
 # Compiled Object files
 *.slo
 *.lo

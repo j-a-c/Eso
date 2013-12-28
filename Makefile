@@ -1,7 +1,8 @@
-all: daemon
+BUILDS=host
+TARGETS=all clean
 
-daemon:
-	gcc -o esod daemon.cpp
+$(TARGETS):
+	for b in $(BUILDS) ; do $(MAKE) -C $$b $@ ; done
 
-clean:
-	rm -rf esod
+$(BUILDS):
+	for t in $(TARGETS) ; do $(MAKE) -C $@ $$t ; done
