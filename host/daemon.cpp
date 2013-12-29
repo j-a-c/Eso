@@ -1,12 +1,98 @@
 // TODO delete after testing
 #include <string>
 
+#include <errno.h>
+#include <fcntl.h>
+#include <signal.h>
 #include <sys/resource.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <sys/un.h>
 #include <unistd.h>
 #include "Config.h"
+
+
+/*
+ * Returns true if the process acquires the lock file.
+ * Must be called to ensure that only one esod daemon is running at a time.
+ * Returns true if this process has been given the lock.
+ *
+ * Reads/writes should be atomic, else helper functions may be needed in case
+ * the calls are interrupted by a signal.
+ */
+bool has_lock(const char* path)
+{
+    int fd;
+    bool result;
+    pid_t pid;
+
+    // Try three times before giving up.
+    for (int attempt = 0; attempt < 3; ++attempt)
+    {
+        /* 
+         * Ensure this call creates the file. 
+         * If path name exists, call won't fail, meaning this process created
+         * the file and we can write our pid to it.
+         * Else, we will check to make sure the file has our pid.
+         */
+        if ((fd = open(path, O_RDWR | O_CREAT | O_EXCL, S_IRWXU)) == -1)
+        {
+            // The error should be that the file exists.
+            if (errno != EEXIST) 
+                return false;
+
+            // Re-open file and read the pid written.
+            if ((fd = open(path, O_RDONLY)) == -1)
+                return false;
+            result = read(fd, &pid, sizeof(pid));
+            close(fd);
+
+            if (result)
+            {
+                // This process has the lock!
+                if (pid == getpid())
+                    return true;
+
+                // Check to see if the pid that has the lock exists.
+                // The lock file might be stale and need to be deleted.
+                if (kill(pid, 0) == -1)
+                {
+                    // ESRCH == No such process.
+                    if (errno != ESRCH) 
+                        return false;
+
+                    // Lock file is stale, so delete it and attempt to acquire.
+                    attempt--;
+                    unlink(path);
+                    continue;
+                }
+            }
+            sleep(1);
+            continue;
+        }
+        
+        /*
+         * We created the lock, so we will write our pid and check it again
+         * next iteration.
+         * Between the time that kill() returns failure with an ESRCH error 
+         * code and the time that unlink() is called to remove the lock file, 
+         * another process could successfully delete the lock file and begin 
+         * creating a new one.
+         */
+        pid = getpid();
+        if (!write(fd, &pid, sizeof(pid)))
+        {
+            close(fd);
+            return false;
+        }
+        close(fd);
+        attempt--;
+    }
+
+    // If we made it here, we have not acquired the lock.
+    return false;
+}
 
 
 /*
@@ -20,11 +106,19 @@ void limit_core(void)
     setrlimit(RLIMIT_CORE, &rlim);
 }
 
+
 /*
  * Starts the server run by the daemonized grandchild.
  */
 int start_daemon(void)
 {
+    // Check if daemon is already running.
+    if (!has_lock(ESOD_LOCK_PATH))
+    {
+        // TODO log?
+        return 1;
+    }
+
     // Prevent core dumps.
     limit_core();
 
@@ -33,10 +127,9 @@ int start_daemon(void)
     // TODO authenticate
 
     struct sockaddr_un server, client;
-    int socket_fd, connection_fd;
 
     // Stream-oriented, local socket.
-    socket_fd = socket(AF_UNIX, SOCK_STREAM, 0);
+    int socket_fd = socket(AF_UNIX, SOCK_STREAM, 0);
     if (socket_fd < 0)
     {
         // TODO log
@@ -49,7 +142,7 @@ int start_daemon(void)
 
     // Set the address parameters.
     server.sun_family = AF_UNIX;
-    strcpy(server.sun_path, ESOD_PATH);
+    strcpy(server.sun_path, ESOD_SOCKET_PATH);
     // The address should not exist, but unlink() just in case.
     unlink(server.sun_path);
 
@@ -71,7 +164,7 @@ int start_daemon(void)
     }
 
     // Accept client connections.
-    while (connection_fd = accept(socket_fd, (struct sockaddr *) &client, 
+    while (int connection_fd = accept(socket_fd, (struct sockaddr *) &client, 
                 (socklen_t *) &len) > -1)
     {
         // TODO Implement protocol
@@ -93,13 +186,12 @@ int start_daemon(void)
     return 1;
 }
 
+
 /**
  * Starts the daemon that will run on the end hosts.
  */
 int main(void)
 {
-    // TODO check if server is already running
-
     // Fork the parent process and have the parent exit.
     if (pid_t pid = fork())
     {
