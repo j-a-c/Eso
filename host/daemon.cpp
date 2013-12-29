@@ -1,6 +1,7 @@
 // TODO delete after testing
 #include <string>
 
+#include <sys/resource.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/un.h>
@@ -8,12 +9,24 @@
 #include "Config.h"
 
 
+/*
+ * Prevents the process from writing any memory dump to disk.
+ */
+void limit_core(void)
+{
+    struct rlimit rlim;
+
+    rlim.rlim_cur = rlim.rlim_max = 0;
+    setrlimit(RLIMIT_CORE, &rlim);
+}
 
 /*
  * Starts the server run by the daemonized grandchild.
  */
-int start_server(void)
+int start_daemon(void)
 {
+    // Prevent core dumps.
+    limit_core();
 
     // TODO save pid
 
@@ -140,6 +153,6 @@ int main(void)
     close(1);
     close(2);
 
-    int error = start_server();
+    int error = start_daemon();
     return error;
 }
