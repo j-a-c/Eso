@@ -1,9 +1,14 @@
 # Notes
-Notes/*
-Papers/*
+_notes/*
+_papers/*
+_test/*
 
 # Executables
 host/esod
+
+#Leftover from runtime
+host/esod_lock
+host/esod_socket
 
 # Compiled Object files
 *.slo
