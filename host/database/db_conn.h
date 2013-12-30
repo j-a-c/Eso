@@ -12,6 +12,8 @@ public:
 
     virtual int create_credential() const = 0;
     virtual int delete_credential() const = 0;
+
+    virtual ~DB_Conn(){}
 };
 
 #endif
