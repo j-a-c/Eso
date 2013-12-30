@@ -1,7 +1,7 @@
 all: daemon
 
 daemon:
-	g++ -o esod daemon.cpp
+	g++ -std=c++11 -o esod daemon.cpp
 
 clean:
 	rm -rf esod

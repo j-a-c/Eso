@@ -10,7 +10,9 @@
 #include <sys/types.h>
 #include <sys/un.h>
 #include <unistd.h>
+
 #include "esod_config.h"
+#include "database/mysql_conn.h"
 
 
 /*
@@ -124,8 +126,6 @@ int start_daemon(void)
 
     // TODO save pid
 
-    // TODO authenticate
-
     struct sockaddr_un server, client;
 
     // Stream-oriented, local socket.
@@ -167,7 +167,10 @@ int start_daemon(void)
     while (int connection_fd = accept(socket_fd, (struct sockaddr *) &client, 
                 (socklen_t *) &len) > -1)
     {
+        // TODO authenticate
+
         // TODO Implement protocol
+        MySQL_Conn db_conn;
 
         // TODO delete this test
         std::string msg = "connecteddddd!";
