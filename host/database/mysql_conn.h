@@ -1,10 +1,37 @@
 #ifndef ESO_HOST_DATABASE_MYSQL_CONN
 #define ESO_HOST_DATABASE_MYSQL_CONN
 
+
+#include "mysql_config.h"
+#include "../../logger/logger.h"
+
+// Include these after all other files because of the mix/max macro problems
 #include <my_global.h>
 #include <mysql.h>
 
-#include "mysql_config.h"
+/*
+CREATE TABLE permissions (
+    set_name VARCHAR(255) NOT NULL,
+    op INT UNSIGNED NOT NULL,
+    entity VARCHAR(32) NOT NULL,
+    entity_type INT UNSIGNED NOT NULL,
+    primary KEY (set_name, entity)
+);
+
+CREATE TABLE credentials (
+    set_name VARCHAR(255) NOT NULL,
+    version INT UNSIGNED NOT NULL,
+    type INT UNSIGNED NOT NULL,
+    algo INT UNSIGNED NOT NULL,
+    size INT UNSIGNED NOT NULL,
+    expiration DATE NOT NULL,
+    edata VARBINARY(8192) NOT NULL,
+    mdata VARBINARY(8192) NOT NULL,
+    enonce VARBINARY(1024) NOT NULL,
+    mnonce VARBINARY(1024) NOT NULL,
+    PRIMARY KEY (set_name, version)
+);
+*/
 
 class MySQL_Conn : public DB_Conn
 {
@@ -23,7 +50,7 @@ public:
 private:
     MYSQL* cred_conn;
     MYSQL* perm_conn;
-    void log_error(const MYSQL *conn) const;
+    void log_error(MYSQL *conn) const;
 
 };
 
@@ -31,13 +58,6 @@ MySQL_Conn::MySQL_Conn()
 {
     MYSQL* cred_conn = mysql_init(nullptr);
     MYSQL* perm_conn = mysql_init(nullptr);
-
-    if (!cred_conn) 
-        log_error(cred_conn);
-
-    if (!mysql_real_connect(cred_conn, LOC, HOST_USER, HOST_PASS, 
-                PERM_LOC, 0, nullptr, 0))
-        log_error(cred_conn);
 
     if (!perm_conn) 
         log_error(perm_conn);
@@ -56,6 +76,22 @@ MySQL_Conn::~MySQL_Conn()
 int MySQL_Conn::create_permission() const
 {
     // TODO
+    std::string query = "INSERT INTO ";
+    query.append(PERM_LOC);
+    query += " VALUES(";
+    query += "set_name";
+    query += ",";
+    query += "1";
+    query += ",";
+    query += "entity";
+    query += ",";
+    query += "2";
+    query += (")");
+    
+
+    if (mysql_query(perm_conn, query.c_str())) 
+        log_error(perm_conn);
+
     return 0;
 }
 
@@ -94,9 +130,9 @@ int MySQL_Conn::delete_credential() const
 
 }
 
-void MySQL_Conn::log_error(const MYSQL *conn) const
+void MySQL_Conn::log_error(MYSQL *conn) const
 {
-    // TODO
+    Logger::log(mysql_error(conn), LogLevel::Error);
 }
 
 

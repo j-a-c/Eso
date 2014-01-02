@@ -14,6 +14,7 @@
 #include "esod_config.h"
 #include "database/db_conn.h"
 #include "database/mysql_conn.h"
+#include "../logger/logger.h"
 
 
 /*
@@ -133,8 +134,7 @@ int start_daemon(void)
     int socket_fd = socket(AF_UNIX, SOCK_STREAM, 0);
     if (socket_fd < 0)
     {
-        // TODO log
-        // socket() failed.
+        Logger::log("socket() failed", LogLevel::Error);
         return 1;
     }
 
@@ -151,27 +151,29 @@ int start_daemon(void)
     int len = strlen(server.sun_path) + sizeof(server.sun_family);
     if (bind(socket_fd, (struct sockaddr *) &server, len) != 0)
     {
-        // TODO log
-        // bind() failed
+        Logger::log("bind() failed", LogLevel::Error);
         return 1;
     }
 
     // Listen for incoming connections from client programs.
     if (listen(socket_fd, ESOD_QUEUE_SIZE) != 0)
     {
-        // TODO log
-        // listen() failed
+        Logger::log("listen() failed", LogLevel::Error);
         return 1;
     }
 
+    Logger::log("esod is listening successfully.", LogLevel::Debug);
     // Accept client connections.
     while (int connection_fd = accept(socket_fd, (struct sockaddr *) &client, 
                 (socklen_t *) &len) > -1)
     {
+        Logger::log("esod accepted new connection.", LogLevel::Debug);
+
         // TODO authenticate
 
         // TODO Implement protocol
         DB_Conn* db_conn = new MySQL_Conn;
+        db_conn->create_permission();
 
         // TODO delete this test
         std::string msg = "connecteddddd!";
@@ -183,8 +185,7 @@ int start_daemon(void)
         return 0;
     }
 
-    // TODO log
-    // accept() error
+    Logger::log("accept() error", LogLevel::Error);
     close(socket_fd);
     unlink(server.sun_path);
     return 1;
@@ -202,8 +203,7 @@ int main(void)
         // Did fork() fail?
         if(pid < 0)
         {
-            // TODO log
-            // First fork failed.
+            Logger::log("First daemon fork failed.", LogLevel::Error);
             return 1;
         }
         else // Fork was successful.
@@ -232,8 +232,7 @@ int main(void)
     {
         if (pid < 0)
         {
-            // TODO log
-            // Second fork failed
+            Logger::log("Second daemon fork failed.");
             return 1;
         }
         else
