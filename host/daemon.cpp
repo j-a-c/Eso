@@ -12,6 +12,7 @@
 #include <unistd.h>
 
 #include "esod_config.h"
+#include "database/db_conn.h"
 #include "database/mysql_conn.h"
 
 
@@ -170,7 +171,7 @@ int start_daemon(void)
         // TODO authenticate
 
         // TODO Implement protocol
-        MySQL_Conn db_conn;
+        DB_Conn* db_conn = new MySQL_Conn;
 
         // TODO delete this test
         std::string msg = "connecteddddd!";

@@ -1,97 +1,103 @@
+#ifndef ESO_HOST_DATABASE_MYSQL_CONN
+#define ESO_HOST_DATABASE_MYSQL_CONN
+
 #include <my_global.h>
 #include <mysql.h>
 
-#include "db_conn.h"
 #include "mysql_config.h"
 
 class MySQL_Conn : public DB_Conn
 {
-
 public:
     MySQL_Conn();
+    int create_permission() const override;
+    int delete_permission() const override;
+    int add_operation() const override;
+    int remove_operation() const override;
 
-    virtual int create_permission() const override;
-    virtual int delete_permission() const override;
-    virtual int add_operation() const override;
-    virtual int remove_operation() const override;
+    int create_credential() const override;
+    int delete_credential() const override;
 
-    virtual int create_credential() const override;
-    virtual int delete_credential() const override;
-
-    virtual ~MySQL_Conn() override 
-    { 
-        mysql_close(cred_conn);
-        mysql_close(perm_conn);
-    }
+    ~MySQL_Conn();
 
 private:
-    // Permissions database connection.
-    MYSQL *perm_conn;
-    // Credentials database connection.
-    MYSQL *cred_conn;
-    void log_and_quit(const MYSQL* conn) const;
+    MYSQL* cred_conn;
+    MYSQL* perm_conn;
+    void log_error(const MYSQL *conn) const;
+
 };
 
 MySQL_Conn::MySQL_Conn()
 {
-    perm_conn = mysql_init(nullptr); 
-    cred_conn = mysql_init(nullptr);
+    MYSQL* cred_conn = mysql_init(nullptr);
+    MYSQL* perm_conn = mysql_init(nullptr);
 
-    if (!perm_conn)
-    {
-        log_and_quit(perm_conn);
-        exit(1);
-    }
+    if (!cred_conn) 
+        log_error(cred_conn);
 
-    if (!cred_conn)
-    {
-        log_and_quit(cred_conn);
-    }
-
-    if (!mysql_real_connect(perm_conn, "localhost", HOST_USER, HOST_PASS,
+    if (!mysql_real_connect(cred_conn, LOC, HOST_USER, HOST_PASS, 
                 PERM_LOC, 0, nullptr, 0))
-    {
-        log_and_quit(perm_conn); 
-    }
+        log_error(cred_conn);
 
-    if (!mysql_real_connect(cred_conn, "localhost", HOST_USER, HOST_PASS,
-                CRED_LOC, 0, nullptr, 0))
-    {
-        log_and_quit(cred_conn); 
-    }
+    if (!perm_conn) 
+        log_error(perm_conn);
+
+    if (!mysql_real_connect(perm_conn, LOC, HOST_USER, HOST_PASS, 
+                PERM_LOC, 0, nullptr, 0)) 
+        log_error(perm_conn);
 }
 
-int MySQL_Conn::create_permission() const 
+MySQL_Conn::~MySQL_Conn()
 {
+    mysql_close(cred_conn);
+    mysql_close(perm_conn);
+}
+
+int MySQL_Conn::create_permission() const
+{
+    // TODO
     return 0;
 }
 
-int MySQL_Conn::delete_permission() const 
+int MySQL_Conn::delete_permission() const
 {
+    // TODO
     return 0;
+
 }
 
-int MySQL_Conn::add_operation() const
+int MySQL_Conn::add_operation() const 
 {
+    // TODO
     return 0;
+
 }
 
 int MySQL_Conn::remove_operation() const
 {
+    // TODO
     return 0;
+
 }
 
-int MySQL_Conn::create_credential() const 
+int MySQL_Conn::create_credential() const
 {
+    // TODO
     return 0;
-}
-int MySQL_Conn::delete_credential() const 
-{
-    return 0;
+
 }
 
-void MySQL_Conn::log_and_quit(const MYSQL* conn) const
+int MySQL_Conn::delete_credential() const
 {
-    // TODO logger
-    exit(1);
+    // TODO
+    return 0;
+
 }
+
+void MySQL_Conn::log_error(const MYSQL *conn) const
+{
+    // TODO
+}
+
+
+#endif
