@@ -1,3 +1,5 @@
+MOVE CURRENT DATABASE IMPLEMENTATION TO THE CENTRAL AUTH!
+
 Central Auth:
     - web interface
     - backup mechanism

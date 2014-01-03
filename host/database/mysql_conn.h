@@ -40,12 +40,13 @@ class MySQL_Conn : public DB_Conn
 {
 public:
     MySQL_Conn();
-    int create_permission(const char *set, const int op, const char *entity, 
-            const int entity_type) const override;
+    int create_permission(const char *set, const unsigned int op, 
+            const char *entity, const unsigned int entity_type) const override;
     int delete_permission(const char* set, const char* entity) const override;
     int add_operation(const char *set, const char * entity, 
-            const int op) const override;
-    int remove_operation() const override;
+            const unsigned int op) const override;
+    int remove_operation(const char *set, const char *entity, 
+            const unsigned int op) const override; 
 
     int create_credential() const override;
     int delete_credential() const override;
@@ -73,8 +74,8 @@ MySQL_Conn::~MySQL_Conn()
  * Creates a new permission. Returns 0 if the permission was successfully
  * created.
  */
-int MySQL_Conn::create_permission(const char *set, const int op, 
-        const char *entity, const int entity_type) const 
+int MySQL_Conn::create_permission(const char *set, const unsigned int op, 
+        const char *entity, const unsigned int entity_type) const 
 {
     Logger::log("Entering create_permission(...)", LogLevel::Debug);
 	
@@ -129,7 +130,7 @@ int MySQL_Conn::delete_permission(const char *set, const char *entity) const
  * Assumes the operation value is a valid operation.
  */
 int MySQL_Conn::add_operation(const char *set, const char *entity, 
-        const int op) const 
+        const unsigned int op) const 
 {
     Logger::log("Entering add_operation(...)", LogLevel::Debug);
 
@@ -152,13 +153,12 @@ int MySQL_Conn::add_operation(const char *set, const char *entity,
     /* Get the number of rows in the result set. Then, we will make sure there
      * is only one result. This error should never occur since (set, entity) is
      * the primary key, but we will check just in case. */
-    int numRows = mysql_num_rows(mysqlResult);
-    if (numRows != 1)
+    if (mysql_num_rows(mysqlResult) != 1)
         return TOO_MANY_ROWS;
 
     MYSQL_ROW mysqlRow = mysql_fetch_row(mysqlResult);
     // This is the original operation value.
-    int opValue = atoi(mysqlRow[0]);
+    unsigned int opValue = atoi(mysqlRow[0]);
 
     // Update the operation value.
     opValue |= op;
@@ -187,10 +187,62 @@ int MySQL_Conn::add_operation(const char *set, const char *entity,
     return ret;
 }
 
-int MySQL_Conn::remove_operation() const
+int MySQL_Conn::remove_operation(const char *set, const char *entity, 
+        const unsigned int op) const 
 {
-    // TODO
-    return 0;
+    Logger::log("Entering remove_operation(...)", LogLevel::Debug);
+
+    // Form select query to get the original operation value.
+    std::string query = "SELECT op FROM ";
+    query.append(PERM_LOC);
+    query += " WHERE set_name='";
+    query.append(set);
+    query +="' and entity='";
+    query.append(entity);
+    query += "';";
+
+    Logger::log(query.c_str());
+
+    // Get the original operation value.
+    MYSQL_RES* mysqlResult = get_result(query.c_str());
+    if (!mysqlResult)
+        return NO_RESULTS;
+
+    /* Get the number of rows in the result set. Then, we will make sure there
+     * is only one result. This error should never occur since (set, entity) is
+     * the primary key, but we will check just in case. */
+    if (mysql_num_rows(mysqlResult) != 1)
+        return TOO_MANY_ROWS;
+
+    MYSQL_ROW mysqlRow = mysql_fetch_row(mysqlResult);
+    // This is the original operation value.
+    unsigned int opValue = atoi(mysqlRow[0]);
+    
+    // Update the operation value.
+    opValue &= ~op;
+
+    // Free the result set.
+    mysql_free_result(mysqlResult); 
+
+    // Form update query to update the operation value.
+    query.clear();
+    query = "UPDATE ";
+    query.append(PERM_LOC);
+    query += " SET op=";
+    query.append(std::to_string(opValue));
+    query += " WHERE set_name='";
+    query.append(set);
+    query +="' and entity='";
+    query.append(entity);
+    query += "';";
+
+    Logger::log(query.c_str());
+
+    // Update the operation value.
+    int ret = perform_query(query.c_str());
+
+    Logger::log("Exiting remove_operation(...)", LogLevel::Debug);
+    return ret;
 
 }
 

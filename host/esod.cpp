@@ -174,9 +174,19 @@ int start_daemon(void)
         // TODO Implement protocol
         DB_Conn* db_conn = new MySQL_Conn;
         db_conn->create_permission("com.josh", 1, "joshuac" ,2);
+
         db_conn->create_permission("com.josh", 1, "test1" ,2);
         db_conn->delete_permission("com.josh", "test1");
+
         db_conn->add_operation("com.josh", "joshuac", 2);
+        db_conn->remove_operation("com.josh", "joshuac", 1);
+        db_conn->add_operation("com.josh", "joshuac", 4);
+        db_conn->add_operation("com.josh", "joshuac", 8);
+        db_conn->remove_operation("com.josh", "joshuac", 8);
+        // joshuac permission should be 6
+
+
+
 
 
         // TODO delete this test
