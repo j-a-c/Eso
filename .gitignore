@@ -1,12 +1,17 @@
+# Thanks a lot GEdit
+*~
+
 # Notes
 _papers/*
 _samples/*
 _test/*
+*_notes
 
 # Executables
 host/esod
 
 #Leftover from runtime
+default.log
 host/esod_lock
 host/esod_socket
 
