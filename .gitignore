@@ -8,12 +8,12 @@ _test/*
 *_notes
 
 # Executables
-host/esod
+local/esod/esod
 
 #Leftover from runtime
 default.log
-host/esod_lock
-host/esod_socket
+local/esod/esod_lock
+local/esod/esod_socket
 
 # Compiled Object files
 *.slo

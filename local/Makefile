@@ -1,4 +1,4 @@
-BUILDS=local
+BUILDS=api esod
 TARGETS=all clean
 
 $(TARGETS):

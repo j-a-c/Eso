@@ -1,5 +1,5 @@
-#ifndef ESO_HOST_DATABASE_MYSQL_CONFIG
-#define ESO_HOST_DATABASE_MYSQL_CONFIG
+#ifndef ESO_CENTRAL_DATABASE_MYSQL_CONFIG
+#define ESO_CENRTAL_DATABASE_MYSQL_CONFIG
 
 const char* LOC = "localhost";
 const char* DB_LOC = "esod_host";

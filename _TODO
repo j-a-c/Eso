@@ -1,7 +1,8 @@
-MOVE CURRENT DATABASE IMPLEMENTATION TO THE CENTRAL AUTH!
-
 Central Auth:
     - web interface
+        - flask
+    - database
+        - the implementation in the folder is C++...
     - backup mechanism
 
 Distribution Servers:

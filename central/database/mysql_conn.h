@@ -1,5 +1,5 @@
-#ifndef ESO_HOST_DATABASE_MYSQL_CONN
-#define ESO_HOST_DATABASE_MYSQL_CONN
+#ifndef ESO_CENTRAL_DATABASE_MYSQL_CONN
+#define ESO_CENTRAL_DATABASE_MYSQL_CONN
 
 #include "db_error.h"
 #include "mysql_config.h"

@@ -1,4 +1,4 @@
-BUILDS=local
+BUILDS=java
 TARGETS=all clean
 
 $(TARGETS):
