@@ -173,12 +173,14 @@ int start_daemon(void)
 
         // TODO Implement protocol
         DB_Conn* db_conn = new MySQL_Conn;
-        db_conn->create_permission();
+        db_conn->create_permission("com.josh", 1, "joshuac" ,2);
+
 
         // TODO delete this test
         std::string msg = "connecteddddd!";
         send(connection_fd, msg.c_str(), msg.length()+1, 0);
 
+        Logger::log("Daemon is closing connection.");
         close(connection_fd);
 
         // TODO delete after testing

@@ -33,11 +33,13 @@ CREATE TABLE credentials (
 );
 */
 
+
 class MySQL_Conn : public DB_Conn
 {
 public:
     MySQL_Conn();
-    int create_permission() const override;
+    int create_permission(const char *set, const int op, const char *entity, 
+            const int entity_type) const override;
     int delete_permission() const override;
     int add_operation() const override;
     int remove_operation() const override;
@@ -48,51 +50,49 @@ public:
     ~MySQL_Conn();
 
 private:
-    MYSQL* cred_conn;
-    MYSQL* perm_conn;
     void log_error(MYSQL *conn) const;
+    int perform_query(const char *query) const;
 
 };
 
 MySQL_Conn::MySQL_Conn()
 {
-    MYSQL* cred_conn = mysql_init(nullptr);
-    MYSQL* perm_conn = mysql_init(nullptr);
 
-    if (!perm_conn) 
-        log_error(perm_conn);
-
-    if (!mysql_real_connect(perm_conn, LOC, HOST_USER, HOST_PASS, 
-                PERM_LOC, 0, nullptr, 0)) 
-        log_error(perm_conn);
 }
 
 MySQL_Conn::~MySQL_Conn()
 {
-    mysql_close(cred_conn);
-    mysql_close(perm_conn);
+
 }
 
-int MySQL_Conn::create_permission() const
+/*
+ * Creates a new permission. Returns 0 if the permission was successfully
+ * created.
+ */
+int MySQL_Conn::create_permission(const char *set, const int op, 
+        const char *entity, const int entity_type) const 
 {
-    // TODO
+    Logger::log("Entering create_permission(...)", LogLevel::Debug);
+	
+    // Form query
     std::string query = "INSERT INTO ";
     query.append(PERM_LOC);
-    query += " VALUES(";
-    query += "set_name";
-    query += ",";
-    query += "1";
-    query += ",";
-    query += "entity";
-    query += ",";
-    query += "2";
-    query += (")");
-    
+    query += " VALUES ('";
+    query.append(set);
+    query += "',";
+    query.append(std::to_string(op));
+    query += ",'";
+    query.append(entity); 
+    query += "',";
+    query.append(std::to_string(entity_type));
+    query += ")";
 
-    if (mysql_query(perm_conn, query.c_str())) 
-        log_error(perm_conn);
+    Logger::log(query.c_str());
 
-    return 0;
+    int ret = perform_query(query.c_str());
+        
+    Logger::log("Exiting create_permission(...)", LogLevel::Debug);
+    return ret;
 }
 
 int MySQL_Conn::delete_permission() const
@@ -130,9 +130,41 @@ int MySQL_Conn::delete_credential() const
 
 }
 
+/*
+ * Logs any errors that occur due to the MySQL connection
+ */
 void MySQL_Conn::log_error(MYSQL *conn) const
 {
+    Logger::log("Entering log_error.", LogLevel::Debug);
     Logger::log(mysql_error(conn), LogLevel::Error);
+}
+
+/*
+ * Performs the given query in the default database as the MySQL user esod.
+ * Returns 0 if no error occured, else the error is logged.
+ */
+int MySQL_Conn::perform_query(const char* query) const 
+{
+    MYSQL* conn = nullptr;
+    conn = mysql_init(nullptr);
+
+    // Connect to database
+    if(!mysql_real_connect(conn, LOC, 
+            HOST_USER, HOST_PASS, DB_LOC, 0, nullptr, 0))
+    {
+        log_error(conn);
+        return 1;
+    }
+
+    // Perform query
+    if(mysql_query(conn, query))
+    {
+        log_error(conn);
+        return 2;
+    }
+
+    mysql_close(conn);
+    return 0;
 }
 
 

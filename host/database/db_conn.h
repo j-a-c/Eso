@@ -4,7 +4,8 @@
 class DB_Conn
 {
 public:
-    virtual int create_permission() const = 0;
+    virtual int create_permission(const char *set, const int op, 
+            const char *entity, const int entity_type) const = 0;
     virtual int delete_permission() const = 0;
     virtual int add_operation() const = 0;
     virtual int remove_operation() const = 0;
