@@ -1,0 +1,33 @@
+Central Auth:
+    - web interface
+    - backup mechanism
+
+Distribution Servers:
+    - distribution server
+
+Host Daemon:
+    - cronjob
+    - save esod pid
+    - close all file descriptors? (23)
+    - implement protocol
+        - key management
+        - database / encryption (298)
+            - clean strings
+            - handles errors
+            - triggers
+            - hash database entries to ensure integrity?
+            - prepared statements
+    - authenticate client
+    - safely erase data (706)
+    - signal handling (712)
+    - secure directory (45, 55)
+    - logging
+	- generalize output path
+	- add logging levels
+	- integrity checks (encrypt/hash)
+    - delete esod tests
+    - sanitize env? (6)
+    - error 'constant' file?
+
+Client API:
+    - jni interface
