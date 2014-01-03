@@ -1,8 +1,7 @@
 #ifndef ESO_HOST_DATABASE_MYSQL_CONN
 #define ESO_HOST_DATABASE_MYSQL_CONN
 
-#include <cstdlib>
-
+#include "db_error.h"
 #include "mysql_config.h"
 #include "../../logger/logger.h"
 
@@ -134,8 +133,6 @@ int MySQL_Conn::add_operation(const char *set, const char *entity,
 {
     Logger::log("Entering add_operation(...)", LogLevel::Debug);
 
-    int ret = 3;
-
     // Form select query to get the original operation value.
     std::string query = "SELECT op FROM ";
     query.append(PERM_LOC);
@@ -150,14 +147,14 @@ int MySQL_Conn::add_operation(const char *set, const char *entity,
     // Get the original operation value.
     MYSQL_RES* mysqlResult = get_result(query.c_str());
     if (!mysqlResult)
-        return ret;
+        return NO_RESULTS;
 
     /* Get the number of rows in the result set. Then, we will make sure there
      * is only one result. This error should never occur since (set, entity) is
      * the primary key, but we will check just in case. */
     int numRows = mysql_num_rows(mysqlResult);
     if (numRows != 1)
-        return 2;
+        return TOO_MANY_ROWS;
 
     MYSQL_ROW mysqlRow = mysql_fetch_row(mysqlResult);
     // This is the original operation value.
@@ -184,7 +181,7 @@ int MySQL_Conn::add_operation(const char *set, const char *entity,
     Logger::log(query.c_str());
 
     // Update the operation value.
-    ret = perform_query(query.c_str());
+    int ret = perform_query(query.c_str());
 
     Logger::log("Exiting add_operation(...)", LogLevel::Debug);
     return ret;
@@ -234,18 +231,18 @@ int MySQL_Conn::perform_query(const char* query) const
             HOST_USER, HOST_PASS, DB_LOC, 0, nullptr, 0))
     {
         log_error(conn);
-        return 1;
+        return CANNOT_CONNECT;
     }
 
     // Perform query
     if(mysql_query(conn, query))
     {
         log_error(conn);
-        return 2;
+        return CANNOT_QUERY;
     }
 
     mysql_close(conn);
-    return 0;
+    return OK;
 }
 
 /*

@@ -10,6 +10,7 @@ Host Daemon:
     - save esod pid
     - close all file descriptors? (23)
     - implement protocol
+	- clean strings
         - key management
         - database / encryption (298)
             - clean strings
@@ -27,7 +28,7 @@ Host Daemon:
 	- integrity checks (encrypt/hash)
     - delete esod tests
     - sanitize env? (6)
-    - error 'constant' file?
+    - error 'constant' files
 
 Client API:
     - jni interface
