@@ -1,9 +1,12 @@
 Central Auth:
     - web interface
-        - flask
+        - create new set
+            - c++ impl
+        - view current set
+            - c++ impl
     - database
         - the implementation in the folder is C++...
-    - backup mechanism
+        - backup mechanism for database
 
 Distribution Servers:
     - distribution server

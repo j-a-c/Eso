@@ -1,9 +1,15 @@
-<form action = "/form/" method="post">
-	<b>Username:</b>
-	<input type="text" name="username"/>
-	<br />
-	<b>Password:</b>
-	<input type="password" name="password"/>
-	<br />
-<input type="submit"/>
-</form>      
+<!doctype html>
+<title>Login</title>
+<link rel=stylesheet type=text/css href="{{ url_for('static', filename='style.css') }}">
+
+<div class=page>
+	<form action = "/form/" method="post">
+		<b>Username:</b>
+		<input type="text" name="username"/>
+		<br />
+		<b>Password:</b>
+		<input type="password" name="password"/>
+		<br />
+	<input type="submit"/>
+	</form>
+</div>

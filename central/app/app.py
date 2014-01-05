@@ -1,4 +1,4 @@
-from flask import Flask, request, redirect, url_for, session, render_template
+from flask import Flask, request, redirect, url_for, render_template
 
 app = Flask(__name__)
 
@@ -22,6 +22,7 @@ def index():
 '''
 @app.route('/create/')
 def createSet():
+    # TODO validate create request
     return render_template('createSet.html')
 
 
@@ -30,6 +31,7 @@ def createSet():
 '''
 @app.route('/set/<setName>/')
 def viewSet(setName):
+    # TODO add option to edit
 	return render_template('viewSet.html', setName=setName)
 
 
