@@ -7,40 +7,44 @@
 
 	<br /><br />
 
-	<form action = "/form/" method="post">
+	<form method="post">
+		Set Name: (Period-delimited words)<br />
+		<input type="text" name="setName"/>
 
-	Set Name:<br />
-	<input type="text" name="setName"/>
+		<br /><br />
 
-	<br /><br />
+		Credential Version: (Must be an integer greater than 0)<br />
+		<input type="text" name="version"/>
 
-	Credential Version:<br />
-	<input type="text" name="version"/>
+		<br /><br />
 
-	<br /><br />
+		Credential Type:<br />
+		<select>
+		 	<option>Username / Password</option>
+		 	<option>Public / Private</option>
+		 	<option>Symmetric</option>
+			<option>Certificate</option>
+		</select>
 
-	Credential Type:<br />
-	<select>
-	 	<option>Username / Password</option>
-	 	<option>Public / Private</option>
-	 	<option>Symmetric</option>
-		<option>Certificate</option>
-	</select>
+		<!-- TODO import or generate option -->
 
-	<br /><br />
+		<br /><br />
 
-	Expiration Date:<br />
-	<input type="text" name="version"/>
+		Expiration Date: (YYYY-MM-DD)<br />
+		<input type="text" name="expiration"/>
 
-	<br /><br />
+		<br /><br />
 
-	Owner:<br />
-	<input type="text" name="version"/>
+		Primary Owner:<br />
+		<input type="text" name="primary"/>
 
-	<br /><br />
+		<br /><br />
 
-	Co-owner:<br />
-	<input type="text" name="version"/>
+		Secondary Owner:<br />
+		<input type="text" name="secondary"/>
 
+		<br /><br />
+
+		<input type="submit"/>
 	</form>
 </div>

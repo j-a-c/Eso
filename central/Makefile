@@ -1,4 +1,4 @@
-BUILDS=central local
+BUILDS=app
 TARGETS=all clean
 
 $(TARGETS):

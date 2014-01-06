@@ -1,4 +1,7 @@
 from flask import Flask, request, redirect, url_for, render_template
+from databaseModule import *
+import datetime
+import re
 
 app = Flask(__name__)
 
@@ -9,9 +12,11 @@ app = Flask(__name__)
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
+        # View a set.
         if request.form['submit'] == 'View Set':
             setName = request.form.get('setName')
             return redirect('set/' + setName)
+        # Create a set.
         elif request.form['submit'] == 'Create Set':
             return redirect(url_for('createSet'))
     return render_template('index.html')
@@ -20,9 +25,64 @@ def index():
 '''
     Form for creating a new set.
 '''
-@app.route('/create/')
+@app.route('/create/', methods=['GET', 'POST'])
 def createSet():
-    # TODO validate create request
+    if request.method == 'POST':
+
+        # Get form contents.
+        setName = request.form.get('setName')
+        version = request.form.get('version')
+        expiration = request.form.get('expiration')
+        # TODO credential type
+        primary = request.form.get('primary')
+        secondary = request.form.get('secondary')
+
+        # Are all the contents of the form 'clean'?
+        # (In the expected form and satisfy the constraints.)
+        isClean = True
+
+        # Check set name.
+        if not re.match('^\w+(\.\w+)*$', setName):
+            isClean = False
+
+        # Check version.
+        # Must be an integer greater than 0.
+        if (not version.isdigit()) or (int(version) <= 0):
+            isClean = False
+
+        # Check expiration.
+        # Must be of the form YYYY-MM-DD
+        try:
+            datetime.datetime.strptime(expiration, '%Y-%m-%d')
+        except ValueError:
+            isClean = False
+
+        # Check primary.
+        # Must be a name with no special characters.
+        if not re.match('^\w+$', primary):
+            isClean = False
+
+        # Check secondary.
+        # Must be a name with no special characters.
+        if not re.match('^\w+$', secondary):
+            isClean = False
+
+        if not isClean:
+            # TODO error message
+            return render_template('createSet.html')
+
+        # Was the set actually created?
+        isCreated = False
+
+        print "Result from myFunction:", myFunction()
+
+        if not isCreated:
+            # TODO error message
+            return render_template('createSet.html')
+
+        # If set was created, redirect to its page.
+        return redirect('set/' + setName)
+
     return render_template('createSet.html')
 
 
@@ -31,6 +91,9 @@ def createSet():
 '''
 @app.route('/set/<setName>/')
 def viewSet(setName):
+
+    # Load info from database
+
     # TODO add option to edit
 	return render_template('viewSet.html', setName=setName)
 

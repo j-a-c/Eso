@@ -2,8 +2,12 @@ Central Auth:
     - web interface
         - create new set
             - c++ impl
+			- input validation
         - view current set
             - c++ impl
+	- daemon
+		- unix domain socket for talking to web app
+		- tcp socket for propagation / backup
     - database
         - the implementation in the folder is C++...
         - backup mechanism for database
@@ -16,14 +20,13 @@ Host Daemon:
     - save esod pid
     - close all file descriptors? (23)
     - implement protocol
-	- clean strings
-        - key management
-        - database / encryption (298)
-            - clean strings
-            - handles errors
-            - triggers
-            - hash database entries to ensure integrity?
-            - prepared statements
+    - key management
+    - database / encryption (298)
+        - clean strings
+        - handles errors
+        - triggers
+        - hash database entries to ensure integrity?
+        - prepared statements
     - authenticate client
     - safely erase data (706)
     - signal handling (712)
