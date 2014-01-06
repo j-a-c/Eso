@@ -1,10 +1,10 @@
 Central Auth:
     - web interface
         - create new set
-            - c++ impl
-			- input validation
+            - fill other params: in credentials
         - view current set
             - c++ impl
+			- pull from database
 	- daemon
 		- unix domain socket for talking to web app
 		- tcp socket for propagation / backup

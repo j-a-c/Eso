@@ -1,5 +1,5 @@
-#ifndef ESO_CENTRAL_DATABASE_DB_ERROR
-#define ESO_CENTRAL_DATABASE_DB_ERROR
+#ifndef ESO_CENTRAL_APP_DATABASE_DB_ERROR
+#define ESO_CENTRAL_APP_DATABASE_DB_ERROR
 
 
 /* 
@@ -21,5 +21,6 @@ const int TOO_MANY_ROWS = 3;
 // No results were returned, when some were expected.
 const int NO_RESULTS = 4;
 
+const int ALREADY_EXISTS = 5;
 
 #endif

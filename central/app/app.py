@@ -68,16 +68,17 @@ def createSet():
             isClean = False
 
         if not isClean:
-            # TODO error message
+            # TODO Error message
             return render_template('createSet.html')
 
         # Was the set actually created?
         isCreated = False
 
-        print "Result from myFunction:", myFunction()
+        if create_set(setName, version, expiration, primary, secondary) == 0:
+            isCreated = True
 
         if not isCreated:
-            # TODO error message
+            # TODO Error message and save form input.
             return render_template('createSet.html')
 
         # If set was created, redirect to its page.

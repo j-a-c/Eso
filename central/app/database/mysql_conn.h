@@ -1,9 +1,10 @@
-#ifndef ESO_CENTRAL_DATABASE_MYSQL_CONN
-#define ESO_CENTRAL_DATABASE_MYSQL_CONN
+#ifndef ESO_CENTRAL_APP_DATABASE_MYSQL_CONN
+#define ESO_CENTRAL_APP_DATABASE_MYSQL_CONN
 
+#include "db_conn.h"
 #include "db_error.h"
 #include "mysql_config.h"
-#include "../../logger/logger.h"
+#include "../../../logger/logger.h"
 
 // Include these after all other files because of the mix/max macro problems
 #include <my_global.h>
@@ -26,13 +27,16 @@ CREATE TABLE credentials (
     type INT UNSIGNED NOT NULL,
     algo INT UNSIGNED NOT NULL,
     size INT UNSIGNED NOT NULL,
+    p_owner VARCHAR(32) NOT NULL,
+    s_owner VARCHAR(32) NOT NULL,
     expiration DATE NOT NULL,
-    edata VARBINARY(8192) NOT NULL,
-    mdata VARBINARY(8192) NOT NULL,
-    enonce VARBINARY(1024) NOT NULL,
-    mnonce VARBINARY(1024) NOT NULL,
+    edata VARBINARY(8192),
+    mdata VARBINARY(8192),
+    enonce VARBINARY(1024),
+    mnonce VARBINARY(1024),
     PRIMARY KEY (set_name, version)
 );
+
 */
 
 
@@ -48,7 +52,9 @@ public:
     int remove_operation(const char *set, const char *entity, 
             const unsigned int op) const override; 
 
-    int create_credential() const override;
+    int create_credential(const char *set_name, 
+            const unsigned int version, const char *expiration, 
+            const char *primary, const char *secondary) const override;
     int delete_credential() const override;
 
     ~MySQL_Conn();
@@ -246,10 +252,38 @@ int MySQL_Conn::remove_operation(const char *set, const char *entity,
 
 }
 
-int MySQL_Conn::create_credential() const
+int MySQL_Conn::create_credential(const char *set_name, 
+        const unsigned int version, const char *expiration, 
+        const char *primary, const char *secondary) const
 {
-    // TODO
-    return 0;
+    
+    Logger::log("Entering create_credential(...)", LogLevel::Debug);
+	
+    // Form query
+    std::string query = "INSERT INTO ";
+    query.append(CRED_LOC);
+    query += "(set_name, version, expiration, p_owner, s_owner)";
+    query += " VALUES ('";
+    query.append(set_name);
+    query += "', ";
+    query.append(std::to_string(version));
+    query += ", '";
+    query.append(expiration); 
+    query += "', '";
+    query.append(primary); 
+    query += "', '";
+    query.append(secondary); 
+    query += "')";
+
+    Logger::log(query.c_str());
+
+    int ret = perform_query(query.c_str());
+
+    std::cout << ret << std::endl;
+        
+    Logger::log("Exiting create_credential(...)", LogLevel::Debug);
+
+    return ret;
 
 }
 
@@ -287,10 +321,10 @@ int MySQL_Conn::perform_query(const char* query) const
     }
 
     // Perform query
-    if(mysql_query(conn, query))
+    if(int ret = mysql_query(conn, query))
     {
         log_error(conn);
-        return CANNOT_QUERY;
+        return ret;
     }
 
     mysql_close(conn);

@@ -1,5 +1,5 @@
-#ifndef ESO_CENTRAL_DATABASE_DB_CONN
-#define ESO_CENTRAL_DATABASE_DB_CONN
+#ifndef ESO_CENTRAL_APP_DATABASE_DB_CONN
+#define ESO_CENTRAL_APP_DATABASE_DB_CONN
 
 class DB_Conn
 {
@@ -23,7 +23,9 @@ public:
     virtual int remove_operation(const char *set, 
             const char *entity, const unsigned int op) const = 0;
 
-    virtual int create_credential() const = 0;
+    virtual int create_credential(const char *set_name, 
+            const unsigned int version, const char *expiration, 
+            const char *primary, const char *secondary) const = 0;
 
     virtual int delete_credential() const = 0;
 
