@@ -46,8 +46,8 @@ def createSet():
             isClean = False
 
         # Check version.
-        # Must be an integer greater than 0.
-        if (not version.isdigit()) or (int(version) <= 0):
+        # Must be an integer greater than 0 and less than 4294967295 .
+        if (not version.isdigit()) or (int(version) <= 0 or int(version) >= 4294967295):
             isClean = False
 
         # Check expiration.
@@ -94,9 +94,12 @@ def createSet():
 def viewSet(setName):
 
     # Load info from database
+    setCreds = get_credentials(setName)
+    setPerms = get_permissions(setName)
 
     # TODO add option to edit
-	return render_template('viewSet.html', setName=setName)
+    return render_template('viewSet.html', setName=setName, setCreds=setCreds,
+            setPerms=setPerms)
 
 
 """

@@ -258,6 +258,8 @@ int MySQL_Conn::create_credential(const char *set_name,
 {
     
     Logger::log("Entering create_credential(...)", LogLevel::Debug);
+
+    // TODO query to see if set_name already exists
 	
     // Form query
     std::string query = "INSERT INTO ";
