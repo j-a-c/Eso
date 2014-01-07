@@ -96,20 +96,8 @@ def createSet():
 def viewSet(setName):
 
     # Load info from database
-    print 'before setCreds'
     setCreds = get_credentials(setName)
-    print type(setCreds)
-    print len(setCreds)
-    print setCreds
-    for x in setCreds:
-        print type(x)
-    print 'after setCreds'
-    print 'before setPerms'
     setPerms = get_permissions(setName)
-    print 'after setPerms'
-
-    print setCreds
-    print setPerms
 
     # TODO add option to edit
     return render_template('viewSet.html', setName=setName, setCreds=setCreds,
