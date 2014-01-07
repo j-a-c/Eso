@@ -5,12 +5,43 @@
 <div class=page>
 	<h1>Showing Set: {{setName}} </h1>
 
+	<br/><br/>
+	
+	Credentials:<br/>
+	<!-- Credentials Table -->
+	<table id="viewSet">
+	<tr>
+		<th>Set</th>
+		<th>Version</th>
+		<th>Type</th>
+		<th>Expiration</th>
+	</tr>
 	{% for cred in setCreds %}
-	<p> cred </p>
+	<tr>
+		<td>{{cred[0]}}</td>
+		<td>{{cred[1]}}</td>
+		<td>{{cred[2]}}</td>
+		<td>{{cred[3]}}</td>
+	</tr>
 	{% endfor %}
+	</table>
 
+	<br/><br/>
+
+	Permissions:<br/>
+	<table id="viewSet">
+	<tr>
+		<th>Entity</th>
+		<th>Entity Type</th>
+		<th>Operation</th>
+	</tr>
+	<!-- Permissions Table -->
 	{% for perm in setPerms %}
-	<p> perm </p>
+	<tr>
+		<td>{{perm[0]}}</td>
+		<td>{{perm[1]}}<</td>
+		<td>{{perm[2]}}<</td>
+	</tr>
 	{% endfor %}
 </div
 

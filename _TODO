@@ -1,16 +1,23 @@
+grep -r TODO *
+
 Central Auth:
+	- fix building creds and perms
+		- remove print statements
+
+	- replace atoi with strtol
     - web interface
         - create new set
 			- query to see if set already exists
-            - fill other params: in credentials
+            - fill other params in credentials
+				- algo, key, size,...
         - view current set
             - c++ impl
 			- pull from database
+			- edit / add / remove functionality
 	- daemon
-		- unix domain socket for talking to web app
 		- tcp socket for propagation / backup
     - database
-        - the implementation in the folder is C++...
+		- remove unneeded functions from impl?
         - backup mechanism for database
 
 Distribution Servers:

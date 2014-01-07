@@ -1,6 +1,9 @@
 #ifndef ESO_CENTRAL_APP_DATABASE_MYSQL_CONN
 #define ESO_CENTRAL_APP_DATABASE_MYSQL_CONN
 
+#include <tuple>
+#include <vector>
+
 #include "db_conn.h"
 #include "db_error.h"
 #include "mysql_config.h"
@@ -54,8 +57,15 @@ public:
 
     int create_credential(const char *set_name, 
             const unsigned int version, const char *expiration, 
-            const char *primary, const char *secondary) const override;
+            const char *primary, const char *secondary, 
+            const unsigned int type) const override;
     int delete_credential() const override;
+
+    std::vector<std::tuple<char *, unsigned int, unsigned int, 
+            char *>> get_credentials(const char *) const override;
+
+    std::vector<std::tuple<char *, unsigned int, unsigned int>> 
+            get_permissions(const char *) const override;
 
     ~MySQL_Conn();
 
@@ -254,7 +264,8 @@ int MySQL_Conn::remove_operation(const char *set, const char *entity,
 
 int MySQL_Conn::create_credential(const char *set_name, 
         const unsigned int version, const char *expiration, 
-        const char *primary, const char *secondary) const
+        const char *primary, const char *secondary, 
+        const unsigned int type) const
 {
     
     Logger::log("Entering create_credential(...)", LogLevel::Debug);
@@ -264,7 +275,7 @@ int MySQL_Conn::create_credential(const char *set_name,
     // Form query
     std::string query = "INSERT INTO ";
     query.append(CRED_LOC);
-    query += "(set_name, version, expiration, p_owner, s_owner)";
+    query += "(set_name, version, expiration, p_owner, s_owner, type)";
     query += " VALUES ('";
     query.append(set_name);
     query += "', ";
@@ -274,14 +285,14 @@ int MySQL_Conn::create_credential(const char *set_name,
     query += "', '";
     query.append(primary); 
     query += "', '";
-    query.append(secondary); 
-    query += "')";
+    query.append(secondary);
+    query += "', ";
+    query.append(std::to_string(type));
+    query += ")";
 
     Logger::log(query.c_str());
 
     int ret = perform_query(query.c_str());
-
-    std::cout << ret << std::endl;
         
     Logger::log("Exiting create_credential(...)", LogLevel::Debug);
 
@@ -294,6 +305,82 @@ int MySQL_Conn::delete_credential() const
     // TODO
     return 0;
 
+}
+
+/*
+ * Returns a vector of tuples representing the entries from query.
+ * The tuple entries are (set_name, version, type, operation).
+ */
+std::vector<std::tuple<char *, unsigned int, unsigned int, 
+            char *>> MySQL_Conn::get_credentials(const char * set_name) const
+{
+    Logger::log("Entering get_credentials(...)", LogLevel::Debug);
+
+    // Return value.
+    std::vector<std::tuple<char *, unsigned int, unsigned int, 
+        char *>> results;
+
+    // Build query.
+    std::string query = "SELECT set_name, version, type, expiration FROM ";
+    query += CRED_LOC;
+    query += " WHERE set_name='";
+    query.append(set_name);
+    query += "';";
+
+    Logger::log(query);
+
+    // Get results.
+    MYSQL_RES* mysqlResult = get_result(query.c_str());
+
+    // Pack query results into return value.
+    MYSQL_ROW mysqlRow;
+    while(mysqlRow = mysql_fetch_row(mysqlResult)) // row pointer in the result set
+        results.push_back(std::make_tuple(mysqlRow[0], atoi(mysqlRow[1]), 
+                    atoi(mysqlRow[2]), mysqlRow[3]));
+    
+    mysql_free_result(mysqlResult); 
+    
+    Logger::log("Exiting get_credentials(...)", LogLevel::Debug);
+
+    return results;
+}
+
+/*
+ * Returns a vector of tuples representing the entries from query.
+ * The tuple entries are (entity, entity_type, operation).
+ */
+std::vector<std::tuple<char *, unsigned int, unsigned int>>
+        MySQL_Conn::get_permissions(const char * set_name) const
+{
+    Logger::log("Entering get_permissions(...)", LogLevel::Debug);
+
+    // Return value.
+    std::vector<std::tuple<char *, unsigned int, 
+        unsigned int>> results;
+
+    // Build query.
+    std::string query = "SELECT entity, entity_type, op FROM "; 
+    query += PERM_LOC;
+    query += " WHERE set_name='";
+    query.append(set_name);
+    query += "';";
+
+    Logger::log(query);
+
+    // Get results.
+    MYSQL_RES* mysqlResult = get_result(query.c_str());
+
+    // Pack query results into return value.
+    MYSQL_ROW mysqlRow;
+    while(mysqlRow = mysql_fetch_row(mysqlResult)) // row pointer in the result set
+        results.push_back(std::make_tuple(mysqlRow[0], atoi(mysqlRow[1]), 
+                    atoi(mysqlRow[2])));
+    
+    mysql_free_result(mysqlResult); 
+
+    Logger::log("Exiting get_permissions(...)", LogLevel::Debug);
+
+    return results;
 }
 
 /*

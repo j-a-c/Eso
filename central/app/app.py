@@ -74,7 +74,9 @@ def createSet():
         # Was the set actually created?
         isCreated = False
 
-        if create_set(setName, version, expiration, primary, secondary) == 0:
+        # TODO handle type (last param), algo, size, etc.
+        if create_credential(setName, version, expiration, primary, secondary,
+                '2') == 0:
             isCreated = True
 
         if not isCreated:
@@ -94,8 +96,20 @@ def createSet():
 def viewSet(setName):
 
     # Load info from database
+    print 'before setCreds'
     setCreds = get_credentials(setName)
+    print type(setCreds)
+    print len(setCreds)
+    print setCreds
+    for x in setCreds:
+        print type(x)
+    print 'after setCreds'
+    print 'before setPerms'
     setPerms = get_permissions(setName)
+    print 'after setPerms'
+
+    print setCreds
+    print setPerms
 
     # TODO add option to edit
     return render_template('viewSet.html', setName=setName, setCreds=setCreds,
