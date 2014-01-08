@@ -69,6 +69,8 @@ RSA *DER_decode_RSA_private(const unsigned char *buf, long len)
  */
 std::tuple<unsigned char *, int, unsigned char *, int> get_new_RSA_pair(int bits)
 {
+    // TODO most functions in here need error checking..
+
     // Generate a new RSA key pair
     // http://www.openssl.org/docs/crypto/rsa.html
     RSA *rsa = RSA_new();
