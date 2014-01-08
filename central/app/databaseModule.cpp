@@ -1,6 +1,7 @@
 #include <Python.h>
 
 #include "database/mysql_conn.h"
+#include "../crypto/rsa.h"
 
 /*
  * MySQL databse interface for the web app.
@@ -30,6 +31,7 @@ static PyObject* create_credential(PyObject* self, PyObject* args)
     char *expiration;
     char *primary;
     char *secondary;
+    // Type input is a string, but we need an unsigned int
     char * input_type;
 
     // Parse input

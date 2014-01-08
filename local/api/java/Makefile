@@ -1,6 +1,7 @@
 all: java
 
 java:
-	javac *.java
+	@echo 'TODO'
+	#javac *.java
 clean:
 	
