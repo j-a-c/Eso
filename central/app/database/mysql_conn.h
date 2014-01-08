@@ -174,7 +174,7 @@ int MySQL_Conn::add_operation(const char *set, const char *entity,
 
     MYSQL_ROW mysqlRow = mysql_fetch_row(mysqlResult);
     // This is the original operation value.
-    unsigned int opValue = atoi(mysqlRow[0]);
+    unsigned int opValue = strtol(mysqlRow[0], nullptr, 0);
 
     // Update the operation value.
     opValue |= op;
@@ -232,7 +232,7 @@ int MySQL_Conn::remove_operation(const char *set, const char *entity,
 
     MYSQL_ROW mysqlRow = mysql_fetch_row(mysqlResult);
     // This is the original operation value.
-    unsigned int opValue = atoi(mysqlRow[0]);
+    unsigned int opValue = strtol(mysqlRow[0], nullptr, 0);
     
     // Update the operation value.
     opValue &= ~op;
@@ -335,8 +335,9 @@ std::vector<std::tuple<char *, unsigned int, unsigned int,
     // Pack query results into return value.
     MYSQL_ROW mysqlRow;
     while(mysqlRow = mysql_fetch_row(mysqlResult)) // row pointer in the result set
-        results.push_back(std::make_tuple(mysqlRow[0], atoi(mysqlRow[1]), 
-                    atoi(mysqlRow[2]), mysqlRow[3]));
+        results.push_back(std::make_tuple(mysqlRow[0], 
+                    strtol(mysqlRow[1], nullptr, 0), 
+                    strtol(mysqlRow[2], nullptr, 0), mysqlRow[3]));
     
     mysql_free_result(mysqlResult); 
     
@@ -373,8 +374,9 @@ std::vector<std::tuple<char *, unsigned int, unsigned int>>
     // Pack query results into return value.
     MYSQL_ROW mysqlRow;
     while(mysqlRow = mysql_fetch_row(mysqlResult)) // row pointer in the result set
-        results.push_back(std::make_tuple(mysqlRow[0], atoi(mysqlRow[1]), 
-                    atoi(mysqlRow[2])));
+        results.push_back(std::make_tuple(mysqlRow[0], 
+                    strtol(mysqlRow[1], nullptr, 0), 
+                    strtol(mysqlRow[2], nullptr, 0)));
     
     mysql_free_result(mysqlResult); 
 
