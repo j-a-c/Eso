@@ -21,6 +21,10 @@ const int TOO_MANY_ROWS = 3;
 // No results were returned, when some were expected.
 const int NO_RESULTS = 4;
 
+// A row with the same primary key already exists.
 const int ALREADY_EXISTS = 5;
+
+// Invalid parameters where given to the query.
+const int INVALID_PARAMS = 6;
 
 #endif

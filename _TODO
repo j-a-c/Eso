@@ -1,9 +1,6 @@
 grep -r TODO *
 
 Central Auth:
-	
-	- intialize key fields
-	- free memory safely
 
     - web interface
         - create new set
@@ -16,6 +13,8 @@ Central Auth:
 		- tcp socket for propagation / backup
 		- push certain credential fields based on operations allowed
     - database
+		- clear query strings
+		- handle username/password input
 		- seed prng for generating rsa keys
 		- encrypt keys before storing to disk
 		- remove unneeded functions from impl?

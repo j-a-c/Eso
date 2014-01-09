@@ -1,12 +1,18 @@
 #ifndef ESO_CENTRAL_APP_DATABASE_MYSQL_CONN
 #define ESO_CENTRAL_APP_DATABASE_MYSQL_CONN
 
+#include <string.h>
 #include <tuple>
 #include <vector>
 
 #include "db_conn.h"
 #include "db_error.h"
+#include "db_types.h"
 #include "mysql_config.h"
+#include "../../crypto/aes.h"
+#include "../../crypto/base64.h"
+#include "../../crypto/memory.h"
+#include "../../crypto/rsa.h"
 #include "../../../logger/logger.h"
 
 // Include these after all other files because of the mix/max macro problems
@@ -280,7 +286,24 @@ int MySQL_Conn::create_credential(const char *set_name,
     std::string query = "INSERT INTO ";
     query.append(CRED_LOC);
     query += "(set_name, version, expiration, p_owner, s_owner, type,";
-    query += " algo, size)";
+    query += " algo, size, ";
+    // Credential type
+    switch(type)
+    {
+        case USERPASS:
+            // TODO
+            break;
+        case SYMMETRIC:
+            query += "pubKey, priKey";
+            break;
+        case ASYMMETRIC:
+            query += "symKey";
+            break;
+        default:
+            Logger::log("Invalid type: " + std::to_string(type));
+            return INVALID_PARAMS;
+    }
+    query += ")";
     query += " VALUES ('";
     query.append(set_name);
     query += "', ";
@@ -297,6 +320,61 @@ int MySQL_Conn::create_credential(const char *set_name,
     query.append(algo);
     query += "', ";
     query.append(std::to_string(size));
+    query += ", ";
+    // Credential data - no default case since an invalid param was handled
+    // previously.
+    if (type == USERPASS)
+    {
+        // TODO implement
+        // TODO encrypt + mac
+    }
+    else if (type == SYMMETRIC)
+    {
+        // Get keys
+        auto key_store = get_new_RSA_pair(size);
+        unsigned char *pubKey = std::get<0>(key_store);
+        int pubLen = std::get<1>(key_store);
+        unsigned char *priKey = std::get<2>(key_store);
+        int priLen = std::get<3>(key_store);
+
+        // Encode keys
+        unsigned char *pubKey_enc = base64_encode(pubKey, pubLen);
+        unsigned char *priKey_enc = base64_encode(priKey, priLen);
+
+        // Add to query
+        // TODO encrypt + mac
+        query += "'";
+        query.append(reinterpret_cast<const char *>(pubKey_enc));
+        query += "', ";
+        query += "'";
+        query.append(reinterpret_cast<const char *>(priKey_enc));
+        query += "'";
+
+        // Free keys
+        free((void*)secure_memset(pubKey, 0, pubLen));
+        free((void*)secure_memset(pubKey_enc, 0, 
+                    strlen(reinterpret_cast<const char *>(pubKey_enc))));
+        free((void*)secure_memset(priKey, 0, priLen));
+        free((void*)secure_memset(priKey_enc, 0, 
+                    strlen(reinterpret_cast<const char *>(priKey_enc))));
+    }
+    else if (type == ASYMMETRIC)
+    {
+        query += "'";
+        // Get key and encode.
+        unsigned char * key = get_new_AES_key(size);
+        unsigned char * enc = base64_encode(key, size/8);
+
+        // TODO encrypt + mac
+        query.append(reinterpret_cast<const char *>(enc));
+
+        // Securely erase key and free
+        free((void*)secure_memset(key, 0, size/8)); // size is in bits
+        free((void*)secure_memset(enc, 0, 
+                    strlen(reinterpret_cast<const char *>(enc))));
+
+        query += "'";
+    }
     query += ")";
 
     Logger::log(query.c_str());

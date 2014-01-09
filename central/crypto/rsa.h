@@ -98,7 +98,8 @@ std::tuple<unsigned char *, int, unsigned char *, int> get_new_RSA_pair(int bits
     // The key is erased before the memory is returned to the system.
     RSA_free(rsa);
 
-    return std::make_tuple(public_store, public_len, private_store, private_len);
+    return std::make_tuple(public_store, public_len, 
+            private_store, private_len);
 }
 
 #endif
