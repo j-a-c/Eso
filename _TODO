@@ -2,8 +2,8 @@ grep -r TODO *
 
 Central Auth:
 	
-	- replace atoi with strtol
-	- safe free
+	- intialize key fields
+	- free memory safely
 
     - web interface
         - create new set

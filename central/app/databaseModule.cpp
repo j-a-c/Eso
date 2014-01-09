@@ -18,8 +18,8 @@
  * Creates a new set.
  *
  * Python arguments (in order) are set name, version, expiration date, primary,
- * and secondary. All inputs should be strings. They will be converted on this
- * side.
+ * secondary, type, algo, and size. All inputs should be strings. 
+ * They will be converted on this side.
  *
  * Return value is 0 if everything went ok, nonzero otherwise.
  */
@@ -33,21 +33,24 @@ static PyObject* create_credential(PyObject* self, PyObject* args)
     char *secondary;
     // Type input is a string, but we need an unsigned int
     char * input_type;
+    char * algo;
+    char * input_size;
 
     // Parse input
-    if (!PyArg_ParseTuple(args, "ssssss", &setName, &input_version, 
-                &expiration, &primary, &secondary, &input_type))
+    if (!PyArg_ParseTuple(args, "ssssssss", &setName, &input_version, 
+                &expiration, &primary, &secondary, &input_type, &algo, &input_size))
         return nullptr;
 
     // atoi cannot return something in the range of an unsigned int, so we will
     // parse it as an unsigned long.
     unsigned int version = strtol(input_version, nullptr, 0);
     unsigned int type = strtol(input_type, nullptr, 0);
+    unsigned int size = strtol(input_size, nullptr, 0);
 
     // Attempt to update database.
     MySQL_Conn conn;
     int status = conn.create_credential(setName, version, expiration, 
-            primary, secondary, type);
+            primary, secondary, type, algo, size);
 
     // Return status (0 if ok, nonzero if error).
 	return Py_BuildValue("i", status);

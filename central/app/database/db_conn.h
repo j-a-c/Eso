@@ -27,7 +27,8 @@ public:
     virtual int create_credential(const char *set_name, 
             const unsigned int version, const char *expiration, 
             const char *primary, const char *secondary, 
-            const unsigned int type) const = 0;
+            const unsigned int type, const char *algo, 
+            const unsigned int size) const = 0;
 
     // Delete a credential.
     virtual int delete_credential() const = 0;

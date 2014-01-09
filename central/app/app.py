@@ -27,13 +27,25 @@ def index():
 '''
 @app.route('/create/', methods=['GET', 'POST'])
 def createSet():
+    # Maps the the selected credential type to its algorithm, key size, 
+    # and type. Type 1 = credential, 2 = symmetric, 3 = asymmetric.
+    # See db_types.h
+    # TODO set a safe password size
+    credMap = { 'Username / Password'   : ('PASS',  '33', '1'),
+                'AES-128'               : ('AES',  '128', '2'),
+                'AES-256'               : ('AES',  '256', '2'),
+                'RSA-1024'              : ('RSA', '1024', '3'),
+                'RSA-2048'              : ('RSA', '2048', '3'),
+                'RSA-4096'              : ('RSA', '4096', '3')
+            }
+
     if request.method == 'POST':
 
         # Get form contents.
         setName = request.form.get('setName')
         version = request.form.get('version')
+        (credAlgo, credSize, credType) = credMap[request.form.get('credType')]
         expiration = request.form.get('expiration')
-        # TODO credential type
         primary = request.form.get('primary')
         secondary = request.form.get('secondary')
 
@@ -74,9 +86,10 @@ def createSet():
         # Was the set actually created?
         isCreated = False
 
-        # TODO handle type (last param), algo, size, etc.
+        # TODO handle algo, size, etc.
+        # (credAlgo, credSize, credType)
         if create_credential(setName, version, expiration, primary, secondary,
-                '2') == 0:
+                credType, credAlgo, credSize) == 0:
             isCreated = True
 
         if not isCreated:

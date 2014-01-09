@@ -28,15 +28,16 @@ CREATE TABLE credentials (
     set_name VARCHAR(255) NOT NULL,
     version INT UNSIGNED NOT NULL,
     type INT UNSIGNED NOT NULL,
-    algo INT UNSIGNED NOT NULL,
+    algo VARCHAR(255) NOT NULL,
     size INT UNSIGNED NOT NULL,
-    p_owner VARCHAR(32) NOT NULL,
-    s_owner VARCHAR(32) NOT NULL,
-    expiration DATE NOT NULL,
-    edata VARBINARY(8192),
-    mdata VARBINARY(8192),
-    enonce VARBINARY(1024),
-    mnonce VARBINARY(1024),
+	p_owner VARCHAR(32) NOT NULL,
+	s_owner VARCHAR(32) NOT NULL,
+    expiration VARCHAR(32) NOT NULL,
+	symKey VARBINARY(8192),
+	priKey VARBINARY(8192),
+	pubKey VARBINARY(8192),
+	user VARBINARY(8192),
+	pass VARBINARY(8192),
     PRIMARY KEY (set_name, version)
 );
 
@@ -58,7 +59,8 @@ public:
     int create_credential(const char *set_name, 
             const unsigned int version, const char *expiration, 
             const char *primary, const char *secondary, 
-            const unsigned int type) const override;
+            const unsigned int type, const char *algo, 
+            const unsigned int size) const override;
     int delete_credential() const override;
 
     std::vector<std::tuple<char *, unsigned int, unsigned int, 
@@ -265,7 +267,8 @@ int MySQL_Conn::remove_operation(const char *set, const char *entity,
 int MySQL_Conn::create_credential(const char *set_name, 
         const unsigned int version, const char *expiration, 
         const char *primary, const char *secondary, 
-        const unsigned int type) const
+        const unsigned int type, const char *algo, 
+        const unsigned int size) const
 {
     
     Logger::log("Entering create_credential(...)", LogLevel::Debug);
@@ -273,9 +276,11 @@ int MySQL_Conn::create_credential(const char *set_name,
     // TODO query to see if set_name already exists
 	
     // Form query
+    // TODO securely encrypt and mac inserted values.
     std::string query = "INSERT INTO ";
     query.append(CRED_LOC);
-    query += "(set_name, version, expiration, p_owner, s_owner, type)";
+    query += "(set_name, version, expiration, p_owner, s_owner, type,";
+    query += " algo, size)";
     query += " VALUES ('";
     query.append(set_name);
     query += "', ";
@@ -288,11 +293,17 @@ int MySQL_Conn::create_credential(const char *set_name,
     query.append(secondary);
     query += "', ";
     query.append(std::to_string(type));
+    query += ", '";
+    query.append(algo);
+    query += "', ";
+    query.append(std::to_string(size));
     query += ")";
 
     Logger::log(query.c_str());
 
     int ret = perform_query(query.c_str());
+
+    query.clear();
         
     Logger::log("Exiting create_credential(...)", LogLevel::Debug);
 
