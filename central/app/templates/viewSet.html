@@ -1,12 +1,21 @@
 <!doctype html>
 <title>View a Set</title>
 <link rel=stylesheet type=text/css href="{{ url_for('static', filename='style.css') }}">
+<script type=text/javascript src="{{ url_for('static', filename='jquery.js') }}"></script>
+<script type=text/javascript src="{{ url_for('static', filename='viewSet.js') }}"></script>
+
+<script type=text/javascript>
+  $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+</script>
 
 <div class=page>
-	<h1>Showing Set: {{setName}} </h1>
+	<!-- A little hack to preserve the set name -->
+	<h1>Showing Set: <div id="setName">{{setName}}</div> </h1>
 
 	<br/><br/>
-	
+	{% if not setCreds %}
+	Set does not exist.
+	{% else %}
 	Credentials:<br/>
 	<!-- Credentials Table -->
 	<table id="viewSet">
@@ -29,7 +38,7 @@
 	<br/><br/>
 
 	Permissions:<br/>
-	<table id="viewSet">
+	<table id="viewPermissions">
 	<tr>
 		<th>Entity</th>
 		<th>Entity Type</th>
@@ -39,9 +48,13 @@
 	{% for perm in setPerms %}
 	<tr>
 		<td>{{perm[0]}}</td>
-		<td>{{perm[1]}}<</td>
-		<td>{{perm[2]}}<</td>
+		<td>{{perm[1]}}</td>
+		<td>{{perm[2]}}</td>
+		<td><button class="editPermButton">Edit</button></td>
 	</tr>
 	{% endfor %}
-</div
+	</table>
 
+	<button type="button" onclick="addPermRow()">Add New Permission</button>
+	{% endif %}
+</div>

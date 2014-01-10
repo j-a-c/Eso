@@ -139,12 +139,75 @@ static PyObject* get_permissions(PyObject* self, PyObject* args)
 }
 
 /*
- * Bind Python function names to our C functions
+ * Function to be called from Python.
+ * Attempt to create a permission on a set.
+ *
+ * Python arguments in order are set_name, entity, entity_type, op.
+ *
+ * Returns 0 if everything went ok, nonzero otherwise.
+ */
+static PyObject* create_permission(PyObject* self, PyObject* args)
+{
+    char *set_name;
+    char *entity;
+    char *input_entity_type;
+    char *input_op;
+
+    // Parse input.
+    if (!PyArg_ParseTuple(args, "ssss", &set_name, &entity, &input_entity_type,
+                &input_op))
+        return nullptr;
+
+    unsigned int entity_type = strtol(input_entity_type, nullptr, 0);
+    unsigned int op = strtol(input_op, nullptr, 0);
+    
+    // Attempt to update database.
+    MySQL_Conn conn;
+    int status = conn.create_permission(set_name, entity, entity_type, op);
+
+    // Return status (0 if ok, nonzero if error).
+	return Py_BuildValue("i", status);
+
+}
+
+/*
+ * Function to be called from Python.
+ * Attempt to update a permission on a set.
+ *
+ * Python arguments in order are set_name, entity, entity_type, op.
+ *
+ * Returns 0 if everything went ok, nonzero otherwise.
+ */
+static PyObject* update_permission(PyObject* self, PyObject* args)
+{
+    char *set_name;
+    char *entity;
+    char *input_op;
+
+    // Parse input.
+    if (!PyArg_ParseTuple(args, "sss", &set_name, &entity, &input_op))
+        return nullptr;
+
+    unsigned int op = strtol(input_op, nullptr, 0);
+    
+    // Attempt to update database.
+    MySQL_Conn conn;
+    int status = conn.update_permission(set_name, entity, op);
+
+    // Return status (0 if ok, nonzero if error).
+	return Py_BuildValue("i", status);
+
+}
+
+/*
+ * Bind Python function names to our C/C++ functions
  */
 static PyMethodDef databaseModule_methods[] = {
 	{"create_credential", create_credential, METH_VARARGS},
     {"get_credentials", get_credentials, METH_VARARGS},
     {"get_permissions", get_permissions, METH_VARARGS},
+    {"create_permission", create_permission, METH_VARARGS},
+    {"update_permission", update_permission, METH_VARARGS},
 	{NULL, NULL}
 };
 

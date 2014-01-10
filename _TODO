@@ -1,5 +1,6 @@
 grep -r TODO *
 
+
 Central Auth:
 
     - web interface
@@ -8,12 +9,16 @@ Central Auth:
             - fill other params in credentials
 				- algo, key, size,...
         - view current set
-			- edit / add / remove functionality
+			- delete perm functionality
+			- add/edit perm: error handling, string cleaning
+			- login to edit permissions
+		- flask templates
 	- daemon
 		- tcp socket for propagation / backup
 		- push certain credential fields based on operations allowed
     - database
 		- clear query strings
+		- logging queries also log the keys -_-
 		- handle username/password input
 		- seed prng for generating rsa keys
 		- encrypt keys before storing to disk

@@ -1,4 +1,4 @@
-from flask import Flask, request, redirect, url_for, render_template
+from flask import Flask, jsonify, request, redirect, url_for, render_template
 from databaseModule import *
 import datetime
 import re
@@ -115,6 +115,53 @@ def viewSet(setName):
     # TODO add option to edit
     return render_template('viewSet.html', setName=setName, setCreds=setCreds,
             setPerms=setPerms)
+
+
+'''
+    Attempt to create a permission.
+    Will result json {result:0} if everything went ok and {result:1} otherwise.
+'''
+@app.route('/_create_perm')
+def createPermission():
+    set_name = request.args.get('setName', '', type=str)
+    entity = request.args.get('entity', '', type=str)
+    entity_type = request.args.get('entity_type', '', type=str)
+    op = request.args.get('op', '', type=str)
+
+    # Validate input
+
+    # Check entity.
+    # Must be a name with no special characters.
+    if not re.match('^\w+$', entity):
+        return jsonify(result=6)
+
+    # create_permission(...) returns 0 on success, so will we.
+    if (create_permission(set_name, entity, entity_type, op)):
+        # Something went wrong.
+        return jsonify(result=1)
+    else:
+        # Everything went ok!
+        return jsonify(result=0)
+
+
+'''
+    Attempt to update a permission.
+    Will result json {result:0} if everything went ok and {result:1} otherwise.
+'''
+@app.route('/_update_perm')
+def updatePermission():
+    set_name = request.args.get('setName', '', type=str)
+    entity = request.args.get('entity', '', type=str)
+    op = request.args.get('op', '', type=str)
+
+    # update_permission(...) returns 0 on success, so will we.
+    if (update_permission(set_name, entity, op)):
+        # Something went wrong.
+        return jsonify(result=1)
+    else:
+        # Everything went ok!
+        return jsonify(result=0)
+
 
 
 """

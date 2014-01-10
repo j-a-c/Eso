@@ -24,9 +24,9 @@
 
 CREATE TABLE permissions (
     set_name VARCHAR(255) NOT NULL,
-    op INT UNSIGNED NOT NULL,
     entity VARCHAR(32) NOT NULL,
     entity_type INT UNSIGNED NOT NULL,
+    op INT UNSIGNED NOT NULL,
     primary KEY (set_name, entity)
 );
 
@@ -54,13 +54,16 @@ class MySQL_Conn : public DB_Conn
 {
 public:
     MySQL_Conn();
-    int create_permission(const char *set, const unsigned int op, 
-            const char *entity, const unsigned int entity_type) const override;
-    int delete_permission(const char* set, const char* entity) const override;
-    int add_operation(const char *set, const char * entity, 
+
+    int create_permission(const char *set_name, const char *entity,
+            const unsigned int entity_type, 
             const unsigned int op) const override;
-    int remove_operation(const char *set, const char *entity, 
-            const unsigned int op) const override; 
+
+    int update_permission(const char *set_name, const char *entity,
+            const unsigned int op) const override;
+
+    int delete_permission(const char* set_name, const char* entity) 
+        const override;
 
     int create_credential(const char *set_name, 
             const unsigned int version, const char *expiration, 
@@ -95,25 +98,24 @@ MySQL_Conn::~MySQL_Conn()
 }
 
 /*
- * Creates a new permission. Returns 0 if the permission was successfully
- * created.
+ * Creates a new permission
  */
-int MySQL_Conn::create_permission(const char *set, const unsigned int op, 
-        const char *entity, const unsigned int entity_type) const 
+int MySQL_Conn::create_permission(const char *set_name, const char *entity,
+        const unsigned int entity_type, const unsigned int op) const
 {
     Logger::log("Entering create_permission(...)", LogLevel::Debug);
 	
     // Form query
     std::string query = "INSERT INTO ";
     query.append(PERM_LOC);
-    query += " VALUES ('";
-    query.append(set);
-    query += "',";
-    query.append(std::to_string(op));
-    query += ",'";
+    query += "(set_name, entity, entity_type, op) VALUES ('";
+    query.append(set_name);
+    query += "', '";
     query.append(entity); 
-    query += "',";
+    query += "', ";
     query.append(std::to_string(entity_type));
+    query += ", ";
+    query.append(std::to_string(op));
     query += ")";
 
     Logger::log(query.c_str());
@@ -122,13 +124,44 @@ int MySQL_Conn::create_permission(const char *set, const unsigned int op,
         
     Logger::log("Exiting create_permission(...)", LogLevel::Debug);
     return ret;
+
+
+}
+
+/*
+ * Updates a permission. Returns 0 if the permission was updated.
+ */
+int  MySQL_Conn::update_permission(const char *set_name, const char *entity,
+            const unsigned int op) const
+{
+    Logger::log("Entering update_permission(...)", LogLevel::Debug);
+	
+    // Form query
+    std::string query = "UPDATE ";
+    query.append(PERM_LOC);
+    query += " SET op=";
+    query.append(std::to_string(op));
+    query += " WHERE set_name='";
+    query.append(set_name);
+    query +="' and entity='";
+    query.append(entity);
+    query += "'";
+
+    Logger::log(query.c_str());
+
+    int ret = perform_query(query.c_str());
+        
+    Logger::log("Exiting update_permission(...)", LogLevel::Debug);
+    return ret;
+
 }
 
 /*
  * Deletes the permission with the given set and entity names.
  * (set, entity) is the primary key for the permissions tables.
  */
-int MySQL_Conn::delete_permission(const char *set, const char *entity) const
+int MySQL_Conn::delete_permission(const char *set_name, 
+        const char *entity) const
 {
     Logger::log("Entering delete_permission(...)", LogLevel::Debug);
 
@@ -136,7 +169,7 @@ int MySQL_Conn::delete_permission(const char *set, const char *entity) const
     std::string query = "DELETE FROM ";
     query.append(PERM_LOC);
     query += " WHERE set_name='";
-    query.append(set);
+    query.append(set_name);
     query +="' and entity='";
     query.append(entity);
     query += "';";
@@ -150,126 +183,8 @@ int MySQL_Conn::delete_permission(const char *set, const char *entity) const
 }
 
 /*
- * Add an operation to the permission specified by (set, entity).
- * Assumes the operation value is a valid operation.
+ * Creates a new credential.
  */
-int MySQL_Conn::add_operation(const char *set, const char *entity, 
-        const unsigned int op) const 
-{
-    Logger::log("Entering add_operation(...)", LogLevel::Debug);
-
-    // Form select query to get the original operation value.
-    std::string query = "SELECT op FROM ";
-    query.append(PERM_LOC);
-    query += " WHERE set_name='";
-    query.append(set);
-    query +="' and entity='";
-    query.append(entity);
-    query += "';";
-
-    Logger::log(query.c_str());
-
-    // Get the original operation value.
-    MYSQL_RES* mysqlResult = get_result(query.c_str());
-    if (!mysqlResult)
-        return NO_RESULTS;
-
-    /* Get the number of rows in the result set. Then, we will make sure there
-     * is only one result. This error should never occur since (set, entity) is
-     * the primary key, but we will check just in case. */
-    if (mysql_num_rows(mysqlResult) != 1)
-        return TOO_MANY_ROWS;
-
-    MYSQL_ROW mysqlRow = mysql_fetch_row(mysqlResult);
-    // This is the original operation value.
-    unsigned int opValue = strtol(mysqlRow[0], nullptr, 0);
-
-    // Update the operation value.
-    opValue |= op;
-
-    // Free the result set.
-    mysql_free_result(mysqlResult); 
-
-    // Form update query to update the operation value.
-    query.clear();
-    query = "UPDATE ";
-    query.append(PERM_LOC);
-    query += " SET op=";
-    query.append(std::to_string(opValue));
-    query += " WHERE set_name='";
-    query.append(set);
-    query +="' and entity='";
-    query.append(entity);
-    query += "';";
-
-    Logger::log(query.c_str());
-
-    // Update the operation value.
-    int ret = perform_query(query.c_str());
-
-    Logger::log("Exiting add_operation(...)", LogLevel::Debug);
-    return ret;
-}
-
-int MySQL_Conn::remove_operation(const char *set, const char *entity, 
-        const unsigned int op) const 
-{
-    Logger::log("Entering remove_operation(...)", LogLevel::Debug);
-
-    // Form select query to get the original operation value.
-    std::string query = "SELECT op FROM ";
-    query.append(PERM_LOC);
-    query += " WHERE set_name='";
-    query.append(set);
-    query +="' and entity='";
-    query.append(entity);
-    query += "';";
-
-    Logger::log(query.c_str());
-
-    // Get the original operation value.
-    MYSQL_RES* mysqlResult = get_result(query.c_str());
-    if (!mysqlResult)
-        return NO_RESULTS;
-
-    /* Get the number of rows in the result set. Then, we will make sure there
-     * is only one result. This error should never occur since (set, entity) is
-     * the primary key, but we will check just in case. */
-    if (mysql_num_rows(mysqlResult) != 1)
-        return TOO_MANY_ROWS;
-
-    MYSQL_ROW mysqlRow = mysql_fetch_row(mysqlResult);
-    // This is the original operation value.
-    unsigned int opValue = strtol(mysqlRow[0], nullptr, 0);
-    
-    // Update the operation value.
-    opValue &= ~op;
-
-    // Free the result set.
-    mysql_free_result(mysqlResult); 
-
-    // Form update query to update the operation value.
-    query.clear();
-    query = "UPDATE ";
-    query.append(PERM_LOC);
-    query += " SET op=";
-    query.append(std::to_string(opValue));
-    query += " WHERE set_name='";
-    query.append(set);
-    query +="' and entity='";
-    query.append(entity);
-    query += "';";
-
-    Logger::log(query.c_str());
-
-    // Update the operation value.
-    int ret = perform_query(query.c_str());
-
-    Logger::log("Exiting remove_operation(...)", LogLevel::Debug);
-    return ret;
-
-}
-
 int MySQL_Conn::create_credential(const char *set_name, 
         const unsigned int version, const char *expiration, 
         const char *primary, const char *secondary, 
