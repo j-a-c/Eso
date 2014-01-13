@@ -1,4 +1,4 @@
-BUILDS=app
+BUILDS=app esoca
 TARGETS=all clean
 
 $(TARGETS):

@@ -1,13 +1,17 @@
 grep -r TODO *
 
+current:
+	- propagation
+
+All:
+	- authenticated communication
 
 Central Auth:
 
     - web interface
         - create new set
 			- query to see if cred/perm already exists
-            - fill other params in credentials
-				- algo, key, size,...
+			- create user/pass set
         - view current set
 			- delete perm functionality
 			- add/edit perm: error handling, string cleaning
@@ -15,7 +19,10 @@ Central Auth:
 		- flask templates
 	- daemon
 		- tcp socket for propagation / backup
-		- push certain credential fields based on operations allowed
+		- propagate all
+			- later: propagate changes
+		- time of last propagation?
+		- config file with distribution servers
     - database
 		- clear query strings
 		- logging queries also log the keys -_-
@@ -27,7 +34,7 @@ Central Auth:
 		- ensure integrity of database
 
 Distribution Servers:
-    - distribution server
+    - distribution daemon
 
 Host Daemon:
     - cronjob

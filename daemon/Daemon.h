@@ -1,5 +1,5 @@
-// TODO delete after testing
-#include <string>
+#ifndef ESO_DAEMON_DAEMON
+#define ESO_DAEMON_DAEMON
 
 #include <errno.h>
 #include <fcntl.h>
@@ -11,8 +11,29 @@
 #include <sys/un.h>
 #include <unistd.h>
 
-#include "esod_config.h"
-#include "../../logger/logger.h"
+#include "../logger/logger.h"
+
+/**
+ * Generic class from creating daemons.
+ */
+class Daemon
+{
+    public:
+        // Creates and starts the daemon.
+        int start() const;
+    private:
+        // Checks if this daemon is a unique instance.
+        bool has_lock(const char *) const;
+        // Prevents the daemon from dumping core.
+        void limit_core() const;
+        // Actually starts the daemon.
+        int start_daemon() const;
+    protected:
+        // The work to be performed by the daemon.
+        virtual int work() const = 0;
+        // Returns the lock path for this daemon.
+        virtual const char * lock_path() const = 0;
+};
 
 
 /*
@@ -23,7 +44,7 @@
  * Reads/writes should be atomic, else helper functions may be needed in case
  * the calls are interrupted by a signal.
  */
-bool has_lock(const char* path)
+bool Daemon::has_lock(const char *path) const
 {
     int fd;
     bool result;
@@ -100,7 +121,7 @@ bool has_lock(const char* path)
 /*
  * Prevents the process from writing any memory dump to disk.
  */
-void limit_core(void)
+void Daemon::limit_core() const 
 {
     struct rlimit rlim;
 
@@ -112,87 +133,27 @@ void limit_core(void)
 /*
  * Starts the server run by the daemonized grandchild.
  */
-int start_daemon(void)
+int Daemon::start_daemon() const
 {
     // Check if daemon is already running.
-    if (!has_lock(ESOD_LOCK_PATH))
+    if (!has_lock(lock_path()))
     {
-        // TODO log?
+        Logger::log("Does not have lock.");
+        Logger::log(lock_path());
         return 1;
     }
 
     // Prevent core dumps.
     limit_core();
 
-    // TODO save pid
-
-    struct sockaddr_un server, client;
-
-    // Stream-oriented, local socket.
-    int socket_fd = socket(AF_UNIX, SOCK_STREAM, 0);
-    if (socket_fd < 0)
-    {
-        Logger::log("socket() failed", LogLevel::Error);
-        return 1;
-    }
-
-    // Clear the address structure
-    memset(&server, 0, sizeof(struct sockaddr_un));
-
-    // Set the address parameters.
-    server.sun_family = AF_UNIX;
-    strcpy(server.sun_path, ESOD_SOCKET_PATH);
-    // The address should not exist, but unlink() just in case.
-    unlink(server.sun_path);
-
-    // Bind the address to the address in the Unix domain.
-    int len = strlen(server.sun_path) + sizeof(server.sun_family);
-    if (bind(socket_fd, (struct sockaddr *) &server, len) != 0)
-    {
-        Logger::log("bind() failed", LogLevel::Error);
-        return 1;
-    }
-
-    // Listen for incoming connections from client programs.
-    if (listen(socket_fd, ESOD_QUEUE_SIZE) != 0)
-    {
-        Logger::log("listen() failed", LogLevel::Error);
-        return 1;
-    }
-
-    Logger::log("esod is listening successfully.", LogLevel::Debug);
-    // Accept client connections.
-    while (int connection_fd = accept(socket_fd, (struct sockaddr *) &client, 
-                (socklen_t *) &len) > -1)
-    {
-        Logger::log("esod accepted new connection.", LogLevel::Debug);
-
-        // TODO authenticate
-
-        // TODO Implement protocol
-
-        // TODO delete this test
-        std::string msg = "connecteddddd!";
-        send(connection_fd, msg.c_str(), msg.length()+1, 0);
-
-        Logger::log("Daemon is closing connection.");
-        close(connection_fd);
-
-        // TODO delete after testing
-        return 0;
-    }
-
-    Logger::log("accept() error", LogLevel::Error);
-    close(socket_fd);
-    unlink(server.sun_path);
-    return 1;
+    return work();
 }
 
 
 /**
  * Starts the daemon that will run on the end hosts.
  */
-int main(void)
+int Daemon::start() const
 {
     // Fork the parent process and have the parent exit.
     if (pid_t pid = fork())
@@ -248,3 +209,5 @@ int main(void)
     int error = start_daemon();
     return error;
 }
+
+#endif
