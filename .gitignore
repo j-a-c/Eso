@@ -8,7 +8,9 @@ _test/*
 *_notes
 
 # Executables
-local/esod/esod
+*esod
+*esoca
+*esol
 
 #Leftover from runtime
 default.log
