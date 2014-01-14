@@ -1,10 +1,12 @@
 grep -r TODO *
 
 current:
-	- propagation
+	- propagation to distro
 
 All:
 	- authenticated communication
+	- uds socket abstraction?
+	- add rows to creds & perms table to show propagation locations
 
 Central Auth:
 
