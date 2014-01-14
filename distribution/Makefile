@@ -1,4 +1,4 @@
-BUILDS=central distribution local
+BUILDS=esod
 TARGETS=all clean
 
 $(TARGETS):

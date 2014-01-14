@@ -1,16 +1,99 @@
 #include <Python.h>
 
-#include "database/mysql_conn.h"
+#include <sys/socket.h>
+#include <sys/un.h>
+
 #include "../crypto/rsa.h"
+#include "../database/mysql_conn.h"
+#include "../esoca/esoca_config.h"
 
 /*
- * MySQL databse interface for the web app.
+ * Python extension module for the web app.
+ *
+ * Provide a MySQL databse interface for the web app.
  * The only functions permitted are creating a new set, editing an existing
  * set, and viewing info about a set.
  *
  * This allows the database functions (most importantly key generation) to be
  * implemented in C++.
  */
+
+
+/*
+ * This function is not called from Python.
+ *
+ * Contacts the CA daemon to push the permission to the distribution servers.
+ * The parameters are the set name and entity of the permission. These make up
+ * the primary key of the permission, which the daemon will use to get the row
+ * from the database to push to the distribution servers.
+ *
+ * Returns 0 if no errors occurred, nonzero otherwise.
+ */
+int permission_to_daemon(char *set_name, char *entity)
+{
+    // Socket to the CA daemon.
+    int socket_fd;
+
+    struct sockaddr_un remote;
+    char recv_msg[1000]; // TODO Config file for max size?
+
+    // Stream-oriented, local socket.
+    if ((socket_fd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) 
+    {
+        // TODO log
+        // Error creating socket.
+        printf("Error creating socket in appExtension.\n");
+        exit(1);
+    }
+
+    // Clear address structure
+    memset(&remote, 0, sizeof(struct sockaddr_un));
+
+    // Set the address parameters
+    remote.sun_family = AF_UNIX;
+    strcpy(remote.sun_path, ESOCA_SOCKET_PATH);
+    int tot_len = strlen(remote.sun_path) + sizeof(remote.sun_family);
+    if (connect(socket_fd, (struct sockaddr *)&remote, tot_len) == -1)
+    {
+        // TODO log
+        // Error connecting to socket.
+        printf("Error connecting to esoca.\n");
+        exit(1);
+    }
+
+    // Send permission request
+    std::string msg = "permission";
+    send(socket_fd, msg.c_str(), msg.length()+1, 0);
+
+    // Receive return value
+    // Test server connection.
+    if (int len = recv(socket_fd, recv_msg, 100, 0))
+    {
+        recv_msg[len] = '\0';
+        if (strcmp(recv_msg, "ok") != 0)
+        {
+            close(socket_fd);
+            return 1;
+        }
+    }
+
+    // Send primary key
+    std::string(key){set_name};
+    key += ";";
+    key.append(entity);
+    send(socket_fd, key.c_str(), key.length()+1, 0);
+    
+    // Receive return value
+    // Test server connection.
+    if (int len = recv(socket_fd, recv_msg, 100, 0)) 
+    {
+        recv_msg[len] = '\0';
+    }
+    
+    close(socket_fd);
+    
+    return 0;
+}
 
 
 /*
@@ -165,6 +248,10 @@ static PyObject* create_permission(PyObject* self, PyObject* args)
     MySQL_Conn conn;
     int status = conn.create_permission(set_name, entity, entity_type, op);
 
+    // Push the permission to distribution servers.
+    if(!status)
+        status = permission_to_daemon(set_name, entity);
+
     // Return status (0 if ok, nonzero if error).
 	return Py_BuildValue("i", status);
 
@@ -194,6 +281,10 @@ static PyObject* update_permission(PyObject* self, PyObject* args)
     MySQL_Conn conn;
     int status = conn.update_permission(set_name, entity, op);
 
+    // Push the permission to distribution servers.
+    if(!status)
+        status = permission_to_daemon(set_name, entity);
+
     // Return status (0 if ok, nonzero if error).
 	return Py_BuildValue("i", status);
 
@@ -202,7 +293,7 @@ static PyObject* update_permission(PyObject* self, PyObject* args)
 /*
  * Bind Python function names to our C/C++ functions
  */
-static PyMethodDef databaseModule_methods[] = {
+static PyMethodDef appExtension_methods[] = {
 	{"create_credential", create_credential, METH_VARARGS},
     {"get_credentials", get_credentials, METH_VARARGS},
     {"get_permissions", get_permissions, METH_VARARGS},
@@ -221,8 +312,8 @@ extern "C"
     /*
      * Python calls this to let us initialize our module
      */
-    void initdatabaseModule()
+    void initappExtension()
     {
-        (void) Py_InitModule("databaseModule", databaseModule_methods);
+        (void) Py_InitModule("appExtension", appExtension_methods);
     }
 }

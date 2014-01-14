@@ -11,13 +11,13 @@
 #include <sys/un.h>
 #include <unistd.h>
 
-#include "LocalDaemon.h"
+#include "CADaemon.h"
 
 /**
  * Starts the daemon that will run on the end hosts.
  */
 int main()
 {
-    LocalDaemon daemon;
+    CADaemon daemon;
     return daemon.start();
 }

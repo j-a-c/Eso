@@ -8,6 +8,7 @@
 #include <openssl/bn.h>
 #include <openssl/rand.h>
 #include <openssl/rsa.h>
+#include <tuple>
 
 /* 
  * Returns the malloc'd buffer, and puts the size of the buffer into the integer

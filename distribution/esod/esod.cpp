@@ -11,13 +11,13 @@
 #include <sys/un.h>
 #include <unistd.h>
 
-#include "LocalDaemon.h"
+#include "DistroDaemon.h"
 
 /**
  * Starts the daemon that will run on the end hosts.
  */
 int main()
 {
-    LocalDaemon daemon;
+    DistroDaemon daemon;
     return daemon.start();
 }

@@ -9,11 +9,11 @@
 #include "db_error.h"
 #include "db_types.h"
 #include "mysql_config.h"
-#include "../../crypto/aes.h"
-#include "../../crypto/base64.h"
-#include "../../crypto/memory.h"
-#include "../../crypto/rsa.h"
-#include "../../../logger/logger.h"
+#include "../crypto/aes.h"
+#include "../crypto/base64.h"
+#include "../crypto/memory.h"
+#include "../crypto/rsa.h"
+#include "../../logger/logger.h"
 
 // Include these after all other files because of the mix/max macro problems
 #include <my_global.h>

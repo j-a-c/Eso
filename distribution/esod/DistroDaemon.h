@@ -12,14 +12,14 @@
 #include <sys/un.h>
 #include <unistd.h>
 
-#include "esol_config.h"
+#include "esod_config.h"
 #include "../../daemon/Daemon.h"
 #include "../../logger/logger.h"
 
 /* 
  * Local daemon implementation
  */
-class LocalDaemon : public Daemon
+class DistroDaemon : public Daemon
 {
     public:
         int start() const;
@@ -28,19 +28,19 @@ class LocalDaemon : public Daemon
         const char * lock_path() const;
 };
 
-int LocalDaemon::start() const
+int DistroDaemon::start() const
 {
     return Daemon::start();
 }
 
-const char * LocalDaemon::lock_path() const
+const char * DistroDaemon::lock_path() const
 {
     // TODO create config file?
-    std::string path = "/home/bose/Desktop/eso/local/esol/esol_lock";
+    std::string path = "/home/bose/Desktop/eso/distribution/esod/esod_lock";
     return path.c_str();
 }
 
-int LocalDaemon::work() const
+int DistroDaemon::work() const
 {
     struct sockaddr_un server, client;
 

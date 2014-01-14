@@ -5,10 +5,8 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <sys/resource.h>
-#include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <sys/un.h>
 #include <unistd.h>
 
 #include "../logger/logger.h"

@@ -12,8 +12,8 @@ local/esod/esod
 
 #Leftover from runtime
 default.log
-local/esol/esod_lock
-local/esol/esod_socket
+*_lock
+*_socket
 
 # Compiled Object files
 *.slo
