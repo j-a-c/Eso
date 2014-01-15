@@ -1,0 +1,4 @@
+#ifndef ESO_CRYPTO_PASSWORD
+#define ESO_CRYPTO_PASSWORD
+
+#endif

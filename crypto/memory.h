@@ -1,3 +1,6 @@
+#ifndef ESO_CRYPTO_MEMORY
+#define ESO_CRYPTO_MEMORY
+
 #include <stddef.h>
 /*
  * Secure version of memset, memcpy, memmove.
@@ -56,3 +59,5 @@ volatile void *secure_memmove(volatile void *dst, volatile void *src,
 
     return dst;
 }
+
+#endif

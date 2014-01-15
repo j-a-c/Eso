@@ -1,3 +1,6 @@
+#ifndef ESO_CRYPTO_BASE64
+#define ESO_CRYPTO_BASE64
+
 #include <stdlib.h>
 #include <string.h>
 
@@ -197,3 +200,5 @@ unsigned char *base64_decode(unsigned char *buf, size_t *len, int strict,
     }
     return outbuf;
 }
+
+#endif

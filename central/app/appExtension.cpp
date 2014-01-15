@@ -1,6 +1,5 @@
 #include <Python.h>
 
-#include "../crypto/rsa.h"
 #include "../database/mysql_conn.h"
 #include "../esoca/esoca_config.h"
 #include "../../socket/uds_socket.h"
