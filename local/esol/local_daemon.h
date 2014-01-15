@@ -7,8 +7,8 @@
 #include "esol_config.h"
 #include "../../daemon/daemon.h"
 #include "../../logger/logger.h"
-#include "../../socket/local_socket.h"
-#include "../../socket/socket_stream.h"
+#include "../../socket/uds_socket.h"
+#include "../../socket/uds_stream.h"
 
 /* 
  * Local daemon implementation
@@ -36,8 +36,8 @@ const char * LocalDaemon::lock_path() const
 
 int LocalDaemon::work() const
 {
-    Local_Socket local_socket{std::string{ESOL_SOCKET_PATH}};
-    if (local_socket.listen())
+    UDS_Socket uds_socket{std::string{ESOL_SOCKET_PATH}};
+    if (uds_socket.listen())
     {
         Logger::log("Error in esol attempting to listen.");
         exit(1);
@@ -49,7 +49,7 @@ int LocalDaemon::work() const
     // Accept client connections.
     while (true)
     {
-        Socket_Stream stream = local_socket.accept();
+        UDS_Stream uds_stream = uds_socket.accept();
 
         Logger::log("esol accepted new connection.", LogLevel::Debug);
 

@@ -2,10 +2,14 @@ grep -r TODO *
 
 current:
 	- propagation to distro
+	- TCP impl
+		- hostname to ip
+
+bugs:
+	- esoca randomly shuts down..
 
 All:
 	- authenticated communication
-	- uds socket abstraction?
 	- add rows to creds & perms table to show propagation locations
 
 Central Auth:
@@ -20,7 +24,7 @@ Central Auth:
 			- login to edit permissions
 		- flask templates
 	- daemon
-		- tcp socket for propagation / backup
+		- config file for distro locations
 		- propagate all
 			- later: propagate changes
 		- time of last propagation?
@@ -37,6 +41,7 @@ Central Auth:
 
 Distribution Servers:
     - distribution daemon
+		- config file for port
 
 Host Daemon:
     - cronjob

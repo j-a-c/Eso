@@ -7,6 +7,9 @@
 #include "esod_config.h"
 #include "../../daemon/daemon.h"
 #include "../../logger/logger.h"
+#include "../../socket/tcp_socket.h"
+#include "../../socket/tcp_stream.h"
+
 
 /* 
  * Local daemon implementation
@@ -35,6 +38,22 @@ const char * DistroDaemon::lock_path() const
 int DistroDaemon::work() const
 {
     // TODO
+    TCP_Socket tcp_socket;
+    if(tcp_socket.listen(std::string{"4344"}) != 0)
+    {
+        Logger::log("Socket creation failed in DistroDaemon::work()");
+        exit(1);
+    }
+
+    Logger::log("esod listening successfully.");
+
+    while(true)
+    {
+        TCP_Stream tcp_stream = tcp_socket.accept();
+        Logger::log("esod accepted new connection.");
+        Logger::log(std::string{"received"} + tcp_stream.recv());
+        Logger::log("esod is closing connection.");
+    }
 
 }
 

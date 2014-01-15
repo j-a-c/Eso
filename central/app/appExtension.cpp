@@ -3,8 +3,8 @@
 #include "../crypto/rsa.h"
 #include "../database/mysql_conn.h"
 #include "../esoca/esoca_config.h"
-#include "../../socket/local_socket.h"
-#include "../../socket/socket_stream.h"
+#include "../../socket/uds_socket.h"
+#include "../../socket/uds_stream.h"
 
 
 /*
@@ -32,15 +32,15 @@
 int permission_to_daemon(char *set_name, char *entity)
 {
     // Socket to the CA daemon.
-    Local_Socket local_socket{std::string{ESOCA_SOCKET_PATH}};
+    UDS_Socket uds_socket{std::string{ESOCA_SOCKET_PATH}};
 
-    Socket_Stream stream = local_socket.connect();
+    UDS_Stream uds_stream = uds_socket.connect();
 
     // Send permission request
     std::string msg = "permission";
-    stream.send(msg);
+    uds_stream.send(msg);
 
-    std::string recv_msg = stream.recv();
+    std::string recv_msg = uds_stream.recv();
 
     // Check for acknowledge.
     if (strcmp(recv_msg.c_str(), "ok") != 0)
@@ -51,9 +51,9 @@ int permission_to_daemon(char *set_name, char *entity)
     key += ";";
     key.append(entity);
 
-    stream.send(key);
+    uds_stream.send(key);
     
-    recv_msg = stream.recv();
+    recv_msg = uds_stream.recv();
 
     return 0;
 }

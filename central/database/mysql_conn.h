@@ -103,7 +103,7 @@ MySQL_Conn::~MySQL_Conn()
 int MySQL_Conn::create_permission(const char *set_name, const char *entity,
         const unsigned int entity_type, const unsigned int op) const
 {
-    Logger::log("Entering create_permission(...)", LogLevel::Debug);
+    Logger::log("Entering create_permission()", LogLevel::Debug);
 	
     // Form query
     std::string query = "INSERT INTO ";
@@ -122,7 +122,9 @@ int MySQL_Conn::create_permission(const char *set_name, const char *entity,
 
     int ret = perform_query(query.c_str());
         
-    Logger::log("Exiting create_permission(...)", LogLevel::Debug);
+    std::string log_msg{"Exiting create_permission() with return = "};
+    log_msg += std::to_string(ret);
+    Logger::log(log_msg, LogLevel::Debug);
     return ret;
 
 
@@ -134,7 +136,7 @@ int MySQL_Conn::create_permission(const char *set_name, const char *entity,
 int  MySQL_Conn::update_permission(const char *set_name, const char *entity,
             const unsigned int op) const
 {
-    Logger::log("Entering update_permission(...)", LogLevel::Debug);
+    Logger::log("Entering update_permission()", LogLevel::Debug);
 	
     // Form query
     std::string query = "UPDATE ";
@@ -151,7 +153,9 @@ int  MySQL_Conn::update_permission(const char *set_name, const char *entity,
 
     int ret = perform_query(query.c_str());
         
-    Logger::log("Exiting update_permission(...)", LogLevel::Debug);
+    std::string log_msg{"Exiting update_permission() with return = "};
+    log_msg += std::to_string(ret);
+    Logger::log(log_msg, LogLevel::Debug);
     return ret;
 
 }
@@ -163,7 +167,7 @@ int  MySQL_Conn::update_permission(const char *set_name, const char *entity,
 int MySQL_Conn::delete_permission(const char *set_name, 
         const char *entity) const
 {
-    Logger::log("Entering delete_permission(...)", LogLevel::Debug);
+    Logger::log("Entering delete_permission()", LogLevel::Debug);
 
     // Form query
     std::string query = "DELETE FROM ";
@@ -178,7 +182,9 @@ int MySQL_Conn::delete_permission(const char *set_name,
 
     int ret = perform_query(query.c_str());
     
-    Logger::log("Exiting delete_permission(...)", LogLevel::Debug);
+    std::string log_msg{"Exiting delete_permission() with return = "};
+    log_msg += std::to_string(ret);
+    Logger::log(log_msg, LogLevel::Debug);
     return ret;
 }
 
@@ -192,7 +198,7 @@ int MySQL_Conn::create_credential(const char *set_name,
         const unsigned int size) const
 {
     
-    Logger::log("Entering create_credential(...)", LogLevel::Debug);
+    Logger::log("Entering create_credential()", LogLevel::Debug);
 
     // TODO query to see if set_name already exists
 	
@@ -298,7 +304,9 @@ int MySQL_Conn::create_credential(const char *set_name,
 
     query.clear();
         
-    Logger::log("Exiting create_credential(...)", LogLevel::Debug);
+    std::string log_msg{"Exiting create_credential() with return = "};
+    log_msg += std::to_string(ret);
+    Logger::log(log_msg, LogLevel::Debug);
 
     return ret;
 
@@ -318,7 +326,7 @@ int MySQL_Conn::delete_credential() const
 std::vector<std::tuple<char *, unsigned int, unsigned int, 
             char *>> MySQL_Conn::get_credentials(const char * set_name) const
 {
-    Logger::log("Entering get_credentials(...)", LogLevel::Debug);
+    Logger::log("Entering get_credentials()", LogLevel::Debug);
 
     // Return value.
     std::vector<std::tuple<char *, unsigned int, unsigned int, 
@@ -345,7 +353,7 @@ std::vector<std::tuple<char *, unsigned int, unsigned int,
     
     mysql_free_result(mysqlResult); 
     
-    Logger::log("Exiting get_credentials(...)", LogLevel::Debug);
+    Logger::log("Exiting get_credentials()", LogLevel::Debug);
 
     return results;
 }
@@ -357,7 +365,7 @@ std::vector<std::tuple<char *, unsigned int, unsigned int,
 std::vector<std::tuple<char *, unsigned int, unsigned int>>
         MySQL_Conn::get_permissions(const char * set_name) const
 {
-    Logger::log("Entering get_permissions(...)", LogLevel::Debug);
+    Logger::log("Entering get_permissions()", LogLevel::Debug);
 
     // Return value.
     std::vector<std::tuple<char *, unsigned int, 
@@ -384,7 +392,7 @@ std::vector<std::tuple<char *, unsigned int, unsigned int>>
     
     mysql_free_result(mysqlResult); 
 
-    Logger::log("Exiting get_permissions(...)", LogLevel::Debug);
+    Logger::log("Exiting get_permissions()", LogLevel::Debug);
 
     return results;
 }
@@ -394,7 +402,7 @@ std::vector<std::tuple<char *, unsigned int, unsigned int>>
  */
 void MySQL_Conn::log_error(MYSQL *conn) const
 {
-    Logger::log("Entering log_error.", LogLevel::Debug);
+    Logger::log("Entering MySQL_Conn::log_error().", LogLevel::Debug);
     Logger::log(mysql_error(conn), LogLevel::Error);
 }
 

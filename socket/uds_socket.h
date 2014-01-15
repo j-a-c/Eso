@@ -1,25 +1,26 @@
-#ifndef ESO_SOCKET_LOCAL_SOCKET
-#define ESO_SOCKET_LOCAL_SOCKET
+#ifndef ESO_SOCKET_UDS_SOCKET
+#define ESO_SOCKET_UDS_SOCKET
 
 #include <errno.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 
-#include "socket.h"
-#include "socket_stream.h"
+#include "uds_stream.h"
 #include "../logger/logger.h"
 
 /*
  * Abstraction over a Unix Domain Socket.
  */
-class Local_Socket : public Socket
+class UDS_Socket
 {
 public:
-    Local_Socket(std::string location);
-    // Must be called before accept()
-    int listen() const;
-    Socket_Stream accept() const;
-    Socket_Stream connect() const;
+    UDS_Socket(std::string location);
+    // Must be called before accept().
+    int listen();
+    // Accept an incoming connection.
+    UDS_Stream accept();
+    // Connect to the location this socket was created with.
+    UDS_Stream connect();
 private:
     int sock_len; // sock_info 
     int socket_fd;
@@ -27,13 +28,18 @@ private:
     const int MAX_QUEUE_SIZE = 5;
 };
 
-Local_Socket::Local_Socket(std::string location)
+/*
+ * The location specified will be the location to bind to if listen() is
+ * called, or the location to connect to if connect() is called.
+ */
+UDS_Socket::UDS_Socket(std::string location)
 {
     // Stream-oriented, local socket.
     if ((socket_fd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) 
     {
         // Error creating socket.
-        Logger::log("Error creating socket.\n");
+        Logger::log("Error creating socket in UDS_Socket().",
+                LogLevel::Error);
         exit(1);
     }
 
@@ -46,29 +52,38 @@ Local_Socket::Local_Socket(std::string location)
     sock_len = strlen(sock_info.sun_path) + sizeof(sock_info.sun_family);
 }
 
-int Local_Socket::listen() const
+/*
+ * Listen to the specified connection.
+ * Returns 0 if everything went ok.
+ */
+int UDS_Socket::listen()
 {
     unlink(sock_info.sun_path);
 
     // Bind the address to the address in the Unix domain. 
     if (bind(socket_fd, (struct sockaddr *) &sock_info, sock_len) != 0)
     {
-        Logger::log("Bind() failed.", LogLevel::Error);
+        Logger::log("Bind() failed in UDS_Socket::listen().", LogLevel::Error);
+        close(socket_fd);
         return 1;
     }
 
     // Listen for incoming connections from client programs.
     if (::listen(socket_fd, MAX_QUEUE_SIZE) != 0)
     {
-        Logger::log("Listen() failed.", LogLevel::Error);
+        Logger::log("Listen() failed in UDS_Socket::listen().", 
+                LogLevel::Error);
+        close(socket_fd);
         return 1;
     }
 
-    Logger::log("Listening successfully.", LogLevel::Debug);
     return 0;
 }
 
-Socket_Stream Local_Socket::accept() const
+/*
+ * Accept an incoming connection.
+ */
+UDS_Stream UDS_Socket::accept()
 {
     struct sockaddr_un client;
     int client_len;
@@ -77,9 +92,13 @@ Socket_Stream Local_Socket::accept() const
                 (socklen_t *) &client_len);
     if (connection_fd == -1) 
     {
-        Logger::log("Error accepting connection.", LogLevel::Debug);
+        int err = errno;
+        Logger::log("Error accepting connection.", LogLevel::Error);
         
-        switch(errno)
+
+        
+        // For error-reporting purposes.
+        switch(err)
         {
             case EBADF:
                 Logger::log("Invalid descriptor.");
@@ -97,22 +116,27 @@ Socket_Stream Local_Socket::accept() const
                 Logger::log("Something else went wrong.");
         }
 
+        close(socket_fd);
         exit(1);
     }
 
-    return Socket_Stream{connection_fd, client, client_len};
+    return UDS_Stream{connection_fd, client, client_len};
 }
 
-Socket_Stream Local_Socket::connect() const
+/*
+ * Connect to the location specified when the UDS_Socket was created.
+ */
+UDS_Stream UDS_Socket::connect()
 {
     if (::connect(socket_fd, (struct sockaddr *)&sock_info, sock_len) == -1)
     {
         // Error connecting to socket.
-        Logger::log("Error connecting to host.");
+        Logger::log("Error connecting to host in UDS_Socket::connect().", 
+                LogLevel::Error);
         exit(1);
     }
 
-    return Socket_Stream{socket_fd, sock_info, sock_len};
+    return UDS_Stream{socket_fd, sock_info, sock_len};
 }
 
 #endif

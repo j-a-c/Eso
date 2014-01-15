@@ -1,5 +1,5 @@
-#ifndef ESO_SOCKET_SOCKET_STREAM
-#define ESO_SOCKET_SOCKET_STREAM
+#ifndef ESO_SOCKET_UDS_STREAM
+#define ESO_SOCKET_UDS_STREAM
 
 #include <string>
 #include <sys/socket.h>
@@ -7,15 +7,17 @@
 #include <sys/un.h>
 
 /*
- * Wrapper for a socket stream.
+ * Wrapper for a Unix Domain socket stream.
  */
-class Socket_Stream
+class UDS_Stream 
 {
 public:
-    Socket_Stream(int con_fd, sockaddr_un remote, int remote_len);
-    ~Socket_Stream();
-    void send(std::string msg);
-    std::string recv();
+    UDS_Stream(int con_fd, sockaddr_un remote, int remote_len);
+    ~UDS_Stream();
+    // Send data.
+    void send(const std::string msg) const;
+    // Receive data.
+    std::string recv() const;
 private:
     int _con_fd;
     struct sockaddr_un _remote;
@@ -23,23 +25,29 @@ private:
     const int MAX_LENGTH = 8449; // 8192+256+1
 };
 
-Socket_Stream::Socket_Stream(int con_fd, sockaddr_un remote, int remote_len)
+UDS_Stream::UDS_Stream(int con_fd, sockaddr_un remote, int remote_len)
     : _con_fd{con_fd}, _remote_len{remote_len}
 {
     _remote = remote;
 }
 
-Socket_Stream::~Socket_Stream()
+UDS_Stream::~UDS_Stream()
 {
     close(_con_fd);
 }
 
-void Socket_Stream::send(std::string msg)
+/*
+ * Send data.
+ */
+void UDS_Stream::send(const std::string msg) const
 {
     ::send(_con_fd, msg.c_str(), msg.length()+1, 0);
 }
 
-std::string Socket_Stream::recv()
+/* 
+ * Receive data.
+ */
+std::string UDS_Stream::recv() const
 {
     char recv_msg[MAX_LENGTH];
 

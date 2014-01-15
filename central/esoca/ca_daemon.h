@@ -10,9 +10,10 @@
 #include "esoca_config.h"
 #include "../../daemon/daemon.h"
 #include "../../logger/logger.h"
-#include "../../socket/local_socket.h"
-#include "../../socket/socket_stream.h"
-
+#include "../../socket/tcp_socket.h"
+#include "../../socket/tcp_stream.h"
+#include "../../socket/uds_socket.h"
+#include "../../socket/uds_stream.h"
 
 /* 
  * Local daemon implementation
@@ -34,7 +35,7 @@ int CADaemon::start() const
 const char * CADaemon::lock_path() const
 {
     // TODO create config file?
-    std::string path = "/home/bose/Desktop/eso/central/esoca//esoca_lock";
+    std::string path = "/home/bose/Desktop/eso/central/esoca/esoca_lock";
     return path.c_str();
 }
 
@@ -42,8 +43,8 @@ int CADaemon::work() const
 {
     // TODO save pid
 
-    Local_Socket local_socket{std::string{ESOCA_SOCKET_PATH}};
-    if(local_socket.listen())
+    UDS_Socket uds_socket{std::string{ESOCA_SOCKET_PATH}};
+    if(uds_socket.listen())
     {
         Logger::log("Error in esoca attempting to listen.");
         exit(1);
@@ -55,31 +56,34 @@ int CADaemon::work() const
     // Accept client connections.
     while (true)
     {
-        Socket_Stream stream = local_socket.accept();
+        Logger::log("esoca is waiting for a new connection.", LogLevel::Debug);
+
+        UDS_Stream uds_stream = uds_socket.accept();
 
         Logger::log("esoca accepted new connection.", LogLevel::Debug);
 
         // TODO authenticate to make sure it is our web requesting access
 
 
-        // Protocol starts here.
-        Logger::log("Waiting for protocol type.");
+        /*
+         * Protocol starts here.
+         */
 
         // Holds the message we receive.
         std::string recv_msg;
         // Holds the message we send.
         std::string msg;
 
-        recv_msg = stream.recv();
-        Logger::log(recv_msg);
+        recv_msg = uds_stream.recv();
+        Logger::log(std::string{"Requested: "} + recv_msg);
 
         // Check for valid request.
         if (strcmp(recv_msg.c_str(), "permission") == 0)
         {
             msg = "ok";
-            stream.send(msg);
+            uds_stream.send(msg);
 
-            recv_msg = stream.recv();
+            recv_msg = uds_stream.recv();
             Logger::log(recv_msg);
 
             // Tokenize the message we received.
@@ -94,24 +98,28 @@ int CADaemon::work() const
 
             const char *set_name = strings[0].c_str();
             const char *entity = strings[1].c_str();
-            Logger::log(set_name);
-            Logger::log(entity);
 
             // TODO propagate permissions.
+            TCP_Socket tcp_socket;
+            // TODO read conifg file
+            TCP_Stream tcp_stream = tcp_socket.connect(
+                    std::string{"localhost"}, std::string{"4344"});
+            tcp_stream.send("hello distro");
+            Logger::log("Message sent to distro.", LogLevel::Debug);
             
 
-            Logger::log("Sending bye.");
+            Logger::log("Sending bye.", LogLevel::Debug);
             msg = "bye";
-            stream.send(msg);
+            uds_stream.send(msg);
         }
         else
         {
-            Logger::log("Invalid request.");
+            Logger::log("Invalid request.", LogLevel::Error);
             msg = "invalid";
-            stream.send(msg);
+            uds_stream.send(msg);
         }
 
-        Logger::log("Daemon is closing connection.");
+        Logger::log("esoca is closing connection.", LogLevel::Debug);
     }
 
     Logger::log("accept() error", LogLevel::Error);
