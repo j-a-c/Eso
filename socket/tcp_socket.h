@@ -2,6 +2,7 @@
 #define ESO_SOCKET_TCP_SOCKET
 
 #include <arpa/inet.h>
+#include <cstring>
 #include <errno.h>
 #include <netdb.h>
 #include <string>
