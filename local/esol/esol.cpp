@@ -11,7 +11,7 @@
 #include <sys/un.h>
 #include <unistd.h>
 
-#include "LocalDaemon.h"
+#include "local_daemon.h"
 
 /**
  * Starts the daemon that will run on the end hosts.
