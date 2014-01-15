@@ -5,7 +5,6 @@
 #include <tuple>
 #include <vector>
 
-#include "db_conn.h"
 #include "db_error.h"
 #include "db_types.h"
 #include "mysql_config.h"
@@ -50,33 +49,33 @@ CREATE TABLE credentials (
 */
 
 
-class MySQL_Conn : public DB_Conn
+class MySQL_Conn
 {
 public:
     MySQL_Conn();
 
     int create_permission(const char *set_name, const char *entity,
             const unsigned int entity_type, 
-            const unsigned int op) const override;
+            const unsigned int op) const;
 
     int update_permission(const char *set_name, const char *entity,
-            const unsigned int op) const override;
+            const unsigned int op) const;
 
     int delete_permission(const char* set_name, const char* entity) 
-        const override;
+        const;
 
     int create_credential(const char *set_name, 
             const unsigned int version, const char *expiration, 
             const char *primary, const char *secondary, 
             const unsigned int type, const char *algo, 
-            const unsigned int size) const override;
-    int delete_credential() const override;
+            const unsigned int size) const;
+    int delete_credential() const;
 
     std::vector<std::tuple<char *, unsigned int, unsigned int, 
-            char *>> get_credentials(const char *) const override;
+            char *>> get_credentials(const char *) const;
 
     std::vector<std::tuple<char *, unsigned int, unsigned int>> 
-            get_permissions(const char *) const override;
+            get_all_permissions(const char *) const;
 
     ~MySQL_Conn();
 
@@ -363,7 +362,7 @@ std::vector<std::tuple<char *, unsigned int, unsigned int,
  * The tuple entries are (entity, entity_type, operation).
  */
 std::vector<std::tuple<char *, unsigned int, unsigned int>>
-        MySQL_Conn::get_permissions(const char * set_name) const
+        MySQL_Conn::get_all_permissions(const char * set_name) const
 {
     Logger::log("Entering get_permissions()", LogLevel::Debug);
 
@@ -392,7 +391,7 @@ std::vector<std::tuple<char *, unsigned int, unsigned int>>
     
     mysql_free_result(mysqlResult); 
 
-    Logger::log("Exiting get_permissions()", LogLevel::Debug);
+    Logger::log("Exiting get_all_permissions()", LogLevel::Debug);
 
     return results;
 }

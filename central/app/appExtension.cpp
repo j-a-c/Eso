@@ -150,7 +150,7 @@ static PyObject* get_credentials(PyObject* self, PyObject* args)
  *
  * Returns a list of tuples (entity, entity_type, operation).
  */
-static PyObject* get_permissions(PyObject* self, PyObject* args)
+static PyObject* get_all_permissions(PyObject* self, PyObject* args)
 {
     char *set_name;
 
@@ -161,7 +161,7 @@ static PyObject* get_permissions(PyObject* self, PyObject* args)
     // Attempt to get permissions
     MySQL_Conn conn;
     std::vector<std::tuple<char*, unsigned int, unsigned int>> results = 
-        conn.get_permissions(set_name);
+        conn.get_all_permissions(set_name);
 
     // List to return.
     PyObject *pyList = PyList_New(0);
@@ -258,7 +258,7 @@ static PyObject* update_permission(PyObject* self, PyObject* args)
 static PyMethodDef appExtension_methods[] = {
 	{"create_credential", create_credential, METH_VARARGS},
     {"get_credentials", get_credentials, METH_VARARGS},
-    {"get_permissions", get_permissions, METH_VARARGS},
+    {"get_all_permissions", get_all_permissions, METH_VARARGS},
     {"create_permission", create_permission, METH_VARARGS},
     {"update_permission", update_permission, METH_VARARGS},
 	{NULL, NULL}
