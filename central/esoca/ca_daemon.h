@@ -55,7 +55,7 @@ int CADaemon::work() const
     // Accept client connections.
     while (true)
     {
-        SocketStream stream = local_socket.accept();
+        Socket_Stream stream = local_socket.accept();
 
         Logger::log("esoca accepted new connection.", LogLevel::Debug);
 

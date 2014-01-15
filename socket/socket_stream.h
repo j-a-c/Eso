@@ -9,11 +9,11 @@
 /*
  * Wrapper for a socket stream.
  */
-class SocketStream
+class Socket_Stream
 {
 public:
-    SocketStream(int con_fd, sockaddr_un remote, int remote_len);
-    ~SocketStream();
+    Socket_Stream(int con_fd, sockaddr_un remote, int remote_len);
+    ~Socket_Stream();
     void send(std::string msg);
     std::string recv();
 private:
@@ -23,23 +23,23 @@ private:
     const int MAX_LENGTH = 8449; // 8192+256+1
 };
 
-SocketStream::SocketStream(int con_fd, sockaddr_un remote, int remote_len)
+Socket_Stream::Socket_Stream(int con_fd, sockaddr_un remote, int remote_len)
     : _con_fd{con_fd}, _remote_len{remote_len}
 {
     _remote = remote;
 }
 
-SocketStream::~SocketStream()
+Socket_Stream::~Socket_Stream()
 {
     close(_con_fd);
 }
 
-void SocketStream::send(std::string msg)
+void Socket_Stream::send(std::string msg)
 {
     ::send(_con_fd, msg.c_str(), msg.length()+1, 0);
 }
 
-std::string SocketStream::recv()
+std::string Socket_Stream::recv()
 {
     char recv_msg[MAX_LENGTH];
 

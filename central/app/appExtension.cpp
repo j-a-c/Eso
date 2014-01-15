@@ -1,11 +1,11 @@
 #include <Python.h>
 
-#include <sys/socket.h>
-#include <sys/un.h>
-
 #include "../crypto/rsa.h"
 #include "../database/mysql_conn.h"
 #include "../esoca/esoca_config.h"
+#include "../../socket/local_socket.h"
+#include "../../socket/socket_stream.h"
+
 
 /*
  * Python extension module for the web app.
@@ -32,66 +32,29 @@
 int permission_to_daemon(char *set_name, char *entity)
 {
     // Socket to the CA daemon.
-    int socket_fd;
+    Local_Socket local_socket{std::string{ESOCA_SOCKET_PATH}};
 
-    struct sockaddr_un remote;
-    char recv_msg[1000]; // TODO Config file for max size?
-
-    // Stream-oriented, local socket.
-    if ((socket_fd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) 
-    {
-        // TODO log
-        // Error creating socket.
-        printf("Error creating socket in appExtension.\n");
-        exit(1);
-    }
-
-    // Clear address structure
-    memset(&remote, 0, sizeof(struct sockaddr_un));
-
-    // Set the address parameters
-    remote.sun_family = AF_UNIX;
-    strcpy(remote.sun_path, ESOCA_SOCKET_PATH);
-    int tot_len = strlen(remote.sun_path) + sizeof(remote.sun_family);
-    if (connect(socket_fd, (struct sockaddr *)&remote, tot_len) == -1)
-    {
-        // TODO log
-        // Error connecting to socket.
-        printf("Error connecting to esoca.\n");
-        exit(1);
-    }
+    Socket_Stream stream = local_socket.connect();
 
     // Send permission request
     std::string msg = "permission";
-    send(socket_fd, msg.c_str(), msg.length()+1, 0);
+    stream.send(msg);
 
-    // Receive return value
-    // Test server connection.
-    if (int len = recv(socket_fd, recv_msg, 100, 0))
-    {
-        recv_msg[len] = '\0';
-        if (strcmp(recv_msg, "ok") != 0)
-        {
-            close(socket_fd);
-            return 1;
-        }
-    }
+    std::string recv_msg = stream.recv();
+
+    // Check for acknowledge.
+    if (strcmp(recv_msg.c_str(), "ok") != 0)
+        return 1;
 
     // Send primary key
     std::string(key){set_name};
     key += ";";
     key.append(entity);
-    send(socket_fd, key.c_str(), key.length()+1, 0);
+
+    stream.send(key);
     
-    // Receive return value
-    // Test server connection.
-    if (int len = recv(socket_fd, recv_msg, 100, 0)) 
-    {
-        recv_msg[len] = '\0';
-    }
-    
-    close(socket_fd);
-    
+    recv_msg = stream.recv();
+
     return 0;
 }
 

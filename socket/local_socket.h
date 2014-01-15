@@ -18,8 +18,8 @@ public:
     Local_Socket(std::string location);
     // Must be called before accept()
     int listen() const;
-    SocketStream accept() const;
-    SocketStream connect() const;
+    Socket_Stream accept() const;
+    Socket_Stream connect() const;
 private:
     int sock_len; // sock_info 
     int socket_fd;
@@ -68,7 +68,7 @@ int Local_Socket::listen() const
     return 0;
 }
 
-SocketStream Local_Socket::accept() const
+Socket_Stream Local_Socket::accept() const
 {
     struct sockaddr_un client;
     int client_len;
@@ -100,10 +100,10 @@ SocketStream Local_Socket::accept() const
         exit(1);
     }
 
-    return SocketStream{connection_fd, client, client_len};
+    return Socket_Stream{connection_fd, client, client_len};
 }
 
-SocketStream Local_Socket::connect() const
+Socket_Stream Local_Socket::connect() const
 {
     if (::connect(socket_fd, (struct sockaddr *)&sock_info, sock_len) == -1)
     {
@@ -112,7 +112,7 @@ SocketStream Local_Socket::connect() const
         exit(1);
     }
 
-    return SocketStream{socket_fd, sock_info, sock_len};
+    return Socket_Stream{socket_fd, sock_info, sock_len};
 }
 
 #endif

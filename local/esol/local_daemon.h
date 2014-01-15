@@ -1,20 +1,14 @@
-#ifndef ESO_LOCAL_ESOL_LOCALDAEMON
-#define ESO_LOCAL_ESOL_LOCALDAEMON
+#ifndef ESO_LOCAL_ESOL_LOCAL_DAEMON
+#define ESO_LOCAL_ESOL_LOCAL_DAEMON
 
-#include <errno.h>
-#include <fcntl.h>
-#include <signal.h>
 #include <string>
-#include <sys/resource.h>
-#include <sys/socket.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <sys/un.h>
 #include <unistd.h>
 
 #include "esol_config.h"
-#include "../../daemon/Daemon.h"
+#include "../../daemon/daemon.h"
 #include "../../logger/logger.h"
+#include "../../socket/local_socket.h"
+#include "../../socket/socket_stream.h"
 
 /* 
  * Local daemon implementation
@@ -42,69 +36,32 @@ const char * LocalDaemon::lock_path() const
 
 int LocalDaemon::work() const
 {
-    struct sockaddr_un server, client;
-
-    // Stream-oriented, local socket.
-    int socket_fd = socket(AF_UNIX, SOCK_STREAM, 0);
-    if (socket_fd < 0)
+    Local_Socket local_socket{std::string{ESOL_SOCKET_PATH}};
+    if (local_socket.listen())
     {
-        Logger::log("socket() failed", LogLevel::Error);
-        return 1;
+        Logger::log("Error in esol attempting to listen.");
+        exit(1);
     }
 
-    // Clear the address structure
-    memset(&server, 0, sizeof(struct sockaddr_un));
-
-    // Set the address parameters.
-    server.sun_family = AF_UNIX;
-    strcpy(server.sun_path, ESOD_SOCKET_PATH);
-    // The address should not exist, but unlink() just in case.
-    unlink(server.sun_path);
-
-    // Bind the address to the address in the Unix domain.
-    int len = strlen(server.sun_path) + sizeof(server.sun_family);
-    if (bind(socket_fd, (struct sockaddr *) &server, len) != 0)
-    {
-        Logger::log("bind() failed", LogLevel::Error);
-        return 1;
-    }
-
-    // Listen for incoming connections from client programs.
-    if (listen(socket_fd, ESOD_QUEUE_SIZE) != 0)
-    {
-        Logger::log("listen() failed", LogLevel::Error);
-        return 1;
-    }
-
-    Logger::log("esod is listening successfully.", LogLevel::Debug);
+    Logger::log("esol is listening successfully.", LogLevel::Debug);
 
     // TODO multithread
     // Accept client connections.
-    while (int connection_fd = accept(socket_fd, (struct sockaddr *) &client, 
-                (socklen_t *) &len) > -1)
+    while (true)
     {
-        Logger::log("esod accepted new connection.", LogLevel::Debug);
+        Socket_Stream stream = local_socket.accept();
+
+        Logger::log("esol accepted new connection.", LogLevel::Debug);
 
         // TODO authenticate by checking pid
 
         // TODO Implement protocol
 
-        // TODO delete this test
-        std::string msg = "connecteddddd!";
-        send(connection_fd, msg.c_str(), msg.length()+1, 0);
 
         Logger::log("Daemon is closing connection.");
-        close(connection_fd);
-
-        // TODO delete after testing
-        return 0;
     }
 
     Logger::log("accept() error", LogLevel::Error);
-    close(socket_fd);
-    unlink(server.sun_path);
-    return 1;
-
 }
 
 #endif
