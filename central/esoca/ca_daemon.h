@@ -1,5 +1,5 @@
-#ifndef ESO_LOCAL_ESOL_LOCALDAEMON
-#define ESO_LOCAL_ESOL_LOCALDAEMON
+#ifndef ESO_CENTRAL_ESOCA_CA_DAEMON
+#define ESO_CENTRAL_ESOCA_CA_DAEMON
 
 #include <iostream>
 #include <signal.h>
@@ -7,15 +7,15 @@
 #include <string>
 #include <vector>
 
-#include "esoca_config.h"
+#include "../config/esoca_config.h"
+#include "../config/mysql_config.h"
 #include "../../daemon/daemon.h"
+#include "../../database/mysql_conn.h"
 #include "../../logger/logger.h"
 #include "../../socket/tcp_socket.h"
 #include "../../socket/tcp_stream.h"
 #include "../../socket/uds_socket.h"
 #include "../../socket/uds_stream.h"
-
-#include "../database/mysql_conn.h"
 
 /* 
  * Local daemon implementation

@@ -1,5 +1,9 @@
-#ifndef ESO_CENTRAL_APP_DATABASE_MYSQL_CONFIG
-#define ESO_CENTRAL_APP_DATABASE_MYSQL_CONFIG
+#ifndef ESO_CENTRAL_CONFIG_MYSQL_CONFIG
+#define ESO_CENTRAL_CONFIG_MYSQL_CONFIG
+
+/*
+ * The configuration file for the central authority's MySQL database.
+ */
 
 // Address.
 const char* LOC = "localhost";

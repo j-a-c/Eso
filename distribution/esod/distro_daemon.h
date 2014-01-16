@@ -4,7 +4,7 @@
 #include <string>
 #include <unistd.h>
 
-#include "esod_config.h"
+#include "../config/esod_config.h"
 #include "../../daemon/daemon.h"
 #include "../../logger/logger.h"
 #include "../../socket/tcp_socket.h"

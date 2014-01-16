@@ -1,7 +1,9 @@
+// Need to include <Python.h> first!
 #include <Python.h>
 
-#include "../database/mysql_conn.h"
-#include "../esoca/esoca_config.h"
+#include "../config/esoca_config.h"
+#include "../config/mysql_config.h"
+#include "../../database/mysql_conn.h"
 #include "../../socket/uds_socket.h"
 #include "../../socket/uds_stream.h"
 

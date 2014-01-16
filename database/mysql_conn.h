@@ -1,5 +1,5 @@
-#ifndef ESO_CENTRAL_APP_DATABASE_MYSQL_CONN
-#define ESO_CENTRAL_APP_DATABASE_MYSQL_CONN
+#ifndef ESO_DATABASE_MYSQL_CONN
+#define ESO_DATABASE_MYSQL_CONN
 
 #include <string.h>
 #include <tuple>
@@ -7,12 +7,11 @@
 
 #include "db_error.h"
 #include "db_types.h"
-#include "mysql_config.h"
-#include "../../crypto/aes.h"
-#include "../../crypto/base64.h"
-#include "../../crypto/memory.h"
-#include "../../crypto/rsa.h"
-#include "../../logger/logger.h"
+#include "../crypto/aes.h"
+#include "../crypto/base64.h"
+#include "../crypto/memory.h"
+#include "../crypto/rsa.h"
+#include "../logger/logger.h"
 
 // Include these after all other files because of the min/max macro problems
 #include <my_global.h>
