@@ -15,6 +15,7 @@
 #include "../../socket/uds_socket.h"
 #include "../../socket/uds_stream.h"
 
+#include "../database/mysql_conn.h"
 
 /* 
  * Local daemon implementation
@@ -99,19 +100,39 @@ int CADaemon::work() const
 
             const char *set_name = strings[0].c_str();
             const char *entity = strings[1].c_str();
-
-            // TODO propagate permissions.
-            TCP_Socket tcp_socket;
-            // TODO read conifg file
-            TCP_Stream tcp_stream = tcp_socket.connect(
-                    std::string{"localhost"}, std::string{"4344"});
-            tcp_stream.send("hello distro");
-            Logger::log("Message sent to distro.", LogLevel::Debug);
             
-
+            // End UDS connection.
             Logger::log("Sending bye.", LogLevel::Debug);
             msg = "bye";
             uds_stream.send(msg);
+
+            /*
+             * Propagate permissions.
+             */
+
+            // Get the current result from the database.
+            // We don't trust whoever requested us just in case.
+            MySQL_Conn conn;
+            auto query_result = conn.get_permission(set_name, entity);
+
+            // Form the message to send from the query result.
+            std::string distribution_msg{std::get<0>(query_result)};
+            distribution_msg += ";";
+            distribution_msg.append(std::get<1>(query_result));
+            distribution_msg += ";";
+            distribution_msg.append(std::to_string(std::get<2>(query_result)));
+            distribution_msg += ";";
+            distribution_msg.append(std::to_string(std::get<3>(query_result)));
+
+
+            TCP_Socket tcp_socket;
+            // TODO Read conifg file for distribution locations.
+            // TODO Send distribution_msg to all distribution servers.
+            TCP_Stream tcp_stream = tcp_socket.connect(
+                    std::string{"localhost"}, std::string{"4344"});
+
+            tcp_stream.send(distribution_msg);
+
         }
         else
         {

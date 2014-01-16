@@ -51,7 +51,7 @@ int DistroDaemon::work() const
     {
         TCP_Stream tcp_stream = tcp_socket.accept();
         Logger::log("esod accepted new connection.");
-        Logger::log(std::string{"received"} + tcp_stream.recv());
+        Logger::log(std::string{"received: "} + tcp_stream.recv());
         Logger::log("esod is closing connection.");
     }
 

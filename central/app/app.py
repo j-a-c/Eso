@@ -109,7 +109,7 @@ def createSet():
 def viewSet(setName):
 
     # Load info from database
-    setCreds = get_credentials(setName)
+    setCreds = get_all_credentials(setName)
     setPerms = get_all_permissions(setName)
 
     # TODO add option to edit
