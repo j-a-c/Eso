@@ -23,7 +23,7 @@ public:
     // Accept an incoming connection
     TCP_Stream accept();
     // Connect to somewhere.
-    TCP_Stream connect(std::string host, std::string port);
+    TCP_Stream connect(std::string hostname, std::string port);
 private:
     int socket_fd;
     struct sockaddr_in servaddr;  //  Socket address structure.
@@ -37,8 +37,6 @@ private:
  */
 int TCP_Socket::listen(std::string port)
 {
-    // TODO config port numbers.
-
     struct sockaddr_in serv_addr; 
 
     socket_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -53,7 +51,7 @@ int TCP_Socket::listen(std::string port)
     memset(&serv_addr, 0, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    serv_addr.sin_port = htons(5100); 
+    serv_addr.sin_port = htons(std::stoi(port)); 
 
     if (bind(socket_fd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) == -1)
     {
@@ -86,13 +84,22 @@ TCP_Stream TCP_Socket::accept()
     return TCP_Stream{conn_fd};
 }
 
-TCP_Stream TCP_Socket::connect(std::string host, std::string port)
+/*
+ * Connects to the port at the given hostname.
+ * 
+ * TODO Current only handles IPv4. To use IPv6, update instances of AF_INET and 
+ * update serv_addr.sin_family to the appropriate family when attempting 
+ * to connect.
+ */
+TCP_Stream TCP_Socket::connect(std::string hostname, std::string port)
 {
-    // TODO hostname to IP
-    // TODO config hostname + port
-
+    // Where we want to connect to
     struct sockaddr_in serv_addr; 
+    // Possible connections.
+    struct addrinfo hints, *p; 
+    struct addrinfo *servinfo; 
 
+    // Create a socket.
     if ((socket_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
         Logger::log("Could not create socket in TCP_Socket::connect().",
@@ -101,27 +108,67 @@ TCP_Stream TCP_Socket::connect(std::string host, std::string port)
         exit(1);
     } 
 
+    // Fill in server's data structure.
     memset(&serv_addr, 0, sizeof(serv_addr)); 
-
     serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(5100); 
+    serv_addr.sin_port = htons(std::stoi(port)); 
 
-    if (inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr) <= 0)
+    // Hints to resolve the hostname.
+    memset(&hints, 0, sizeof hints); 
+    hints.ai_family   = AF_INET;    
+    hints.ai_socktype = SOCK_STREAM;  
+    hints.ai_flags    = AI_PASSIVE; 
+
+    // Resolve the hostname. 
+    if ((getaddrinfo(hostname.c_str(), nullptr, &hints, &servinfo)) == -1)
     {
-        Logger::log("inet_pton error occured in TCP_Socket::connect().",
+        Logger::log("getaddrinfo() error in TCP_Socket::connect()", 
                 LogLevel::Error);
         exit(1);
+    }       
+
+    bool connected = false;
+    // Attempt to connect
+    for (p=servinfo; p; p=p->ai_next) 
+    { 
+        struct in_addr  *addr;  
+        if (p->ai_family == AF_INET) 
+        { 
+            struct sockaddr_in *ipv = (struct sockaddr_in *)p->ai_addr; 
+            addr = &(ipv->sin_addr);  
+        } 
+        // We will keep this just in case we change from AF_INET in the future.
+        else 
+        { 
+            struct sockaddr_in6 *ipv6 = (struct sockaddr_in6 *)p->ai_addr; 
+            addr = (struct in_addr *) &(ipv6->sin6_addr); 
+        }
+
+        // Set the network address structure.
+        serv_addr.sin_addr = *addr;
+
+        // Attempt to connect.
+        if (::connect(socket_fd, (struct sockaddr *)&serv_addr, 
+                    sizeof(serv_addr)) < 0)
+        {
+            Logger::log("Connect failed in TCP_Socket::connect().",
+                    LogLevel::Error);
+            continue;
+        }
+        else
+        {
+            connected = true;
+            // We are connected!
+            break;
+        }
     } 
 
-    if (::connect(socket_fd, (struct sockaddr *)&serv_addr,
-                sizeof(serv_addr)) < 0)
-    {
-        Logger::log("Connect failed in TCP_Socket::connect().",
-                LogLevel::Error);
+    freeaddrinfo(servinfo);     
+
+    if (connected)
+        return TCP_Stream{socket_fd}; 
+    else
         exit(1);
-    } 
-
-    return TCP_Stream{socket_fd}; 
 }
 
 #endif
