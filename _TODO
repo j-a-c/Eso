@@ -2,8 +2,11 @@ grep -r TODO *
 
 current:
 	- propagation to distro
+		- distro db setup
+		- distro update creds
 	- TCP impl
 		- hostname to ip
+		- config for esoca and esod
 
 bugs:
 	- esoca randomly shuts down..

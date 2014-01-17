@@ -1,7 +1,6 @@
 #ifndef ESO_CENTRAL_ESOCA_CA_DAEMON
 #define ESO_CENTRAL_ESOCA_CA_DAEMON
 
-#include <iostream>
 #include <signal.h>
 #include <sstream>
 #include <string>
@@ -12,10 +11,12 @@
 #include "../../daemon/daemon.h"
 #include "../../database/mysql_conn.h"
 #include "../../logger/logger.h"
+#include "../../global_config/global_config.h"
 #include "../../socket/tcp_socket.h"
 #include "../../socket/tcp_stream.h"
 #include "../../socket/uds_socket.h"
 #include "../../socket/uds_stream.h"
+#include "../../utility/parser.h"
 
 /* 
  * Local daemon implementation
@@ -89,17 +90,11 @@ int CADaemon::work() const
             Logger::log(recv_msg);
 
             // Tokenize the message we received.
-            std::vector<std::string> strings;
-            std::istringstream f{recv_msg};
-            std::string s;    
-            while (std::getline(f, s, ';')) 
-            {
-                std::cout << s << std::endl;
-                strings.push_back(s);
-            }
-
-            const char *set_name = strings[0].c_str();
-            const char *entity = strings[1].c_str();
+            std::vector<std::string> recv_values = 
+                split_string(recv_msg, DELIMITER);
+            
+            const char *set_name = recv_values[0].c_str();
+            const char *entity = recv_values[1].c_str();
             
             // End UDS connection.
             Logger::log("Sending bye.", LogLevel::Debug);

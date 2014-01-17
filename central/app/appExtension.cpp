@@ -4,6 +4,7 @@
 #include "../config/esoca_config.h"
 #include "../config/mysql_config.h"
 #include "../../database/mysql_conn.h"
+#include "../../global_config/global_config.h"
 #include "../../socket/uds_socket.h"
 #include "../../socket/uds_stream.h"
 
@@ -49,7 +50,7 @@ int permission_to_daemon(char *set_name, char *entity)
 
     // Send primary key
     std::string(key){set_name};
-    key += ";";
+    key += DELIMITER;
     key.append(entity);
 
     uds_stream.send(key);
