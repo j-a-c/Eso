@@ -1,8 +1,9 @@
-#ifndef ESO_UTILITY_PARSER
-#define ESO_UTILITY_PARSER
+#ifndef ESO_UTIL_PARSER
+#define ESO_UTIL_PARSER
 
 #include <exception>
 #include <iostream>
+#include <sstream>
 
 /*
  * Some parser-related functions, including reading a file and splitting a

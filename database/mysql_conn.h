@@ -58,6 +58,12 @@ public:
             const unsigned int entity_type, 
             const unsigned int op) const;
 
+    // Attempts to insert a new permission, but updates the op value is the
+    // permission already exists.
+    int insert_permission(const char *set_name, const char *entity,
+            const unsigned int entity_type, 
+            const unsigned int op) const;
+
     // Update the permission with the given set name and entity with the
     // specified operation value.
     int update_permission(const char *set_name, const char *entity,
@@ -111,7 +117,9 @@ MySQL_Conn::~MySQL_Conn()
 }
 
 /*
- * Creates a new permission
+ * Creates a new permission. Does not do "ON DUPLICATE KEY UPDATE" because we
+ * want to create a credential only once, and not update it if someone else
+ * creates a credential with the same primary key.
  */
 int MySQL_Conn::create_permission(const char *set_name, const char *entity,
         const unsigned int entity_type, const unsigned int op) const
@@ -167,6 +175,38 @@ int  MySQL_Conn::update_permission(const char *set_name, const char *entity,
     int ret = perform_query(query.c_str());
         
     std::string log_msg{"Exiting MySQL_Conn::update_permission() with return = "};
+    log_msg += std::to_string(ret);
+    Logger::log(log_msg, LogLevel::Debug);
+    return ret;
+}
+
+/*
+ * Insert a permission. Updates the op value if the key already exists. 
+ * Returns 0 if the permission was inserted/updated successfully.
+ */
+int MySQL_Conn::insert_permission(const char *set_name, const char *entity,
+        const unsigned int entity_type, const unsigned int op) const
+{
+    Logger::log("Entering MySQL_Conn::insert_permission()", LogLevel::Debug);
+
+    // Form query
+    std::string query{"INSERT INTO "};
+    query.append(PERM_LOC);
+    query += "(set_name, entity, entity_type, op) VALUES ('";
+    query.append(set_name);
+    query += "', '";
+    query.append(entity); 
+    query += "', ";
+    query.append(std::to_string(entity_type));
+    query += ", ";
+    query.append(std::to_string(op));
+    query += ") ON DUPLICATE KEY UPDATE op=VALUES(op)";
+
+    Logger::log(query.c_str());
+
+    int ret = perform_query(query.c_str());
+
+    std::string log_msg{"Exiting MySQL_Conn::insert_permission() with return = "};
     log_msg += std::to_string(ret);
     Logger::log(log_msg, LogLevel::Debug);
     return ret;

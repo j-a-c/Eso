@@ -1,10 +1,7 @@
 grep -r TODO *
 
 current:
-	- propagation to distro
-		- distro db setup
-		- distro update creds
-		- config for esoca and esod
+	- config for esoca and esod
 
 All:
 	- authenticated communication
