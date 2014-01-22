@@ -9,6 +9,7 @@
 #include "../config/mysql_config.h"
 #include "../../daemon/daemon.h"
 #include "../../global_config/global_config.h"
+#include "../../global_config/message_config.h"
 #include "../../logger/logger.h"
 #include "../../socket/tcp_socket.h"
 #include "../../socket/tcp_stream.h"
@@ -78,14 +79,29 @@ int DistroDaemon::work() const
         Logger::log("esod accepted new connection.", LogLevel::Debug);
 
         std::string received_string = tcp_stream.recv();
-        Logger::log(std::string{"received: "} + received_string);
+        Logger::log(std::string{"Requested: "} + received_string);
 
-        auto values = split_string(received_string, MSG_DELIMITER);
-        MySQL_Conn conn;
-        conn.insert_permission(values[0].c_str(), values[1].c_str(),
-                std::stol(values[2]), std::stol(values[3]));
+        if (received_string == UPDATE_PERM)
+        {
+            received_string = tcp_stream.recv();
+            Logger::log(std::string{"received: "} + received_string);
 
-        Logger::log("esod is closing connection.", LogLevel::Debug);
+            auto values = split_string(received_string, MSG_DELIMITER);
+            MySQL_Conn conn;
+            conn.insert_permission(values[0].c_str(), values[1].c_str(),
+                    std::stol(values[2]), std::stol(values[3]));
+
+            Logger::log("esod is closing connection.", LogLevel::Debug);
+        }
+        else if (received_string == GET_PERM)
+        {
+        
+        }
+        else
+        {
+            // TODO
+            // Invalid request.
+        }
     }
 
 }

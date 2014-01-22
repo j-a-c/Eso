@@ -12,6 +12,7 @@
 #include "../../database/mysql_conn.h"
 #include "../../logger/logger.h"
 #include "../../global_config/global_config.h"
+#include "../../global_config/message_config.h"
 #include "../../socket/tcp_socket.h"
 #include "../../socket/tcp_stream.h"
 #include "../../socket/uds_socket.h"
@@ -81,11 +82,8 @@ int CADaemon::work() const
         Logger::log(std::string{"Requested: "} + recv_msg);
 
         // Check for valid request.
-        if (strcmp(recv_msg.c_str(), "permission") == 0)
+        if (recv_msg == UPDATE_PERM)
         {
-            msg = "ok";
-            uds_stream.send(msg);
-
             recv_msg = uds_stream.recv();
             Logger::log(recv_msg);
 
@@ -96,11 +94,6 @@ int CADaemon::work() const
             const char *set_name = recv_values[0].c_str();
             const char *entity = recv_values[1].c_str();
             
-            // End UDS connection.
-            Logger::log("Sending bye.", LogLevel::Debug);
-            msg = "bye";
-            uds_stream.send(msg);
-
             /*
              * Propagate permissions.
              */
@@ -134,6 +127,7 @@ int CADaemon::work() const
                 TCP_Stream tcp_stream = tcp_socket.connect(
                         values[0], values[1]);
 
+                tcp_stream.send(UPDATE_PERM);
                 tcp_stream.send(distribution_msg);
             }
 
@@ -141,8 +135,6 @@ int CADaemon::work() const
         else
         {
             Logger::log("Invalid request.", LogLevel::Error);
-            msg = "invalid";
-            uds_stream.send(msg);
         }
 
         Logger::log("esoca is closing connection.", LogLevel::Debug);

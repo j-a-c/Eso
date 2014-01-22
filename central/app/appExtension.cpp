@@ -5,6 +5,7 @@
 #include "../config/mysql_config.h"
 #include "../../database/mysql_conn.h"
 #include "../../global_config/global_config.h"
+#include "../../global_config/message_config.h"
 #include "../../socket/uds_socket.h"
 #include "../../socket/uds_stream.h"
 
@@ -39,14 +40,8 @@ int permission_to_daemon(char *set_name, char *entity)
     UDS_Stream uds_stream = uds_socket.connect();
 
     // Send permission request
-    std::string msg = "permission";
+    std::string msg = UPDATE_PERM;
     uds_stream.send(msg);
-
-    std::string recv_msg = uds_stream.recv();
-
-    // Check for acknowledge.
-    if (strcmp(recv_msg.c_str(), "ok") != 0)
-        return 1;
 
     // Send primary key
     std::string(key){set_name};
@@ -54,8 +49,6 @@ int permission_to_daemon(char *set_name, char *entity)
     key.append(entity);
 
     uds_stream.send(key);
-    
-    recv_msg = uds_stream.recv();
 
     return 0;
 }
