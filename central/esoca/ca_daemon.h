@@ -79,11 +79,12 @@ int CADaemon::work() const
         std::string msg;
 
         recv_msg = uds_stream.recv();
-        Logger::log(std::string{"Requested: "} + recv_msg);
+        Logger::log(std::string{"Requested from esoca: "} + recv_msg);
 
         // Check for valid request.
         if (recv_msg == UPDATE_PERM)
         {
+            Logger::log(UPDATE_PERM, LogLevel::Debug);
             recv_msg = uds_stream.recv();
             Logger::log(recv_msg);
 
@@ -93,6 +94,7 @@ int CADaemon::work() const
             
             const char *set_name = recv_values[0].c_str();
             const char *entity = recv_values[1].c_str();
+            const char *loc = recv_values[2].c_str();
             
             /*
              * Propagate permissions.
@@ -101,7 +103,7 @@ int CADaemon::work() const
             // Get the current result from the database.
             // We don't trust whoever requested us just in case.
             MySQL_Conn conn;
-            auto query_result = conn.get_permission(set_name, entity);
+            auto query_result = conn.get_permission(set_name, entity, loc);
 
             // Form the message to send from the query result.
             std::string distribution_msg{std::get<0>(query_result)};
@@ -111,6 +113,8 @@ int CADaemon::work() const
             distribution_msg.append(std::to_string(std::get<2>(query_result)));
             distribution_msg += ";";
             distribution_msg.append(std::to_string(std::get<3>(query_result)));
+            distribution_msg += ";";
+            distribution_msg.append(std::get<4>(query_result));
 
 
             // Read conifg file for distribution locations.
@@ -121,11 +125,13 @@ int CADaemon::work() const
             {
                 auto values = split_string(line, LOC_DELIMITER);
 
-                Logger::log(values[0], LogLevel::Debug);
-
                 TCP_Socket tcp_socket;
                 TCP_Stream tcp_stream = tcp_socket.connect(
                         values[0], values[1]);
+
+                std::string log_msg{"esoca to esod: "};
+                log_msg += distribution_msg;
+                Logger::log(log_msg, LogLevel::Debug);
 
                 tcp_stream.send(UPDATE_PERM);
                 tcp_stream.send(distribution_msg);

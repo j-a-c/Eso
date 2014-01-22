@@ -43,6 +43,7 @@
 		<th>Entity</th>
 		<th>Entity Type</th>
 		<th>Operation</th>
+		<th>Location</th>
 	</tr>
 	<!-- Permissions Table -->
 	{% for perm in setPerms %}
@@ -50,6 +51,7 @@
 		<td>{{perm[0]}}</td>
 		<td>{{perm[1]}}</td>
 		<td>{{perm[2]}}</td>
+		<td>{{perm[3]}}</td>
 		<td><button class="editPermButton">Edit</button></td>
 	</tr>
 	{% endfor %}

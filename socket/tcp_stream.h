@@ -1,8 +1,10 @@
 #ifndef ESO_SOCKET_TCP_STREAM
 #define ESO_SOCKET_TCP_STREAM
 
-#include <errno.h>
+#include <cstring>
 #include <string>
+
+#include "../global_config/message_config.h"
 
 /*
  * Wrapper for a TCP stream.
@@ -13,10 +15,13 @@ public:
     TCP_Stream(int con_fd); 
     ~TCP_Stream();
     void send(std::string msg) const;
-    std::string recv() const;
+    std::string recv();
 private:
     int _con_fd;
-    const int MAX_LENGTH = 8449; // 8192+256+1
+    // Max length of data we will read in at a time.
+    const int MAX_LENGTH = 1024;
+    // Buffer holding partially constructed messages.
+    std::string msg_buffer;
 };
 
 TCP_Stream::TCP_Stream(int con_fd) : _con_fd{con_fd}
@@ -31,30 +36,68 @@ TCP_Stream::~TCP_Stream()
 
 void TCP_Stream::send(std::string msg) const
 {
-    if (::send(_con_fd, msg.c_str(), msg.length()+1, 0) == -1)
+    // We will manually append MSG_END here to allow the receiver to
+    // distinguish between messages.
+    msg.append(MSG_END);
+
+    // Buffer to send.
+    const char *buff = msg.c_str();
+    // Position in buffer.
+    char *pos = (char *) buff;
+    // Length of data to send
+    size_t len = strlen(buff);
+    // Number of characters sent.
+    ssize_t n;
+
+    // Ensure that all data is sent.
+    while (len > 0 && (n = ::send(_con_fd, pos, len, 0)) > 0)
     {
-        Logger::log(std::string{"Error in TCP_Stream::send(): "} +
-                std::to_string(errno), LogLevel::Error);
+        pos += n;
+        len -= (size_t) n;
+    }
+    if (len > 0 || n < 0)
+    {
+        std::string error_msg{"Something went wrong in TCP_Stream::send() "};
+        error_msg += std::to_string(len);
+        Logger::log(error_msg, LogLevel::Error);
     }
 }
-std::string TCP_Stream::recv() const
+
+std::string TCP_Stream::recv()
 {
+    Logger::log("Entering TCP_Stream::recv()", LogLevel::Debug);
+
     char recv_msg[MAX_LENGTH];
-
-    // Receive request type.
-    if(int len = ::recv(_con_fd, recv_msg, MAX_LENGTH, 0))
+    std::size_t end_pos;
+    // Read until we find a complete message.
+    while ((end_pos = msg_buffer.find_first_of(MSG_END)) == std::string::npos)
     {
-        recv_msg[len] = '\0';
-        return std::string{recv_msg};
+        if(int len = ::recv(_con_fd, recv_msg, MAX_LENGTH, 0))
+        {
+            char temp_msg[len];
+            strncpy(temp_msg, recv_msg, len);
+            msg_buffer.append(temp_msg);
+        }
+        else
+        {
+            std::string error_msg{"Something went wrong in TCP_Stream::recv() "};
+            error_msg += std::to_string(len);
+            Logger::log(error_msg, LogLevel::Error);
+        }
     }
-    else
-    {
-        Logger::log(std::string{"Error in TCP_Stream::recv(): "} + 
-                std::to_string(errno), LogLevel::Error);
 
-    }
+    // Return message does not include MSG_END
+    std::string ret_msg = msg_buffer.substr(0, end_pos);
+    // Update message buffer to exclude MSG_END
+    msg_buffer = msg_buffer.substr(end_pos+1);
 
-    return std::string{};
+    std::string log_msg{"TCP buffer contents after: "};
+    log_msg += msg_buffer;
+    Logger::log(log_msg, LogLevel::Debug);
+
+    Logger::log("Exiting TCP_Stream::recv()", LogLevel::Debug);
+
+    return ret_msg;
 }
 
 #endif

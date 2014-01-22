@@ -32,7 +32,7 @@
  *
  * Returns 0 if no errors occurred, nonzero otherwise.
  */
-int permission_to_daemon(char *set_name, char *entity)
+int permission_to_daemon(char *set_name, char *entity, char *loc)
 {
     // Socket to the CA daemon.
     UDS_Socket uds_socket{std::string{ESOCA_SOCKET_PATH}};
@@ -47,6 +47,10 @@ int permission_to_daemon(char *set_name, char *entity)
     std::string(key){set_name};
     key += MSG_DELIMITER;
     key.append(entity);
+    key += MSG_DELIMITER;
+    key.append(loc);
+
+    Logger::log(std::string{"Sending to esoca: "} + key, LogLevel::Debug);
 
     uds_stream.send(key);
 
@@ -144,7 +148,7 @@ static PyObject* get_all_credentials(PyObject* self, PyObject* args)
  * The function argument in Python should be a string containing the set name
  * to be queried.
  *
- * Returns a list of tuples (entity, entity_type, operation).
+ * Returns a list of tuples (entity, entity_type, operation, location).
  */
 static PyObject* get_all_permissions(PyObject* self, PyObject* args)
 {
@@ -156,7 +160,7 @@ static PyObject* get_all_permissions(PyObject* self, PyObject* args)
 
     // Attempt to get permissions
     MySQL_Conn conn;
-    std::vector<std::tuple<char*, unsigned int, unsigned int>> results = 
+    std::vector<std::tuple<char*, unsigned int, unsigned int, char*>> results = 
         conn.get_all_permissions(set_name);
 
     // List to return.
@@ -168,8 +172,8 @@ static PyObject* get_all_permissions(PyObject* self, PyObject* args)
     for (auto &tup : results) 
     {
         // TODO check for initialization
-        pyTup = Py_BuildValue("(sii)", std::get<0>(tup), std::get<1>(tup), 
-                std::get<2>(tup));
+        pyTup = Py_BuildValue("(siis)", std::get<0>(tup), std::get<1>(tup), 
+                std::get<2>(tup), std::get<3>(tup));
 
         // TODO check for initialization
         PyList_Append(pyList, pyTup);
@@ -193,10 +197,11 @@ static PyObject* create_permission(PyObject* self, PyObject* args)
     char *entity;
     char *input_entity_type;
     char *input_op;
+    char *loc;
 
     // Parse input.
-    if (!PyArg_ParseTuple(args, "ssss", &set_name, &entity, &input_entity_type,
-                &input_op))
+    if (!PyArg_ParseTuple(args, "sssss", &set_name, &entity, &input_entity_type,
+                &input_op, &loc))
         return nullptr;
 
     unsigned int entity_type = strtol(input_entity_type, nullptr, 0);
@@ -204,11 +209,11 @@ static PyObject* create_permission(PyObject* self, PyObject* args)
     
     // Attempt to update database.
     MySQL_Conn conn;
-    int status = conn.create_permission(set_name, entity, entity_type, op);
+    int status = conn.create_permission(set_name, entity, entity_type, op, loc);
 
     // Push the permission to distribution servers.
     if(!status)
-        status = permission_to_daemon(set_name, entity);
+        status = permission_to_daemon(set_name, entity, loc);
 
     // Return status (0 if ok, nonzero if error).
 	return Py_BuildValue("i", status);
@@ -219,7 +224,7 @@ static PyObject* create_permission(PyObject* self, PyObject* args)
  * Function to be called from Python.
  * Attempt to update a permission on a set.
  *
- * Python arguments in order are set_name, entity, entity_type, op.
+ * Python arguments in order are set_name, entity, op, loc.
  *
  * Returns 0 if everything went ok, nonzero otherwise.
  */
@@ -228,20 +233,21 @@ static PyObject* update_permission(PyObject* self, PyObject* args)
     char *set_name;
     char *entity;
     char *input_op;
+    char *loc;
 
     // Parse input.
-    if (!PyArg_ParseTuple(args, "sss", &set_name, &entity, &input_op))
+    if (!PyArg_ParseTuple(args, "ssss", &set_name, &entity, &input_op, &loc))
         return nullptr;
 
     unsigned int op = strtol(input_op, nullptr, 0);
     
     // Attempt to update database.
     MySQL_Conn conn;
-    int status = conn.update_permission(set_name, entity, op);
+    int status = conn.update_permission(set_name, entity, op, loc);
 
     // Push the permission to distribution servers.
     if(!status)
-        status = permission_to_daemon(set_name, entity);
+        status = permission_to_daemon(set_name, entity, loc);
 
     // Return status (0 if ok, nonzero if error).
 	return Py_BuildValue("i", status);

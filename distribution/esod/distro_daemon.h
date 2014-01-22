@@ -79,22 +79,26 @@ int DistroDaemon::work() const
         Logger::log("esod accepted new connection.", LogLevel::Debug);
 
         std::string received_string = tcp_stream.recv();
-        Logger::log(std::string{"Requested: "} + received_string);
+        Logger::log(std::string{"Requested from esod: "} + received_string);
 
         if (received_string == UPDATE_PERM)
         {
             received_string = tcp_stream.recv();
-            Logger::log(std::string{"received: "} + received_string);
+            Logger::log(std::string{"esod received: "} + received_string);
 
             auto values = split_string(received_string, MSG_DELIMITER);
             MySQL_Conn conn;
-            conn.insert_permission(values[0].c_str(), values[1].c_str(),
-                    std::stol(values[2]), std::stol(values[3]));
+            conn.insert_permission(values[0].c_str(), values[1].c_str(), 
+                    std::stol(values[2]), std::stol(values[3]), 
+                    values[4].c_str());
 
             Logger::log("esod is closing connection.", LogLevel::Debug);
         }
         else if (received_string == GET_PERM)
         {
+            // Receive primary key
+            // Query our database
+            // Package and send results
         
         }
         else

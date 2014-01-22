@@ -5,6 +5,7 @@
 #include <iostream>
 #include <sstream>
 
+
 /*
  * Some parser-related functions, including reading a file and splitting a
  * string using a specified delimiter.
@@ -22,7 +23,6 @@ std::vector<std::string> split_string(std::string to_split, char delimiter)
     std::string s;    
     while (std::getline(f, s, delimiter)) 
     {
-        std::cout << s << std::endl;
         strings.push_back(s);
     }
 

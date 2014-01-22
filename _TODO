@@ -1,6 +1,9 @@
 grep -r TODO *
 
 current:
+	- esoca crashes when creating perm. just added loc to perm table
+		- make sure data in sent and read completely..
+
 	- config for esod, and esol (global config?)
 	- start client daemon request
 	- implement esod protocol

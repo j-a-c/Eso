@@ -25,7 +25,8 @@ CREATE TABLE permissions (
     entity VARCHAR(32) NOT NULL,
     entity_type INT UNSIGNED NOT NULL,
     op INT UNSIGNED NOT NULL,
-    primary KEY (set_name, entity)
+	loc VARCHAR(300) NOT NULL,
+    primary KEY (set_name, entity, loc)
 );
 
 CREATE TABLE credentials (
@@ -55,24 +56,24 @@ public:
 
     // Create a new permission.
     int create_permission(const char *set_name, const char *entity,
-            const unsigned int entity_type, 
-            const unsigned int op) const;
+            const unsigned int entity_type, const unsigned int op,
+            const char *loc) const;
 
-    // Attempts to insert a new permission, but updates the op value is the
+    // Attempts to insert a new permission, but updates the op value if the
     // permission already exists.
     int insert_permission(const char *set_name, const char *entity,
-            const unsigned int entity_type, 
-            const unsigned int op) const;
+            const unsigned int entity_type, const unsigned int op,
+            const char *loc) const;
 
     // Update the permission with the given set name and entity with the
     // specified operation value.
     int update_permission(const char *set_name, const char *entity,
-            const unsigned int op) const;
+            const unsigned int op, const char *loc) const;
 
     // Delete the permission with the given set name and entity.
     // This is the primary key for the permissions table.
-    int delete_permission(const char* set_name, const char* entity) 
-        const;
+    int delete_permission(const char* set_name, const char* entity, 
+            const char * loc) const;
 
     // Create a new credential.
     int create_credential(const char *set_name, 
@@ -88,13 +89,14 @@ public:
     std::vector<std::tuple<char *, unsigned int, unsigned int, 
             char *>> get_all_credentials(const char *set_name) const;
 
-    // Get the permission with the given set name and enitity.
+    // Get the permission with the given set name, enitity, and location.
     // This is the primary key for the permissions table.
-    std::tuple<char *, char *, unsigned int, unsigned int> 
-        get_permission(const char * set_name, const char *entity) const;
+    std::tuple<char *, char *, unsigned int, unsigned int, char *> 
+            get_permission(const char * set_name, const char *entity, 
+            const char *loc) const;
 
     // Get all permissions associated with the given set name.
-    std::vector<std::tuple<char *, unsigned int, unsigned int>> 
+    std::vector<std::tuple<char *, unsigned int, unsigned int, char *>> 
             get_all_permissions(const char *set_name) const;
 
     ~MySQL_Conn();
@@ -122,14 +124,15 @@ MySQL_Conn::~MySQL_Conn()
  * creates a credential with the same primary key.
  */
 int MySQL_Conn::create_permission(const char *set_name, const char *entity,
-        const unsigned int entity_type, const unsigned int op) const
+        const unsigned int entity_type, const unsigned int op, 
+        const char *loc) const
 {
     Logger::log("Entering MySQL_Conn::create_permission()", LogLevel::Debug);
 	
     // Form query
     std::string query{"INSERT INTO "};
     query.append(PERM_LOC);
-    query += "(set_name, entity, entity_type, op) VALUES ('";
+    query += "(set_name, entity, entity_type, op, loc) VALUES ('";
     query.append(set_name);
     query += "', '";
     query.append(entity); 
@@ -137,7 +140,9 @@ int MySQL_Conn::create_permission(const char *set_name, const char *entity,
     query.append(std::to_string(entity_type));
     query += ", ";
     query.append(std::to_string(op));
-    query += ")";
+    query += ", '";
+    query.append(loc);
+    query +="')";
 
     Logger::log(query.c_str());
 
@@ -155,7 +160,7 @@ int MySQL_Conn::create_permission(const char *set_name, const char *entity,
  * Updates a permission. Returns 0 if the permission was updated.
  */
 int  MySQL_Conn::update_permission(const char *set_name, const char *entity,
-            const unsigned int op) const
+            const unsigned int op, const char *loc) const
 {
     Logger::log("Entering MySQL_Conn::update_permission()", LogLevel::Debug);
 	
@@ -166,8 +171,10 @@ int  MySQL_Conn::update_permission(const char *set_name, const char *entity,
     query.append(std::to_string(op));
     query += " WHERE set_name='";
     query.append(set_name);
-    query +="' and entity='";
+    query += "' and entity='";
     query.append(entity);
+    query += "' AND loc='";
+    query.append(loc);
     query += "'";
 
     Logger::log(query.c_str());
@@ -185,14 +192,15 @@ int  MySQL_Conn::update_permission(const char *set_name, const char *entity,
  * Returns 0 if the permission was inserted/updated successfully.
  */
 int MySQL_Conn::insert_permission(const char *set_name, const char *entity,
-        const unsigned int entity_type, const unsigned int op) const
+        const unsigned int entity_type, const unsigned int op,
+        const char *loc) const
 {
     Logger::log("Entering MySQL_Conn::insert_permission()", LogLevel::Debug);
 
     // Form query
     std::string query{"INSERT INTO "};
     query.append(PERM_LOC);
-    query += "(set_name, entity, entity_type, op) VALUES ('";
+    query += "(set_name, entity, entity_type, op, loc) VALUES ('";
     query.append(set_name);
     query += "', '";
     query.append(entity); 
@@ -200,7 +208,9 @@ int MySQL_Conn::insert_permission(const char *set_name, const char *entity,
     query.append(std::to_string(entity_type));
     query += ", ";
     query.append(std::to_string(op));
-    query += ") ON DUPLICATE KEY UPDATE op=VALUES(op)";
+    query += ", '";
+    query.append(loc);
+    query += "') ON DUPLICATE KEY UPDATE op=VALUES(op)";
 
     Logger::log(query.c_str());
 
@@ -217,8 +227,8 @@ int MySQL_Conn::insert_permission(const char *set_name, const char *entity,
  * Deletes the permission with the given set and entity names.
  * (set, entity) is the primary key for the permissions tables.
  */
-int MySQL_Conn::delete_permission(const char *set_name, 
-        const char *entity) const
+int MySQL_Conn::delete_permission(const char *set_name, const char *entity,
+        const char * loc) const
 {
     Logger::log("Entering MySQL_Conn::delete_permission()", LogLevel::Debug);
 
@@ -227,8 +237,10 @@ int MySQL_Conn::delete_permission(const char *set_name,
     query.append(PERM_LOC);
     query += " WHERE set_name='";
     query.append(set_name);
-    query +="' and entity='";
+    query += "' and entity='";
     query.append(entity);
+    query += "' AND loc='";
+    query.append(loc);
     query += "';";
 
     Logger::log(query.c_str());
@@ -414,29 +426,32 @@ std::vector<std::tuple<char *, unsigned int, unsigned int,
 /*
  * Returns a tuple representing the entries from the query.
  * The order of the tuple values is as follows below.
- * There should only be one tuple because (set_name, entity) is the primary key
- * for the permissions table.
+ * There should only be one tuple because (set_name, entity, loc) is the primary 
+ * key for the permissions table.
     set_name VARCHAR(255) NOT NULL,
     entity VARCHAR(32) NOT NULL,
     entity_type INT UNSIGNED NOT NULL,
     op INT UNSIGNED NOT NULL,
+    loc VARCHAR(300) NOT NULL
 */
-std::tuple<char *, char *, unsigned int, unsigned int> 
-        MySQL_Conn::get_permission(const char *set_name, 
-        const char *entity) const
+std::tuple<char *, char *, unsigned int, unsigned int, char *> 
+        MySQL_Conn::get_permission(const char *set_name, const char *entity,
+                const char *loc) const
 {
     Logger::log("Entering MySQL_Conn::get_permissions()", LogLevel::Debug);
 
     // Return value.
-    std::tuple<char *, char *, unsigned int, unsigned int> result;
+    std::tuple<char *, char *, unsigned int, unsigned int, char *> result;
 
     // Build query.
-    std::string query{"SELECT set_name, entity, entity_type, op FROM "}; 
+    std::string query{"SELECT set_name, entity, entity_type, op, loc FROM "}; 
     query += PERM_LOC;
     query += " WHERE set_name='";
     query.append(set_name);
     query += "' AND entity='";
     query.append(entity);
+    query += "' AND loc='";
+    query.append(loc);
     query += "';";
 
     Logger::log(query);
@@ -451,7 +466,8 @@ std::tuple<char *, char *, unsigned int, unsigned int>
     // primary key for the permissions table.
     mysqlRow = mysql_fetch_row(mysqlResult);
     result = std::make_tuple(mysqlRow[0], mysqlRow[1],
-            strtol(mysqlRow[2], nullptr, 0), strtol(mysqlRow[3], nullptr, 0));
+            strtol(mysqlRow[2], nullptr, 0), strtol(mysqlRow[3], nullptr, 0),
+            mysqlRow[4]);
     
     mysql_free_result(mysqlResult); 
 
@@ -464,19 +480,19 @@ std::tuple<char *, char *, unsigned int, unsigned int>
 
 /*
  * Returns a vector of tuples representing the entries from query.
- * The tuple entries are (entity, entity_type, operation).
+ * The tuple entries are (entity, entity_type, operation, loc).
  */
-std::vector<std::tuple<char *, unsigned int, unsigned int>>
+std::vector<std::tuple<char *, unsigned int, unsigned int, char *>>
         MySQL_Conn::get_all_permissions(const char * set_name) const
 {
     Logger::log("Entering MySQL_Conn::get_all_permissions()", LogLevel::Debug);
 
     // Return value.
     std::vector<std::tuple<char *, unsigned int, 
-        unsigned int>> results;
+        unsigned int, char *>> results;
 
     // Build query.
-    std::string query{"SELECT entity, entity_type, op FROM "}; 
+    std::string query{"SELECT entity, entity_type, op, loc FROM "}; 
     query += PERM_LOC;
     query += " WHERE set_name='";
     query.append(set_name);
@@ -493,7 +509,8 @@ std::vector<std::tuple<char *, unsigned int, unsigned int>>
     while(mysqlRow = mysql_fetch_row(mysqlResult)) 
         results.push_back(std::make_tuple(mysqlRow[0], 
                     strtol(mysqlRow[1], nullptr, 0), 
-                    strtol(mysqlRow[2], nullptr, 0)));
+                    strtol(mysqlRow[2], nullptr, 0),
+                    mysqlRow[3]));
     
     mysql_free_result(mysqlResult); 
 

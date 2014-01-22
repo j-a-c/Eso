@@ -45,6 +45,7 @@ $(document).on('click', '.updatePermButton', function(){
 	var currentRow 		= $(this).closest('tr');
 	var entityRow	 	= currentRow.find('td').eq(0);
 	var opOptions 		= currentRow.find('select').eq(0);
+	var locRow 			= currentRow.find('td').eq(3);
 
 	// Calculate the operations allowed for this entity (ops)
     var ops = 0;
@@ -58,7 +59,8 @@ $(document).on('click', '.updatePermButton', function(){
 	$.getJSON($SCRIPT_ROOT + '/_update_perm', {
 		setName: 		$("#setName").html(),
         entity: 		entityRow.html(),
-		op:				ops
+		op:				ops,
+		loc: 			locRow.html()
       }, function(data) {
 		// TODO if result is true, hide input and replace with values.
 		// data.result will be 0 on success.
@@ -89,6 +91,7 @@ $(document).on('click', '.createPermButton', function(){
 	var entityRow	 	= currentRow.find('input').eq(0);
 	var entityOptions 	= currentRow.find('select').eq(0);
 	var opOptions 		= currentRow.find('select').eq(1);
+	var locRow 			= currentRow.find('input').eq(1);
 
 	// Calculate the operations allowed for this entity (ops)
     var ops = 0;
@@ -103,7 +106,8 @@ $(document).on('click', '.createPermButton', function(){
 		setName: 		$("#setName").html(),
         entity: 		entityRow.val(),
         entity_type: 	entityOptions.find(":selected").val(),
-		op:				ops
+		op:				ops,
+		loc: 			locRow.val()
       }, function(data) {
 		// TODO if result is true, hide input and replace with values.
 		// data.result will be 0 on success.
@@ -113,6 +117,7 @@ $(document).on('click', '.createPermButton', function(){
 			currentRow.find('td').eq(0).html(entityRow.val());
 			currentRow.find('td').eq(1).html(entityOptions.find(":selected").val());
 			currentRow.find('td').eq(2).html(ops);
+			currentRow.find('td').eq(3).html(locRow.val());
 
 			// Update button function to 'edit'.
 			currentButton.attr('class', 'editPermButton');
@@ -133,7 +138,7 @@ $(document).on('click', '.createPermButton', function(){
  */
 function addPermRow()
 {
-	$('#viewPermissions tr:last').after('<tr><td><input type="text"/></td><td>'+entityTypeSelect+'</td><td>'+operationSelect+'</td><td><button class="createPermButton">Create</button></td></tr>');
+	$('#viewPermissions tr:last').after('<tr><td><input type="text"/></td><td>'+entityTypeSelect+'</td><td>'+operationSelect+'</td><td><input type="text"/></td><td><button class="createPermButton">Create</button></td></tr>');
 
 
 }

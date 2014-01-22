@@ -6,6 +6,9 @@
 #include <sys/types.h> 
 #include <sys/un.h>
 
+#include "../global_config/message_config.h"
+#include "../logger/logger.h"
+
 /*
  * Wrapper for a Unix Domain socket stream.
  */
@@ -15,14 +18,17 @@ public:
     UDS_Stream(int con_fd, sockaddr_un remote, int remote_len);
     ~UDS_Stream();
     // Send data.
-    void send(const std::string msg) const;
+    void send(std::string msg) const;
     // Receive data.
-    std::string recv() const;
+    std::string recv();
 private:
     int _con_fd;
     struct sockaddr_un _remote;
     int _remote_len;
-    const int MAX_LENGTH = 8449; // 8192+256+1
+    // Max length of data we will read in at a time.
+    int MAX_LENGTH = 1024;
+    // Buffer holding partially constructed messages.
+    std::string msg_buffer;
 };
 
 UDS_Stream::UDS_Stream(int con_fd, sockaddr_un remote, int remote_len)
@@ -37,28 +43,76 @@ UDS_Stream::~UDS_Stream()
 }
 
 /*
- * Send data.
+ * Send data. Includes MSG_END to allow the receiver to distinguish between 
+ * messages.
  */
-void UDS_Stream::send(const std::string msg) const
+void UDS_Stream::send(std::string msg) const
 {
-    ::send(_con_fd, msg.c_str(), msg.length()+1, 0);
+    Logger::log("Entering UDS_Stream::send()", LogLevel::Debug);
+
+    // Manually append MSG_END here to allow receiver to distinguish between
+    // messages.
+    msg.append(MSG_END);
+
+    // Buffer to send.
+    const char *buff = msg.c_str();
+    // Position in buffer.
+    char *pos = (char *) buff;
+    // Length of data to send
+    size_t len = strlen(buff);
+    // Number of characters sent.
+    ssize_t n;
+
+    // Ensure that all data is sent.
+    while (len > 0 && (n = ::send(_con_fd, pos, len, 0)) > 0)
+    {
+        pos += n;
+        len -= (size_t) n;
+    }
+    if (len > 0 || n < 0)
+    {
+        std::string error_msg{"Something went wrong in UDS_Stream::send() "};
+        error_msg += std::to_string(len);
+        Logger::log(error_msg, LogLevel::Error);
+    }
+
+    Logger::log("Exiting UDS_Stream::send()", LogLevel::Debug);
 }
 
 /* 
- * Receive data.
+ * Returns a completed message, not including the MSG_END character.
  */
-std::string UDS_Stream::recv() const
+std::string UDS_Stream::recv()
 {
-    char recv_msg[MAX_LENGTH];
+    Logger::log("Entering UDS_Stream::recv()", LogLevel::Debug);
 
-    // Receive request type.
-    if(int len = ::recv(_con_fd, recv_msg, MAX_LENGTH, 0))
+    char recv_msg[MAX_LENGTH];
+    std::size_t end_pos;
+    // Read until we find a complete message.
+    while ((end_pos = msg_buffer.find_first_of(MSG_END)) == std::string::npos)
     {
-        recv_msg[len] = '\0';
-        return std::string{recv_msg};
+        if(int len = ::recv(_con_fd, recv_msg, MAX_LENGTH, 0))
+        {
+            char temp_msg[len];
+            strncpy(temp_msg, recv_msg, len);
+            msg_buffer.append(temp_msg);
+        }
+        else
+        {
+            std::string error_msg{"Something went wrong in UDS_Stream::recv() "};
+            error_msg += std::to_string(len);
+            Logger::log(error_msg, LogLevel::Error);
+        }
     }
 
-    return std::string{};
+    // Return message does not include MSG_END
+    std::string ret_msg = msg_buffer.substr(0, end_pos);
+    // Update message buffer to exclude MSG_END
+    msg_buffer = msg_buffer.substr(end_pos+1);
+
+    Logger::log("Exiting UDS_Stream::recv()", LogLevel::Debug);
+
+    return ret_msg;
 }
 
 #endif

@@ -127,6 +127,7 @@ def createPermission():
     entity = request.args.get('entity', '', type=str)
     entity_type = request.args.get('entity_type', '', type=str)
     op = request.args.get('op', '', type=str)
+    loc = request.args.get('loc', '', type=str)
 
     # Validate input
 
@@ -136,7 +137,7 @@ def createPermission():
         return jsonify(result=6)
 
     # create_permission(...) returns 0 on success, so will we.
-    if (create_permission(set_name, entity, entity_type, op)):
+    if (create_permission(set_name, entity, entity_type, op, loc)):
         # Something went wrong.
         return jsonify(result=1)
     else:
@@ -153,9 +154,10 @@ def updatePermission():
     set_name = request.args.get('setName', '', type=str)
     entity = request.args.get('entity', '', type=str)
     op = request.args.get('op', '', type=str)
+    loc = request.args.get('loc', '', type=str)
 
     # update_permission(...) returns 0 on success, so will we.
-    if (update_permission(set_name, entity, op)):
+    if (update_permission(set_name, entity, op, loc)):
         # Something went wrong.
         return jsonify(result=1)
     else:
