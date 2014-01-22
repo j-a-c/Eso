@@ -50,7 +50,7 @@ int permission_to_daemon(char *set_name, char *entity)
 
     // Send primary key
     std::string(key){set_name};
-    key += DELIMITER;
+    key += MSG_DELIMITER;
     key.append(entity);
 
     uds_stream.send(key);

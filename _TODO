@@ -1,7 +1,9 @@
 grep -r TODO *
 
 current:
-	- config for esoca and esod
+	- config for esod, and esol (global config?)
+	- start client daemon request
+	- implement esod protocol
 
 All:
 	- authenticated communication

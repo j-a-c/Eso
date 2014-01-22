@@ -13,6 +13,7 @@
 #include "../../socket/tcp_socket.h"
 #include "../../socket/tcp_stream.h"
 #include "../../util/parser.h"
+#include "../../util/network.h"
 
 #include "../../database/mysql_conn.h"
 
@@ -43,6 +44,21 @@ const char * DistroDaemon::lock_path() const
 
 int DistroDaemon::work() const
 {
+    /*
+    std::vector<std::string> locations;
+    std::vector<std::string> ports;
+    // Read conifg file for distribution locations.
+    // TODO config this location somewhere
+    std::ifstream input( "/home/bose/Desktop/eso/global_config/locations_config" );
+    for (std::string line; getline(input, line); )
+    {
+        auto values = split_string(line, LOC_DELIMITER);
+
+        locations.push_back(values[0]);
+        ports.push_back(values[1]);
+    }
+    */
+
     // TODO
     TCP_Socket tcp_socket;
     if(tcp_socket.listen(std::string{"4344"}) != 0)
@@ -64,7 +80,7 @@ int DistroDaemon::work() const
         std::string received_string = tcp_stream.recv();
         Logger::log(std::string{"received: "} + received_string);
 
-        auto values = split_string(received_string, DELIMITER);
+        auto values = split_string(received_string, MSG_DELIMITER);
         MySQL_Conn conn;
         conn.insert_permission(values[0].c_str(), values[1].c_str(),
                 std::stol(values[2]), std::stol(values[3]));

@@ -91,7 +91,7 @@ int CADaemon::work() const
 
             // Tokenize the message we received.
             std::vector<std::string> recv_values = 
-                split_string(recv_msg, DELIMITER);
+                split_string(recv_msg, MSG_DELIMITER);
             
             const char *set_name = recv_values[0].c_str();
             const char *entity = recv_values[1].c_str();
@@ -120,13 +120,22 @@ int CADaemon::work() const
             distribution_msg.append(std::to_string(std::get<3>(query_result)));
 
 
-            TCP_Socket tcp_socket;
-            // TODO Read conifg file for distribution locations.
-            // TODO Send distribution_msg to all distribution servers.
-            TCP_Stream tcp_stream = tcp_socket.connect(
-                    std::string{"localhost"}, std::string{"4344"});
+            // Read conifg file for distribution locations.
+            // Send distribution_msg to all distribution servers.
+            // TODO config this location somewhere
+            std::ifstream input( "/home/bose/Desktop/eso/global_config/locations_config" );
+            for (std::string line; getline(input, line); )
+            {
+                auto values = split_string(line, LOC_DELIMITER);
 
-            tcp_stream.send(distribution_msg);
+                Logger::log(values[0], LogLevel::Debug);
+
+                TCP_Socket tcp_socket;
+                TCP_Stream tcp_stream = tcp_socket.connect(
+                        values[0], values[1]);
+
+                tcp_stream.send(distribution_msg);
+            }
 
         }
         else
