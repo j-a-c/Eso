@@ -1,0 +1,5 @@
+#!/bin/bash
+./central/esoca/esoca
+./distribution/esod/esod
+./local/esol/esol
+python central/app/app.py

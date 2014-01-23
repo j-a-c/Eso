@@ -2,12 +2,9 @@ grep -r TODO *
 
 current:
 	- config for esod, and esol (global config?)
-	- start client daemon request
-	- implement esod protocol
 
 All:
 	- authenticated communication
-	- add rows to creds & perms table to show propagation locations
 
 Central Auth:
 

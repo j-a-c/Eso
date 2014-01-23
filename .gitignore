@@ -7,10 +7,6 @@ _samples/*
 _test/*
 *_notes
 
-# Local Debug
-_start
-_stop
-
 # Executables
 distribution/esod/esod
 central/esoca/esoca
