@@ -2,6 +2,7 @@
 #define ESO_LOCAL_ESOL_LOCAL_DAEMON
 
 #include <string>
+#include <thread>
 #include <unistd.h>
 
 #include "../config/esol_config.h"
@@ -20,6 +21,8 @@ class LocalDaemon : public Daemon
     private:
         int work() const;
         const char * lock_path() const;
+        void handleTCP() const;
+        void handleUDP() const;
 };
 
 int LocalDaemon::start() const
@@ -27,6 +30,9 @@ int LocalDaemon::start() const
     return Daemon::start();
 }
 
+/*
+ * Return the path for the lock file.
+ */
 const char * LocalDaemon::lock_path() const
 {
     // TODO create config file?
@@ -34,7 +40,18 @@ const char * LocalDaemon::lock_path() const
     return path.c_str();
 }
 
-int LocalDaemon::work() const
+/*
+ * Handle incoming TCP connections.
+ */
+void LocalDaemon::handleTCP() const
+{
+
+}
+
+/*
+ * Handle incoming UDP connections.
+ */
+void LocalDaemon::handleUDP() const
 {
     UDS_Socket uds_socket{std::string{ESOL_SOCKET_PATH}};
     if (uds_socket.listen())
@@ -45,8 +62,7 @@ int LocalDaemon::work() const
 
     Logger::log("esol is listening successfully.", LogLevel::Debug);
 
-    // TODO multithread
-    // Accept client connections.
+    // TODO multithread?
     while (true)
     {
         UDS_Stream uds_stream = uds_socket.accept();
@@ -58,10 +74,22 @@ int LocalDaemon::work() const
         // TODO Implement protocol
 
 
-        Logger::log("Daemon is closing connection.");
+        Logger::log("esol is closing connection.");
     }
 
     Logger::log("accept() error", LogLevel::Error);
+
+}
+
+int LocalDaemon::work() const
+{
+    std::thread udp_thread(&LocalDaemon::handleUDP, this);
+    std::thread tcp_thread(&LocalDaemon::handleTCP, this);
+
+    // The threads should loop infinitely, so we will keep the main thread
+    // waiting.
+    udp_thread.join();
+    tcp_thread.join();
 }
 
 #endif
