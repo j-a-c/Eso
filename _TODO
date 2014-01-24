@@ -3,6 +3,13 @@ grep -r TODO *
 current:
 	- config for esod, and esol (global config?)
 	- java api
+		- encrypt
+			- sym / asym
+		- decrypt
+			- sym / asym
+		- sign
+		- hmac
+		- verify
 
 	- change exits to exceptions
 		- current: uds connect
@@ -67,3 +74,4 @@ Host Daemon:
 
 Client API:
     - jni interface
+	- easier way to load the shared library

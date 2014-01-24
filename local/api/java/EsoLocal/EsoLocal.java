@@ -36,6 +36,31 @@ public class EsoLocal
     private native boolean pingEsoLocal();
 
     /**
+     * TODO
+     */
+    public native byte[] encrypt(String set, byte[] data);
+
+    /**
+     * TODO
+     */
+    public native byte[] decrypt(String set, byte[] data);
+
+    /**
+     * TODO
+     */
+    public native byte[] sign(String set, byte[] data);
+
+    /**
+     * TODO
+     */
+    public native byte[] hmac(String set, byte[] data);
+
+    /**
+     * TODO
+     */
+    public native byte[] verify(String set, byte[] data);
+
+    /**
      * Private constructor to force user to test for service.
      * Will throw a RuntimeException if the local service cannot be reached.
      *

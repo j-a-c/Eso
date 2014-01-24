@@ -15,6 +15,46 @@ extern "C" {
 JNIEXPORT jboolean JNICALL Java_EsoLocal_EsoLocal_pingEsoLocal
   (JNIEnv *, jobject);
 
+/*
+ * Class:     EsoLocal_EsoLocal
+ * Method:    encrypt
+ * Signature: (Ljava/lang/String;[B)[B
+ */
+JNIEXPORT jbyteArray JNICALL Java_EsoLocal_EsoLocal_encrypt
+  (JNIEnv *, jobject, jstring, jbyteArray);
+
+/*
+ * Class:     EsoLocal_EsoLocal
+ * Method:    decrypt
+ * Signature: (Ljava/lang/String;[B)[B
+ */
+JNIEXPORT jbyteArray JNICALL Java_EsoLocal_EsoLocal_decrypt
+  (JNIEnv *, jobject, jstring, jbyteArray);
+
+/*
+ * Class:     EsoLocal_EsoLocal
+ * Method:    sign
+ * Signature: (Ljava/lang/String;[B)[B
+ */
+JNIEXPORT jbyteArray JNICALL Java_EsoLocal_EsoLocal_sign
+  (JNIEnv *, jobject, jstring, jbyteArray);
+
+/*
+ * Class:     EsoLocal_EsoLocal
+ * Method:    hmac
+ * Signature: (Ljava/lang/String;[B)[B
+ */
+JNIEXPORT jbyteArray JNICALL Java_EsoLocal_EsoLocal_hmac
+  (JNIEnv *, jobject, jstring, jbyteArray);
+
+/*
+ * Class:     EsoLocal_EsoLocal
+ * Method:    verify
+ * Signature: (Ljava/lang/String;[B)[B
+ */
+JNIEXPORT jbyteArray JNICALL Java_EsoLocal_EsoLocal_verify
+  (JNIEnv *, jobject, jstring, jbyteArray);
+
 #ifdef __cplusplus
 }
 #endif
