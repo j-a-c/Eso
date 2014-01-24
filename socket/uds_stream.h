@@ -48,8 +48,6 @@ UDS_Stream::~UDS_Stream()
  */
 void UDS_Stream::send(std::string msg) const
 {
-    Logger::log("Entering UDS_Stream::send()", LogLevel::Debug);
-
     // Manually append MSG_END here to allow receiver to distinguish between
     // messages.
     msg.append(MSG_END);
@@ -75,8 +73,6 @@ void UDS_Stream::send(std::string msg) const
         error_msg += std::to_string(len);
         Logger::log(error_msg, LogLevel::Error);
     }
-
-    Logger::log("Exiting UDS_Stream::send()", LogLevel::Debug);
 }
 
 /* 
@@ -84,8 +80,6 @@ void UDS_Stream::send(std::string msg) const
  */
 std::string UDS_Stream::recv()
 {
-    Logger::log("Entering UDS_Stream::recv()", LogLevel::Debug);
-
     char recv_msg[MAX_LENGTH];
     std::size_t end_pos;
     // Read until we find a complete message.
@@ -109,8 +103,6 @@ std::string UDS_Stream::recv()
     std::string ret_msg = msg_buffer.substr(0, end_pos);
     // Update message buffer to exclude MSG_END
     msg_buffer = msg_buffer.substr(end_pos+1);
-
-    Logger::log("Exiting UDS_Stream::recv()", LogLevel::Debug);
 
     return ret_msg;
 }

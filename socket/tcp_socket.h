@@ -18,6 +18,7 @@
 class TCP_Socket
 {
 public:
+    ~TCP_Socket();
     // Must be called before accept().
     int listen(std::string port);
     // Accept an incoming connection
@@ -29,6 +30,11 @@ private:
     struct sockaddr_in servaddr;  //  Socket address structure.
     const int MAX_QUEUE_SIZE = 5;
 };
+
+TCP_Socket::~TCP_Socket()
+{
+    close(socket_fd);
+}
 
 /*
  * Listens to the designated port.
@@ -80,6 +86,13 @@ TCP_Stream TCP_Socket::accept()
     // TODO error checking
 
     int conn_fd = ::accept(socket_fd, nullptr, nullptr);
+
+    if (conn_fd == -1)
+    {
+        std::string error_msg{"Error in TCP_Socket::accept() "};
+        error_msg.append(std::to_string(errno));
+        Logger::log(error_msg, LogLevel::Error);
+    }
    
     return TCP_Stream{conn_fd};
 }

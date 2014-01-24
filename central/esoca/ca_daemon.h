@@ -50,21 +50,21 @@ int CADaemon::work() const
     UDS_Socket uds_socket{std::string{ESOCA_SOCKET_PATH}};
     if(uds_socket.listen())
     {
-        Logger::log("Error in esoca attempting to listen.");
+        Logger::log("Error in esoca attempting to listen to UDS.");
         exit(1);
     }
     
-    Logger::log("esoca is listening successfully.", LogLevel::Debug);
+    Logger::log("esoca is listening to UDS successfully.", LogLevel::Debug);
 
     // TODO multithread
     // Accept client connections.
     while (true)
     {
-        Logger::log("esoca is waiting for a new connection.", LogLevel::Debug);
+        Logger::log("esoca is waiting for a UDS connection.", LogLevel::Debug);
 
         UDS_Stream uds_stream = uds_socket.accept();
 
-        Logger::log("esoca accepted new connection.", LogLevel::Debug);
+        Logger::log("esoca accepted new UDS connection.", LogLevel::Debug);
 
         // TODO authenticate to make sure it is our web requesting access
 
@@ -84,7 +84,6 @@ int CADaemon::work() const
         // Check for valid request.
         if (recv_msg == UPDATE_PERM)
         {
-            Logger::log(UPDATE_PERM, LogLevel::Debug);
             recv_msg = uds_stream.recv();
             Logger::log(recv_msg);
 
@@ -143,7 +142,7 @@ int CADaemon::work() const
             Logger::log("Invalid request.", LogLevel::Error);
         }
 
-        Logger::log("esoca is closing connection.", LogLevel::Debug);
+        Logger::log("esoca is closing UDS connection.", LogLevel::Debug);
     }
 
     Logger::log("accept() error", LogLevel::Error);
