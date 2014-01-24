@@ -1,3 +1,5 @@
+import EsoLocal.*;
+
 /**
  * @author Joshua A. Campbell
  *

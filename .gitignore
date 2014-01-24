@@ -30,3 +30,7 @@ default.log
 *.lai
 *.la
 *.a
+
+# Java
+*.class
+*.jar

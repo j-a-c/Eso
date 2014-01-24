@@ -1,14 +1,15 @@
 #include <jni.h>
-#include "EsoLocal.h"
+#include "EsoLocal_EsoLocal.h"
 #include <iostream>
 
-#include "../../config/esol_config.h"
-#include "../../../global_config/message_config.h"
-#include "../../../socket/exception.h"
-#include "../../../socket/uds_socket.h"
-#include "../../../socket/uds_stream.h"
+#include "../../../config/esol_config.h"
+#include "../../../../global_config/message_config.h"
+#include "../../../../socket/exception.h"
+#include "../../../../socket/uds_socket.h"
+#include "../../../../socket/uds_stream.h"
 
-JNIEXPORT jboolean JNICALL Java_EsoLocal_pingEsoLocal (JNIEnv *, jobject)
+JNIEXPORT jboolean JNICALL Java_EsoLocal_EsoLocal_pingEsoLocal (JNIEnv *, jobject)
+
 {
     UDS_Socket uds_socket{std::string{ESOL_SOCKET_PATH}};
 

@@ -1,3 +1,5 @@
+package EsoLocal;
+
 import java.lang.reflect.Field;
 
 /**
@@ -6,13 +8,15 @@ import java.lang.reflect.Field;
  * The local Eso service. This service is used when the client does not have
  * permission to retrieve the credentials.
  */
-class EsoLocal
+public class EsoLocal
 {
     // A little hack to find the dynamic library.
     static 
     {
-        System.setProperty("java.library.path", "." );
-         
+        // TODO need to fix how the to find the library.
+        // Perhaps find the JAR file location and go from there?
+        System.setProperty("java.library.path", "./lib" );
+
         try
         {
             Field fieldSysPath = 
