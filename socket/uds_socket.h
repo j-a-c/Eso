@@ -4,7 +4,9 @@
 #include <errno.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <unistd.h>
 
+#include "exception.h"
 #include "uds_stream.h"
 #include "../logger/logger.h"
 
@@ -95,8 +97,6 @@ UDS_Stream UDS_Socket::accept()
         int err = errno;
         Logger::log("Error accepting connection.", LogLevel::Error);
         
-
-        
         // For error-reporting purposes.
         switch(err)
         {
@@ -133,7 +133,7 @@ UDS_Stream UDS_Socket::connect()
         // Error connecting to socket.
         Logger::log("Error connecting to host in UDS_Socket::connect().", 
                 LogLevel::Error);
-        exit(1);
+        throw connect_exception();
     }
 
     return UDS_Stream{socket_fd, sock_info, sock_len};

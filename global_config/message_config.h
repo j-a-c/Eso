@@ -13,6 +13,9 @@ std::string UPDATE_PERM{"update_permission"};
 // Request preceding permissions that want to be updated.
 std::string GET_PERM{"get_permission"};
 
+// Used to ping one of the services.
+std::string PING{"ping"};
+
 // Terminates the current message.
 // Message should NOT ever contain this character, as it is used
 // internally by the socket streams to delimiter buffered messages.

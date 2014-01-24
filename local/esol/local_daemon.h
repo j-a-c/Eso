@@ -103,8 +103,8 @@ void LocalDaemon::handleTCP() const
  */
 void LocalDaemon::handleUDS() const
 {
-    UDS_Socket uds_socket{std::string{ESOL_SOCKET_PATH}};
-    if (uds_socket.listen())
+    UDS_Socket uds_in_socket{std::string{ESOL_SOCKET_PATH}};
+    if (uds_in_socket.listen())
     {
         Logger::log("Error in esol attempting to listen to UDS.");
         exit(1);
@@ -117,18 +117,28 @@ void LocalDaemon::handleUDS() const
     {
         Logger::log("esol is waiting for UDS connection.", LogLevel::Debug);
 
-        UDS_Stream uds_stream = uds_socket.accept();
+        UDS_Stream uds_stream = uds_in_socket.accept();
 
         Logger::log("esol accepted new UDS connection.", LogLevel::Debug);
 
         // TODO authenticate by checking pid
 
-        // TODO Implement protocol
+        // Implement protocol
 
+        std::string received_string = uds_stream.recv();
+        Logger::log(std::string{"Requested from esol: "} + received_string);
 
+        if (received_string == PING)
+        {
+            uds_stream.send(PING);
+        }
+        else
+        {
+            // TODO 
+            // Invalid request.
+        }
         Logger::log("esol is closing UDS connection.");
     }
-
     Logger::log("UDS accept() error", LogLevel::Error);
 }
 

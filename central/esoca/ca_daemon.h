@@ -137,6 +137,10 @@ int CADaemon::work() const
             }
 
         }
+        else if (recv_msg == PING)
+        {
+            uds_stream.send(PING);
+        }
         else
         {
             Logger::log("Invalid request.", LogLevel::Error);

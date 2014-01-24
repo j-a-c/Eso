@@ -118,6 +118,10 @@ int DistroDaemon::work() const
             // Package and send results
         
         }
+        else if (received_string == PING)
+        {
+            incoming_stream.send(PING);
+        }
         else
         {
             // TODO
