@@ -3,7 +3,9 @@ grep -r TODO *
 current:
 	- config for esod, and esol (global config?)
 	- java api
+
 	- change exits to exceptions
+		- current: uds connect
 
 All:
 	- authenticated communication

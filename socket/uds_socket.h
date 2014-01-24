@@ -125,6 +125,8 @@ UDS_Stream UDS_Socket::accept()
 
 /*
  * Connect to the location specified when the UDS_Socket was created.
+ *
+ * @throws connect_exception
  */
 UDS_Stream UDS_Socket::connect()
 {

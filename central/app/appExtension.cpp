@@ -1,6 +1,8 @@
 // Need to include <Python.h> first!
 #include <Python.h>
 
+#include <exception>
+
 #include "../config/esoca_config.h"
 #include "../config/mysql_config.h"
 #include "../../database/mysql_conn.h"
@@ -37,24 +39,32 @@ int permission_to_daemon(char *set_name, char *entity, char *loc)
     // Socket to the CA daemon.
     UDS_Socket uds_socket{std::string{ESOCA_SOCKET_PATH}};
 
-    UDS_Stream uds_stream = uds_socket.connect();
+    try
+    {
+        UDS_Stream uds_stream = uds_socket.connect();
 
-    // Send permission request
-    std::string msg = UPDATE_PERM;
-    uds_stream.send(msg);
+        // Send permission request
+        std::string msg = UPDATE_PERM;
+        uds_stream.send(msg);
 
-    // Send primary key
-    std::string(key){set_name};
-    key += MSG_DELIMITER;
-    key.append(entity);
-    key += MSG_DELIMITER;
-    key.append(loc);
+        // Send primary key
+        std::string(key){set_name};
+        key += MSG_DELIMITER;
+        key.append(entity);
+        key += MSG_DELIMITER;
+        key.append(loc);
 
-    Logger::log(std::string{"Sending to esoca: "} + key, LogLevel::Debug);
+        Logger::log(std::string{"Sending to esoca: "} + key, LogLevel::Debug);
 
-    uds_stream.send(key);
+        uds_stream.send(key);
 
-    return 0;
+        return 0;
+    }
+    catch (std::exception& e)
+    {
+        return 1;
+    }
+
 }
 
 
