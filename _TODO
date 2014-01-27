@@ -75,3 +75,8 @@ Host Daemon:
 Client API:
     - jni interface
 	- easier way to load the shared library
+
+crypto:
+	- aes.h
+		- EVP_EncryptInit_ex & Decrypt
+		- use IV
