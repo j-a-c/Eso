@@ -1,6 +1,8 @@
 grep -r TODO *
 
 current:
+	- encrypt api
+
 	- config for esod, and esol (global config?)
 	- java api
 		- encrypt
@@ -16,6 +18,8 @@ current:
 
 All:
 	- authenticated communication
+
+	- using '!' as message terminator means we cannot send 'hello world!'...
 
 Central Auth:
 
@@ -76,7 +80,10 @@ Client API:
     - jni interface
 	- easier way to load the shared library
 
-crypto:
+Crypto:
 	- aes.h
 		- EVP_EncryptInit_ex & Decrypt
 		- use IV
+
+Bugs:
+	- REQUESt_ENCRYPT message is being sent (or received) twice by esol

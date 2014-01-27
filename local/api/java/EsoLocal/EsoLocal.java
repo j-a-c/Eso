@@ -38,27 +38,27 @@ public class EsoLocal
     /**
      * TODO
      */
-    public native byte[] encrypt(String set, byte[] data);
+    public native byte[] encrypt(String set, byte[] data, int version);
 
     /**
      * TODO
      */
-    public native byte[] decrypt(String set, byte[] data);
+    public native byte[] decrypt(String set, byte[] data, int version);
 
     /**
      * TODO
      */
-    public native byte[] sign(String set, byte[] data);
+    public native byte[] sign(String set, byte[] data, int version);
 
     /**
      * TODO
      */
-    public native byte[] hmac(String set, byte[] data);
+    public native byte[] hmac(String set, byte[] data, int version);
 
     /**
      * TODO
      */
-    public native byte[] verify(String set, byte[] data);
+    public native byte[] verify(String set, byte[] data, int version);
 
     /**
      * Private constructor to force user to test for service.

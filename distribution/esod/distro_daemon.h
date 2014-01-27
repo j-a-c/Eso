@@ -87,6 +87,7 @@ int DistroDaemon::work() const
             received_string = incoming_stream.recv();
             Logger::log(std::string{"esod received: "} + received_string);
 
+            // set, entity, entity_type, op, loc
             auto values = split_string(received_string, MSG_DELIMITER);
 
             // Update distribution server database.

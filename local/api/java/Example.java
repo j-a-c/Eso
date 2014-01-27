@@ -28,6 +28,11 @@ class Example
         }
     }
 
+    public byte[] symmetricEncrypt(String setName, String secretMessage, int version)
+    {
+        return eso.encrypt(setName, secretMessage.getBytes(), 1);
+    }
+
     /**
      * Driver for the examples.
      */
@@ -37,6 +42,13 @@ class Example
 
         // Attempt to connect to the Eso local service.
         example.getService();
+        
+        // Sample set name and a secret message.
+        String setName = "com.joshuac";
+        String secretMessage = "Hello World";
+
+        // Encrypt the secret message.
+        byte[] encryptedMsg = example.symmetricEncrypt(setName, secretMessage, 1);
     }
 
 }

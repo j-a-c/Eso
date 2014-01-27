@@ -102,18 +102,19 @@ int CADaemon::work() const
             // Get the current result from the database.
             // We don't trust whoever requested us just in case.
             MySQL_Conn conn;
-            auto query_result = conn.get_permission(set_name, entity, loc);
+            Permission query_result = conn.get_permission(set_name, entity, loc);
 
             // Form the message to send from the query result.
-            std::string distribution_msg{std::get<0>(query_result)};
+            // set, entity, entity_type, op, loc
+            std::string distribution_msg{query_result.set_name};
             distribution_msg += ";";
-            distribution_msg.append(std::get<1>(query_result));
+            distribution_msg.append(query_result.entity);
             distribution_msg += ";";
-            distribution_msg.append(std::to_string(std::get<2>(query_result)));
+            distribution_msg.append(std::to_string(query_result.entity_type));
             distribution_msg += ";";
-            distribution_msg.append(std::to_string(std::get<3>(query_result)));
+            distribution_msg.append(std::to_string(query_result.op));
             distribution_msg += ";";
-            distribution_msg.append(std::get<4>(query_result));
+            distribution_msg.append(query_result.loc);
 
 
             // Read conifg file for distribution locations.

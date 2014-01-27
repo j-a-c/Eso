@@ -132,6 +132,25 @@ void LocalDaemon::handleUDS() const
         {
             uds_stream.send(PING);
         }
+        else if (received_string == REQUEST_ENCRYPT)
+        {
+            received_string = uds_stream.recv();
+            // TODO Why is the request string being set twice?
+            received_string = uds_stream.recv();
+
+            std::string log_msg{"esol: Encrypt params: "};
+            log_msg += received_string;
+            Logger::log(log_msg, LogLevel::Debug);
+
+            auto values = split_string(received_string, MSG_DELIMITER); 
+
+            // Check permissions to see if encrypt is allowed. (check
+            // permission function?)
+
+            // Get credential type.
+            // Get encryption key.
+            // Encrypt and return ciphertext.
+        }
         else
         {
             // TODO 

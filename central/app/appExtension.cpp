@@ -129,8 +129,7 @@ static PyObject* get_all_credentials(PyObject* self, PyObject* args)
 
     // Attempt to get credentials.
     MySQL_Conn conn;
-    std::vector<std::tuple<char*, unsigned int, unsigned int, char *>> 
-        results = conn.get_all_credentials(set_name);
+    std::vector<Credential> results = conn.get_all_credentials(set_name);
 
     // List to return.
     PyObject *pyList = PyList_New(0);
@@ -138,11 +137,11 @@ static PyObject* get_all_credentials(PyObject* self, PyObject* args)
     PyObject *pyTup;
     
     // Populate the list.
-    for (auto &tup : results) 
+    for (auto &cred : results) 
     {
         // TODO check for initialization
-        pyTup = Py_BuildValue("(siis)", std::get<0>(tup), std::get<1>(tup), 
-                std::get<2>(tup), std::get<3>(tup));
+        pyTup = Py_BuildValue("(siis)", cred.set_name.c_str(), cred.version, 
+                cred.type, cred.expiration.c_str());
 
         // TODO check for initialization
         PyList_Append(pyList, pyTup);
@@ -170,8 +169,7 @@ static PyObject* get_all_permissions(PyObject* self, PyObject* args)
 
     // Attempt to get permissions
     MySQL_Conn conn;
-    std::vector<std::tuple<char*, unsigned int, unsigned int, char*>> results = 
-        conn.get_all_permissions(set_name);
+    std::vector<Permission> results = conn.get_all_permissions(set_name);
 
     // List to return.
     PyObject *pyList = PyList_New(0);
@@ -179,11 +177,11 @@ static PyObject* get_all_permissions(PyObject* self, PyObject* args)
     PyObject *pyTup;
     
     // Populate the list.
-    for (auto &tup : results) 
+    for (auto &perm : results) 
     {
         // TODO check for initialization
-        pyTup = Py_BuildValue("(siis)", std::get<0>(tup), std::get<1>(tup), 
-                std::get<2>(tup), std::get<3>(tup));
+        pyTup = Py_BuildValue("(siis)", perm.entity.c_str(), perm.entity_type,
+                perm.op, perm.loc.c_str());
 
         // TODO check for initialization
         PyList_Append(pyList, pyTup);

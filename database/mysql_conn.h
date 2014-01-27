@@ -2,11 +2,12 @@
 #define ESO_DATABASE_MYSQL_CONN
 
 #include <string.h>
-#include <tuple>
 #include <vector>
 
+#include "credential.h"
 #include "db_error.h"
 #include "db_types.h"
+#include "permission.h"
 #include "../crypto/aes.h"
 #include "../crypto/base64.h"
 #include "../crypto/memory.h"
@@ -86,18 +87,15 @@ public:
     int delete_credential() const;
 
     // Get all credentials associated with the given set name. 
-    std::vector<std::tuple<char *, unsigned int, unsigned int, 
-            char *>> get_all_credentials(const char *set_name) const;
+    std::vector<Credential> get_all_credentials(const char *set_name) const;
 
     // Get the permission with the given set name, enitity, and location.
     // This is the primary key for the permissions table.
-    std::tuple<char *, char *, unsigned int, unsigned int, char *> 
-            get_permission(const char * set_name, const char *entity, 
+    Permission get_permission(const char * set_name, const char *entity,
             const char *loc) const;
 
     // Get all permissions associated with the given set name.
-    std::vector<std::tuple<char *, unsigned int, unsigned int, char *>> 
-            get_all_permissions(const char *set_name) const;
+    std::vector<Permission> get_all_permissions(const char *set_name) const;
 
     ~MySQL_Conn();
 
@@ -385,17 +383,14 @@ int MySQL_Conn::delete_credential() const
 }
 
 /*
- * Returns a vector of tuples representing the entries from query.
- * The tuple entries are (set_name, version, type, operation).
+ * Returns a vector of Credentials representing the entries from query.
  */
-std::vector<std::tuple<char *, unsigned int, unsigned int, 
-            char *>> MySQL_Conn::get_all_credentials(const char * set_name) const
+std::vector<Credential> MySQL_Conn::get_all_credentials(const char * set_name) const
 {
     Logger::log("Entering MySQL_Conn::get_all_credentials()", LogLevel::Debug);
 
     // Return value.
-    std::vector<std::tuple<char *, unsigned int, unsigned int, 
-        char *>> results;
+    std::vector<Credential> results;
 
     // Build query.
     std::string query{"SELECT set_name, version, type, expiration FROM "};
@@ -411,10 +406,17 @@ std::vector<std::tuple<char *, unsigned int, unsigned int,
 
     // Pack query results into return value.
     MYSQL_ROW mysqlRow;
-    while(mysqlRow = mysql_fetch_row(mysqlResult)) // row pointer in the result set
-        results.push_back(std::make_tuple(mysqlRow[0], 
-                    strtol(mysqlRow[1], nullptr, 0), 
-                    strtol(mysqlRow[2], nullptr, 0), mysqlRow[3]));
+    // Row pointer in the result set
+    while(mysqlRow = mysql_fetch_row(mysqlResult))
+    {
+        Credential cred;
+        cred.set_name = std::string{mysqlRow[0]};
+        cred.version = strtol(mysqlRow[1], nullptr, 0);
+        cred.type = strtol(mysqlRow[2], nullptr, 0);
+        cred.expiration = std::string{mysqlRow[3]};
+
+        results.push_back(cred);
+    }
     
     mysql_free_result(mysqlResult); 
     
@@ -424,24 +426,20 @@ std::vector<std::tuple<char *, unsigned int, unsigned int,
 }
 
 /*
- * Returns a tuple representing the entries from the query.
- * The order of the tuple values is as follows below.
- * There should only be one tuple because (set_name, entity, loc) is the primary 
- * key for the permissions table.
+ * Returns a Permission representing the entries from the query.
+ * There should only be one Permission because (set_name, entity, loc) is the 
+ * primary key for the permissions table.
+
     set_name VARCHAR(255) NOT NULL,
     entity VARCHAR(32) NOT NULL,
     entity_type INT UNSIGNED NOT NULL,
     op INT UNSIGNED NOT NULL,
     loc VARCHAR(300) NOT NULL
 */
-std::tuple<char *, char *, unsigned int, unsigned int, char *> 
-        MySQL_Conn::get_permission(const char *set_name, const char *entity,
+Permission MySQL_Conn::get_permission(const char *set_name, const char *entity,
                 const char *loc) const
 {
     Logger::log("Entering MySQL_Conn::get_permissions()", LogLevel::Debug);
-
-    // Return value.
-    std::tuple<char *, char *, unsigned int, unsigned int, char *> result;
 
     // Build query.
     std::string query{"SELECT set_name, entity, entity_type, op, loc FROM "}; 
@@ -459,15 +457,20 @@ std::tuple<char *, char *, unsigned int, unsigned int, char *>
     // Get results.
     MYSQL_RES* mysqlResult = get_result(query.c_str());
 
+    // Return value.
+    Permission result;
+
     // Row pointer in the result set.
     MYSQL_ROW mysqlRow;
     // Pack query results into return value.
     // There should only be one return value, since (set_name,entity) is the
     // primary key for the permissions table.
     mysqlRow = mysql_fetch_row(mysqlResult);
-    result = std::make_tuple(mysqlRow[0], mysqlRow[1],
-            strtol(mysqlRow[2], nullptr, 0), strtol(mysqlRow[3], nullptr, 0),
-            mysqlRow[4]);
+    result.set_name= std::string{mysqlRow[0]};
+    result.entity = std::string{mysqlRow[1]};
+    result.entity_type = strtol(mysqlRow[2], nullptr, 0);
+    result.op = strtol(mysqlRow[3], nullptr, 0);
+    result.loc = std::string{mysqlRow[4]};
     
     mysql_free_result(mysqlResult); 
 
@@ -479,17 +482,12 @@ std::tuple<char *, char *, unsigned int, unsigned int, char *>
 
 
 /*
- * Returns a vector of tuples representing the entries from query.
- * The tuple entries are (entity, entity_type, operation, loc).
+ * Returns a vector of Permission representing the entries from query.
  */
-std::vector<std::tuple<char *, unsigned int, unsigned int, char *>>
+std::vector<Permission>
         MySQL_Conn::get_all_permissions(const char * set_name) const
 {
     Logger::log("Entering MySQL_Conn::get_all_permissions()", LogLevel::Debug);
-
-    // Return value.
-    std::vector<std::tuple<char *, unsigned int, 
-        unsigned int, char *>> results;
 
     // Build query.
     std::string query{"SELECT entity, entity_type, op, loc FROM "}; 
@@ -503,14 +501,22 @@ std::vector<std::tuple<char *, unsigned int, unsigned int, char *>>
     // Get results.
     MYSQL_RES* mysqlResult = get_result(query.c_str());
 
+    // Return value.
+    std::vector<Permission> results;
+
     // Row pointer in the result set
     MYSQL_ROW mysqlRow;
     // Pack query results into return value.
     while(mysqlRow = mysql_fetch_row(mysqlResult)) 
-        results.push_back(std::make_tuple(mysqlRow[0], 
-                    strtol(mysqlRow[1], nullptr, 0), 
-                    strtol(mysqlRow[2], nullptr, 0),
-                    mysqlRow[3]));
+    {
+        Permission perm;
+        perm.entity = std::string{mysqlRow[0]};
+        perm.entity_type = strtol(mysqlRow[1], nullptr, 0);
+        perm.op = strtol(mysqlRow[2], nullptr, 0);
+        perm.loc = std::string{mysqlRow[3]};
+
+        results.push_back(perm);
+    }
     
     mysql_free_result(mysqlResult); 
 

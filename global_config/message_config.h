@@ -16,6 +16,8 @@ std::string GET_PERM{"get_permission"};
 // Used to ping one of the services.
 std::string PING{"ping"};
 
+std::string REQUEST_ENCRYPT("request_encrypt");
+
 // Terminates the current message.
 // Message should NOT ever contain this character, as it is used
 // internally by the socket streams to delimiter buffered messages.
