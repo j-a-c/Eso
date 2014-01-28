@@ -8,10 +8,6 @@
 #include "db_error.h"
 #include "db_types.h"
 #include "permission.h"
-#include "../crypto/aes.h"
-#include "../crypto/base64.h"
-#include "../crypto/memory.h"
-#include "../crypto/rsa.h"
 #include "../logger/logger.h"
 
 // Include these after all other files because of the min/max macro problems
@@ -76,17 +72,18 @@ public:
     int delete_permission(const char* set_name, const char* entity, 
             const char * loc) const;
 
-    // Create a new credential.
-    int create_credential(const char *set_name, 
-            const unsigned int version, const char *expiration, 
-            const char *primary, const char *secondary, 
-            const unsigned int type, const char *algo, 
-            const unsigned int size) const;
+    // Creates a new credential, using all the input fields from the given
+    // credential.
+    int create_credential(Credential);
     
     // TODO
     int delete_credential() const;
 
+    // Get the credential with the given primary key.
+    Credential get_credential(const char *set_name, unsigned int version);
+
     // Get all credentials associated with the given set name. 
+    // Only the set_name, version, type, and expiration fields will be filled.
     std::vector<Credential> get_all_credentials(const char *set_name) const;
 
     // Get the permission with the given set name, enitity, and location.
@@ -251,16 +248,12 @@ int MySQL_Conn::delete_permission(const char *set_name, const char *entity,
     return ret;
 }
 
-/*
- * Creates a new credential.
+/**
+ * Creates a new credential in the database from the given credential.
+ * Returns 0 on success.
  */
-int MySQL_Conn::create_credential(const char *set_name, 
-        const unsigned int version, const char *expiration, 
-        const char *primary, const char *secondary, 
-        const unsigned int type, const char *algo, 
-        const unsigned int size) const
+int MySQL_Conn::create_credential(Credential cred)
 {
-    
     Logger::log("Entering MySQL_Conn::create_credential()", LogLevel::Debug);
 
     // TODO query to see if set_name already exists
@@ -269,99 +262,62 @@ int MySQL_Conn::create_credential(const char *set_name,
     // TODO securely encrypt and mac inserted values.
     std::string query{"INSERT INTO "};
     query.append(CRED_LOC);
-    query += "(set_name, version, expiration, p_owner, s_owner, type,";
-    query += " algo, size, ";
-    // Credential type
-    switch(type)
+    query += "(set_name, version, type, algo, size, p_owner, s_owner, ";
+    query += "expiration, ";
+    switch (cred.type)
     {
         case USERPASS:
-            // TODO
+            query += "user, pass";
             break;
         case SYMMETRIC:
-            query += "pubKey, priKey";
-            break;
-        case ASYMMETRIC:
             query += "symKey";
             break;
-        default:
-            Logger::log("Invalid type: " + std::to_string(type));
-            return INVALID_PARAMS;
+        case ASYMMETRIC:
+            query += "priKey, pubKey";
+            break;
     }
-    query += ")";
-    query += " VALUES ('";
-    query.append(set_name);
+    query += ") VALUES('";
+    query += cred.set_name;
     query += "', ";
-    query.append(std::to_string(version));
-    query += ", '";
-    query.append(expiration); 
-    query += "', '";
-    query.append(primary); 
-    query += "', '";
-    query.append(secondary);
-    query += "', ";
-    query.append(std::to_string(type));
-    query += ", '";
-    query.append(algo);
-    query += "', ";
-    query.append(std::to_string(size));
+    query.append(std::to_string(cred.version));
     query += ", ";
-    // Credential data - no default case since an invalid param was handled
-    // previously.
-    if (type == USERPASS)
+    query.append(std::to_string(cred.type));
+    query += ", '";
+    query += cred.algo;
+    query += "', ";
+    query.append(std::to_string(cred.size));
+    query += ", '";
+    query += cred.p_owner;
+    query += "', '";
+    query += cred.s_owner;
+    query += "', '";
+    query += cred.expiration;
+    query += "', ";
+    switch (cred.type)
     {
-        // TODO implement
-        // TODO encrypt + mac
-    }
-    else if (type == SYMMETRIC)
-    {
-        // Get keys
-        auto key_store = get_new_RSA_pair(size);
-        unsigned char *pubKey = std::get<0>(key_store);
-        int pubLen = std::get<1>(key_store);
-        unsigned char *priKey = std::get<2>(key_store);
-        int priLen = std::get<3>(key_store);
-
-        // Encode keys
-        unsigned char *pubKey_enc = base64_encode(pubKey, pubLen);
-        unsigned char *priKey_enc = base64_encode(priKey, priLen);
-
-        // Add to query
-        // TODO encrypt + mac
-        query += "'";
-        query.append(reinterpret_cast<const char *>(pubKey_enc));
-        query += "', ";
-        query += "'";
-        query.append(reinterpret_cast<const char *>(priKey_enc));
-        query += "'";
-
-        // Free keys
-        free((void*)secure_memset(pubKey, 0, pubLen));
-        free((void*)secure_memset(pubKey_enc, 0, 
-                    strlen(reinterpret_cast<const char *>(pubKey_enc))));
-        free((void*)secure_memset(priKey, 0, priLen));
-        free((void*)secure_memset(priKey_enc, 0, 
-                    strlen(reinterpret_cast<const char *>(priKey_enc))));
-    }
-    else if (type == ASYMMETRIC)
-    {
-        query += "'";
-        // Get key and encode.
-        unsigned char * key = get_new_AES_key(size);
-        unsigned char * enc = base64_encode(key, size/8);
-
-        // TODO encrypt + mac
-        query.append(reinterpret_cast<const char *>(enc));
-
-        // Securely erase key and free
-        free((void*)secure_memset(key, 0, size/8)); // size is in bits
-        free((void*)secure_memset(enc, 0, 
-                    strlen(reinterpret_cast<const char *>(enc))));
-
-        query += "'";
+        case USERPASS:
+            query += "'";
+            query += cred.user;
+            query += "', '";
+            query += cred.pass;
+            query += "'";
+            break;
+        case SYMMETRIC:
+            query += "'";
+            query += cred.symKey;
+            query += "'";
+            break;
+        case ASYMMETRIC:
+            query += "'";
+            query += cred.priKey;
+            query += "', '";
+            query += cred.pubKey;
+            query += "'";
+            break;
     }
     query += ")";
 
-    Logger::log(query.c_str());
+    Logger::log(query);
 
     int ret = perform_query(query.c_str());
 
@@ -372,14 +328,81 @@ int MySQL_Conn::create_credential(const char *set_name,
     Logger::log(log_msg, LogLevel::Debug);
 
     return ret;
-
 }
 
+
+/**
+ * TODO
+ */
 int MySQL_Conn::delete_credential() const
 {
     // TODO
     return 0;
 
+}
+
+/**
+ * Returns the credential with the given primary key (set_name, version).
+ * May return an empty credential if no such credential exists in the current
+ * database.
+ */
+Credential MySQL_Conn::get_credential(const char *set_name, 
+        unsigned int version)
+{
+    Logger::log("Entering MySQL_Conn::get_credential()", LogLevel::Debug);
+
+    Credential cred;
+
+    // Build query.
+    std::string query{"SELECT set_name, version, type, algo, size, expiration, "};
+    query += "symKey, priKey, pubKey, user, pass, p_owner, s_owner FROM ";
+    query += CRED_LOC;
+    query += " WHERE set_name='";
+    query.append(set_name);
+    query += "' AND version=";
+    query.append(std::to_string(version));
+    query +=";";
+
+    Logger::log(query);
+
+    // Get results.
+    MYSQL_RES* mysqlResult = get_result(query.c_str());
+
+    // Pack query results into return value.
+    MYSQL_ROW mysqlRow;
+    // Row pointer in the result set
+    // There may be 0 or 1 results.
+    while(mysqlRow = mysql_fetch_row(mysqlResult))
+    {
+        cred.set_name = std::string{mysqlRow[0]};
+        cred.version = strtol(mysqlRow[1], nullptr, 0);
+        cred.type = strtol(mysqlRow[2], nullptr, 0);
+        cred.algo = std::string{mysqlRow[3]};
+        cred.size = strtol(mysqlRow[4], nullptr, 0);
+        cred.expiration = std::string{mysqlRow[5]};
+        switch (cred.type)
+        {
+            case SYMMETRIC:
+                cred.symKey = std::string{mysqlRow[6]};
+                break;
+            case ASYMMETRIC:
+                cred.priKey = std::string{mysqlRow[7]};
+                cred.pubKey = std::string{mysqlRow[8]};
+                break;
+            case USERPASS:
+                cred.user = std::string{mysqlRow[9]};
+                cred.pass = std::string{mysqlRow[10]};
+                break;
+        }
+        cred.p_owner = std::string{mysqlRow[11]};
+        cred.s_owner = std::string{mysqlRow[12]};
+    }
+    
+    mysql_free_result(mysqlResult); 
+
+    Logger::log("Exiting MySQL_Conn::get_credential()", LogLevel::Debug);
+
+    return cred;
 }
 
 /*

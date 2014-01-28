@@ -178,9 +178,11 @@ static unsigned int raw_base64_decode(unsigned char *in, unsigned char *out,
  *
  * Do not forget that the return value was malloc'd internally!
  */
-unsigned char *base64_decode(unsigned char *buf, size_t *len, int strict,
-        int *err) 
+unsigned char *base64_decode(unsigned char *buf, size_t *len) 
 {
+    int error;
+    int *err = &error;
+
     unsigned char *outbuf;
     outbuf = (unsigned char *)malloc(3 * 
             (strlen(reinterpret_cast<const char *>(buf)) / 4 + 1));
@@ -191,7 +193,7 @@ unsigned char *base64_decode(unsigned char *buf, size_t *len, int strict,
         return 0;
     }
 
-    *len = raw_base64_decode(buf, outbuf, strict, err);
+    *len = raw_base64_decode(buf, outbuf, 1, err);
     if (*err) 
     {
         free(outbuf);

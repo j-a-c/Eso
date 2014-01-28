@@ -8,6 +8,11 @@
 
 #include "../config/esoca_config.h"
 #include "../config/mysql_config.h"
+#include "../../crypto/aes.h"
+#include "../../crypto/base64.h"
+#include "../../crypto/memory.h"
+#include "../../crypto/password.h"
+#include "../../crypto/rsa.h"
 #include "../../daemon/daemon.h"
 #include "../../database/mysql_conn.h"
 #include "../../logger/logger.h"
@@ -29,6 +34,8 @@ class CADaemon : public Daemon
     private:
         int work() const;
         const char * lock_path() const;
+        // Propagates a message to the distribution servers.
+        void propagate(const std::string msg_type, const std::string msg) const;
 };
 
 int CADaemon::start() const
@@ -41,6 +48,36 @@ const char * CADaemon::lock_path() const
     // TODO create config file?
     std::string path = "/home/bose/Desktop/eso/central/esoca/esoca_lock";
     return path.c_str();
+}
+
+/**
+ * Propagates a message to the distribution servers.
+ *
+ * @param msg_type The type of the message (ex: UPDATE_PERM).
+ * @param msg The message to send
+ */
+void CADaemon::propagate(const std::string msg_type, 
+        const std::string msg) const
+{
+    // Read conifg file for distribution locations.
+    // Send distribution_msg to all distribution servers.
+    // TODO config this location somewhere
+    std::ifstream input( "/home/bose/Desktop/eso/global_config/locations_config" );
+    for (std::string line; getline(input, line); )
+    {
+        auto values = split_string(line, LOC_DELIMITER);
+
+        TCP_Socket tcp_socket;
+        TCP_Stream tcp_stream = tcp_socket.connect(
+                values[0], values[1]);
+
+        std::string log_msg{"esoca to esod: "};
+        log_msg += msg;
+        Logger::log(log_msg, LogLevel::Debug);
+
+        tcp_stream.send(msg_type);
+        tcp_stream.send(msg);
+    }
 }
 
 int CADaemon::work() const
@@ -116,27 +153,77 @@ int CADaemon::work() const
             distribution_msg += ";";
             distribution_msg.append(query_result.loc);
 
+            // Propagate to distribution servers.
+            propagate(UPDATE_PERM, distribution_msg);
+        }
+        else if (recv_msg == NEW_CRED)
+        {
+            // Receive the serialized credential.
+            recv_msg = uds_stream.recv();
+            
+            std::string log_msg{"esoca: Serialized credential: "};
+            log_msg += recv_msg;
+            Logger::log(log_msg, LogLevel::Debug);
 
-            // Read conifg file for distribution locations.
-            // Send distribution_msg to all distribution servers.
-            // TODO config this location somewhere
-            std::ifstream input( "/home/bose/Desktop/eso/global_config/locations_config" );
-            for (std::string line; getline(input, line); )
+            Credential cred = Credential(recv_msg);
+
+            // Generate keys for this credential.
+            if (cred.type == USERPASS)
             {
-                auto values = split_string(line, LOC_DELIMITER);
+                // TODO implement
+                // TODO encrypt + mac
+            }
+            else if (cred.type == ASYMMETRIC)
+            {
+                int size = cred.size;
 
-                TCP_Socket tcp_socket;
-                TCP_Stream tcp_stream = tcp_socket.connect(
-                        values[0], values[1]);
+                // Get keys
+                auto key_store = get_new_RSA_pair(size);
+                unsigned char *pubKey = std::get<0>(key_store);
+                int pubLen = std::get<1>(key_store);
+                unsigned char *priKey = std::get<2>(key_store);
+                int priLen = std::get<3>(key_store);
 
-                std::string log_msg{"esoca to esod: "};
-                log_msg += distribution_msg;
-                Logger::log(log_msg, LogLevel::Debug);
+                // Encode keys
+                unsigned char *pubKey_enc = base64_encode(pubKey, pubLen);
+                unsigned char *priKey_enc = base64_encode(priKey, priLen);
 
-                tcp_stream.send(UPDATE_PERM);
-                tcp_stream.send(distribution_msg);
+                cred.pubKey = std::string{(char*) pubKey_enc};
+                cred.priKey = std::string{(char*) priKey_enc};
+
+                // Add to query
+                // TODO encrypt + mac
+                // Free keys
+                free((void*)secure_memset(pubKey, 0, pubLen));
+                free((void*)secure_memset(pubKey_enc, 0, 
+                            strlen(reinterpret_cast<const char *>(pubKey_enc))));
+                free((void*)secure_memset(priKey, 0, priLen));
+                free((void*)secure_memset(priKey_enc, 0, 
+                            strlen(reinterpret_cast<const char *>(priKey_enc))));
+            }
+            else if (cred.type == SYMMETRIC)
+            {
+                int size = cred.size;
+
+                // Get key and encode.
+                unsigned char * key = get_new_AES_key(size);
+                unsigned char * enc = base64_encode(key, size/8);
+
+                // TODO encrypt + mac
+                cred.symKey = std::string{(char*) enc};
+
+                // Securely erase key and free
+                free((void*)secure_memset(key, 0, size/8)); // size is in bits
+                free((void*)secure_memset(enc, 0, 
+                            strlen(reinterpret_cast<const char *>(enc))));
             }
 
+            // Update esoca's database.
+            MySQL_Conn conn;
+            conn.create_credential(cred) ;
+
+            // Propagate to distribution servers.
+            propagate(NEW_CRED, cred.serialize());
         }
         else if (recv_msg == PING)
         {
@@ -144,7 +231,9 @@ int CADaemon::work() const
         }
         else
         {
-            Logger::log("Invalid request.", LogLevel::Error);
+            std::string log_msg{"esoca invalid request: "};
+            log_msg += recv_msg;
+            Logger::log(log_msg);
         }
 
         Logger::log("esoca is closing UDS connection.", LogLevel::Debug);

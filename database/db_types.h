@@ -2,7 +2,7 @@
 #define ESO_DATABASE_DB_TYPES
 
 const int USERPASS      = 1;
-const int ASYMMETRIC    = 2;
-const int SYMMETRIC     = 3;
+const int SYMMETRIC     = 2;
+const int ASYMMETRIC    = 3;
 
 #endif

@@ -7,7 +7,11 @@
 
 #include "../config/esol_config.h"
 #include "../config/mysql_config.h"
+#include "../../crypto/aes.h"
+#include "../../crypto/base64.h"
+#include "../../crypto/rsa.h"
 #include "../../daemon/daemon.h"
+#include "../../database/db_types.h"
 #include "../../global_config/global_config.h"
 #include "../../logger/logger.h"
 #include "../../socket/tcp_socket.h"
@@ -142,19 +146,95 @@ void LocalDaemon::handleUDS() const
             log_msg += received_string;
             Logger::log(log_msg, LogLevel::Debug);
 
-            auto values = split_string(received_string, MSG_DELIMITER); 
+            // According to message_config.h, we should receive:
+            // set_name;version;data_to_encrypt.
+            auto values = split_string(received_string, MSG_DELIMITER);
+            std::string data_to_encrypt = values[2];
 
             // Check permissions to see if encrypt is allowed. (check
             // permission function?)
 
-            // Get credential type.
-            // Get encryption key.
+            MySQL_Conn conn;
+            Credential cred = conn.get_credential(values[0].c_str(), 
+                    stoi(values[1]));
+            // If credential is empty, we will request it, update our database,
+            // and then proceed.
+            if (cred.set_name.empty())
+            {
+                Logger::log("esol: Credential not found, contacting esod.");
+
+                // Try requesting all distribution locations.
+                // Read config file for distribution locations.
+                // TODO config this location somewhere
+                std::ifstream input( "/home/bose/Desktop/eso/global_config/locations_config" );
+                for (std::string line; getline(input, line); )
+                {
+                    auto dist_info = split_string(line, LOC_DELIMITER);
+
+                    TCP_Socket tcp_socket;
+                    TCP_Stream tcp_stream = tcp_socket.connect(
+                            dist_info[0], dist_info[1]);
+
+                    // Form message to send.
+                    // set_name;version
+                    std::string distribution_msg{values[0]};
+                    distribution_msg += MSG_DELIMITER;
+                    distribution_msg += values[1];
+
+                    std::string log_msg{"esol to esod: "};
+                    log_msg += distribution_msg;
+                    Logger::log(log_msg, LogLevel::Debug);
+
+                    tcp_stream.send(GET_CRED);
+                    tcp_stream.send(distribution_msg);
+
+                    std::string tcp_received = tcp_stream.recv();
+                    // Our request was successful. Update our database.
+                    if (tcp_received != INVALID_REQUEST)
+                    {
+                        cred = Credential(tcp_received);
+                        conn.create_credential(cred);
+                        break;
+                    }
+                }
+                // TODO If not valid, throw exception.
+            }
+
+            // The length of the data to be encrypted.
+            int len;
             // Encrypt and return ciphertext.
+            if (cred.type == USERPASS)
+            {
+                // TODO throw exception
+            }
+            else if (cred.type == SYMMETRIC)
+            {
+                unsigned char *encyption;
+                len = cred.symKey.length();
+                unsigned char *key = base64_decode((unsigned char *)cred.symKey.c_str(), (size_t *)&len);
+                // We add 1 to data_to_encrypt.length() because we want to
+                // preserve the null terminator.
+                len = data_to_encrypt.length() + 1;
+                encyption = 
+                    aes_encrypt(key, 
+                            (unsigned char *) data_to_encrypt.c_str(), 
+                            &len, cred.size);
+                uds_stream.send(std::string{(char*)encyption});
+                free(encyption);
+                free(key);
+            }
+            else if (cred.type == ASYMMETRIC)
+            {
+                // TODO
+            }
         }
         else
         {
             // TODO 
             // Invalid request.
+            std::string log_msg{"esol invalid request: "};
+            log_msg += received_string;
+            Logger::log(log_msg);
         }
         Logger::log("esol is closing UDS connection.");
     }

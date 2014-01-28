@@ -96,7 +96,6 @@ int DistroDaemon::work() const
                     std::stol(values[2]), std::stol(values[3]), 
                     values[4].c_str());
 
-
             // Send update to the local daemon.
             // TODO This obvious assumes the local daemon is running...
             TCP_Socket tcp_out_socket;
@@ -119,6 +118,53 @@ int DistroDaemon::work() const
             // Package and send results
         
         }
+        else if (received_string == GET_CRED)
+        {
+            Credential cred;
+            
+            // TODO Ensure that location is authorized to receive this cred.
+
+            // Parse request parameters. See the parameter order in
+            // message_config.h
+            received_string = incoming_stream.recv();
+            auto params = split_string(received_string, MSG_DELIMITER);
+
+            std::string log_msg{"In esod, cred params: "};
+            log_msg += received_string;
+            Logger::log(log_msg);
+
+            // Query our database.
+            MySQL_Conn conn;
+            cred = conn.get_credential(params[0].c_str(), stoi(params[1]));
+            // If the result is valid, serialize and send it.
+            if (!cred.set_name.empty())
+            {
+                log_msg = std::string{"esod to esol: cred serialized: "};
+                log_msg += cred.serialize();
+                Logger::log(log_msg, LogLevel::Debug);
+                incoming_stream.send(cred.serialize());
+            }
+            else
+            {
+                Logger::log("Invalid cred requested from esod.");
+                incoming_stream.send(INVALID_REQUEST);
+            }
+
+        }
+        else if (received_string == NEW_CRED)
+        {
+            // Receive serialized Credential.
+            received_string = incoming_stream.recv();
+
+            std::string log_msg{"In esod, new cred: "};
+            log_msg += received_string;
+            Logger::log(log_msg, LogLevel::Debug);
+
+            // Insert Credential into database.
+            Credential cred = Credential{received_string};
+            MySQL_Conn conn;
+            conn.create_credential(cred);
+        }
         else if (received_string == PING)
         {
             incoming_stream.send(PING);
@@ -127,6 +173,10 @@ int DistroDaemon::work() const
         {
             // TODO
             // Invalid request.
+            std::string log_msg{"esod invalid request: "};
+            log_msg += received_string;
+            Logger::log(log_msg);
+
         }
     }
 

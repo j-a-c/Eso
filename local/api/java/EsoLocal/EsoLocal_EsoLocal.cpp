@@ -69,20 +69,25 @@ JNIEXPORT jbyteArray JNICALL Java_EsoLocal_EsoLocal_encrypt(JNIEnv *env,
         // Send encryption parameters.
         std::string msg{set_name};
         msg += MSG_DELIMITER;
-        msg += std::string{(char*)buf};
-        msg += MSG_DELIMITER;
         msg += std::to_string((int) version);
+        msg += MSG_DELIMITER;
+        msg += std::string{(char*)buf};
         uds_stream.send(msg);
 
         // TODO Receive the encrypted string.
+        std::string encryption = uds_stream.recv();
+
+        // Convert encryption from native to Java.
+        len = encryption.length();
+        jbyteArray encArray = env->NewByteArray(len);
+        env->SetByteArrayRegion(encArray, 0, len, (jbyte*)encryption.c_str());
 
         // Release the set_name.
         env->ReleaseStringUTFChars(in_set, set_name);
         // Free the data message. 
         free(buf);
 
-        // TODO
-        return in_msg; 
+        return encArray; 
     }
     catch(std::exception e)
     {

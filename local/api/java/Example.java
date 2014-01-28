@@ -1,5 +1,7 @@
 import EsoLocal.*;
 
+import java.util.Arrays;
+
 /**
  * @author Joshua A. Campbell
  *
@@ -44,11 +46,12 @@ class Example
         example.getService();
         
         // Sample set name and a secret message.
-        String setName = "com.joshuac";
+        String setName = "com.joshuac.test.sym";
         String secretMessage = "Hello World";
 
         // Encrypt the secret message.
         byte[] encryptedMsg = example.symmetricEncrypt(setName, secretMessage, 1);
+        System.out.println("Encrypted message: " + Arrays.toString(encryptedMsg));
     }
 
 }

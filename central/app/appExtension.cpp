@@ -70,7 +70,8 @@ int permission_to_daemon(char *set_name, char *entity, char *loc)
 
 /*
  * Function to be called from Python.
- * Creates a new set.
+ *
+ * Requests that esoca created a new credential with the given parameters.
  *
  * Python arguments (in order) are set name, version, expiration date, primary,
  * secondary, type, algo, and size. All inputs should be strings. 
@@ -80,7 +81,7 @@ int permission_to_daemon(char *set_name, char *entity, char *loc)
  */
 static PyObject* create_credential(PyObject* self, PyObject* args)
 {
-	char *setName;
+	char *set_name;
     // Version input is a string, but we need an unsigned int
     char *input_version;
     char *expiration;
@@ -92,7 +93,7 @@ static PyObject* create_credential(PyObject* self, PyObject* args)
     char * input_size;
 
     // Parse input
-    if (!PyArg_ParseTuple(args, "ssssssss", &setName, &input_version, 
+    if (!PyArg_ParseTuple(args, "ssssssss", &set_name, &input_version, 
                 &expiration, &primary, &secondary, &input_type, &algo, &input_size))
         return nullptr;
 
@@ -102,10 +103,42 @@ static PyObject* create_credential(PyObject* self, PyObject* args)
     unsigned int type = strtol(input_type, nullptr, 0);
     unsigned int size = strtol(input_size, nullptr, 0);
 
-    // Attempt to update database.
-    MySQL_Conn conn;
-    int status = conn.create_credential(setName, version, expiration, 
-            primary, secondary, type, algo, size);
+    // Fill out credential fields.
+    Credential cred;
+    cred.set_name = set_name;
+    cred.version = version;
+    cred.expiration = expiration;
+    cred.p_owner = primary;
+    cred.s_owner = secondary;
+    cred.type = type;
+    cred.algo = algo;
+    cred.size = size;
+
+    // Socket to the CA daemon.
+    UDS_Socket uds_socket{std::string{ESOCA_SOCKET_PATH}};
+
+    int status;
+    // Send Credential to esoca for completion.
+    try
+    {
+        UDS_Stream uds_stream = uds_socket.connect();
+
+        // Send permission request
+        uds_stream.send(NEW_CRED);
+
+        // Serialize the credential.
+        std::string msg{cred.serialize()};
+
+        Logger::log(std::string{"Sending to esoca: "} + msg, LogLevel::Debug);
+
+        uds_stream.send(msg);
+
+        status = 0;
+    }
+    catch (std::exception& e)
+    {
+        status = 1;
+    }
 
     // Return status (0 if ok, nonzero if error).
 	return Py_BuildValue("i", status);

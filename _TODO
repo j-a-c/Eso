@@ -1,7 +1,12 @@
 grep -r TODO *
 
 current:
+	- check credential prop to distro
+	- move creation of credentials / perms from appExtension to esoca
+	- update database.h to only use Credentials/Permissions?
+	- switch unsigned char * stuff to strings
 	- encrypt api
+	- decrypt
 
 	- config for esod, and esol (global config?)
 	- java api
