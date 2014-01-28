@@ -1,19 +1,19 @@
 grep -r TODO *
 
+Bugs:
+	- REQUESt_ENCRYPT message is being sent (or received) twice by esol
+	- running Example twice shows garbage in uds stream
+
 current:
-	- check credential prop to distro
-	- move creation of credentials / perms from appExtension to esoca
 	- update database.h to only use Credentials/Permissions?
 	- switch unsigned char * stuff to strings
-	- encrypt api
-	- decrypt
 
 	- config for esod, and esol (global config?)
 	- java api
 		- encrypt
-			- sym / asym
+			- asym
 		- decrypt
-			- sym / asym
+			- asym
 		- sign
 		- hmac
 		- verify
@@ -89,6 +89,3 @@ Crypto:
 	- aes.h
 		- EVP_EncryptInit_ex & Decrypt
 		- use IV
-
-Bugs:
-	- REQUESt_ENCRYPT message is being sent (or received) twice by esol
