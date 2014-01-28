@@ -95,3 +95,59 @@ JNIEXPORT jbyteArray JNICALL Java_EsoLocal_EsoLocal_encrypt(JNIEnv *env,
     }
 
 }
+
+/*
+ * Native method for EsoLocal.EsoLocal_EsoLocal.
+ * Contacts the local daemon and requests in_msg to be decrypted using the
+ * credentials from set in_set.
+ */
+
+JNIEXPORT jbyteArray JNICALL Java_EsoLocal_EsoLocal_decrypt
+  (JNIEnv *env, jobject obj, jstring in_set, jbyteArray in_msg, jint version)
+{
+    UDS_Socket uds_socket{std::string{ESOL_SOCKET_PATH}};
+
+    try
+    {
+        // Send decrypt request message.
+        UDS_Stream uds_stream = uds_socket.connect();
+        uds_stream.send(REQUEST_DECRYPT);
+
+        // Get the set name from the input parameters.
+        jboolean isCopy;
+        const char *set_name = env->GetStringUTFChars(in_set, &isCopy);
+
+        // Get the data array.
+        int len = env->GetArrayLength(in_msg);
+        unsigned char* buf = new unsigned char[len];
+        env->GetByteArrayRegion(in_msg, 0, len, reinterpret_cast<jbyte*>(buf));
+
+        // Send decryption parameters.
+        std::string msg{set_name};
+        msg += MSG_DELIMITER;
+        msg += std::to_string((int) version);
+        msg += MSG_DELIMITER;
+        msg += std::string{(char*)buf};
+        uds_stream.send(msg);
+
+        // TODO Receive the decrypted string.
+        std::string decryption = uds_stream.recv();
+
+        // Convert decryption from native to Java.
+        len = decryption.length();
+        jbyteArray decArray = env->NewByteArray(len);
+        env->SetByteArrayRegion(decArray, 0, len, (jbyte*)decryption.c_str());
+
+        // Release the set_name.
+        env->ReleaseStringUTFChars(in_set, set_name);
+        // Free the data message. 
+        free(buf);
+
+        return decArray; 
+    }
+    catch(std::exception e)
+    {
+        // TODO
+    }
+
+}

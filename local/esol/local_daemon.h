@@ -34,6 +34,8 @@ class LocalDaemon : public Daemon
         const char * lock_path() const;
         void handleTCP() const;
         void handleUDS() const;
+        // Retrieves the requested credential.
+        Credential get_credential(const char *, const int) const;
 };
 
 int LocalDaemon::start() const
@@ -102,6 +104,62 @@ void LocalDaemon::handleTCP() const
     Logger::log("TCP accept() error", LogLevel::Error);
 }
 
+/**
+ * Returns the Credential with the given set_name and version.
+ * First checks the local database, and then queries the distribution servers
+ * if the Credential was not found locally.
+ */
+Credential LocalDaemon::get_credential(const char * set_name, 
+        const int version) const
+{
+    MySQL_Conn conn;
+    Credential cred = conn.get_credential(set_name, version);
+    // If credential is empty, we will request it, update our database,
+    // and then proceed.
+    if (cred.set_name.empty())
+    {
+        Logger::log("esol: Credential not found, contacting esod.");
+
+        // Try requesting all distribution locations.
+        // Read config file for distribution locations.
+        // TODO config this location somewhere
+        std::ifstream input( "/home/bose/Desktop/eso/global_config/locations_config" );
+        for (std::string line; getline(input, line); )
+        {
+            auto dist_info = split_string(line, LOC_DELIMITER);
+
+            TCP_Socket tcp_socket;
+            TCP_Stream tcp_stream = tcp_socket.connect(
+                    dist_info[0], dist_info[1]);
+
+            // Form message to send.
+            // set_name;version
+            std::string distribution_msg{set_name};
+            distribution_msg += MSG_DELIMITER;
+            distribution_msg += std::to_string(version);
+
+            std::string log_msg{"esol to esod: "};
+            log_msg += distribution_msg;
+            Logger::log(log_msg, LogLevel::Debug);
+
+            tcp_stream.send(GET_CRED);
+            tcp_stream.send(distribution_msg);
+
+            std::string tcp_received = tcp_stream.recv();
+            // Our request was successful. Update our database.
+            if (tcp_received != INVALID_REQUEST)
+            {
+                cred = Credential(tcp_received);
+                conn.create_credential(cred);
+                break;
+            }
+        }
+        // TODO If not valid, throw exception.
+    }
+    return cred;
+}
+
+
 /*
  * Handle incoming UDS connections.
  */
@@ -154,52 +212,11 @@ void LocalDaemon::handleUDS() const
             // Check permissions to see if encrypt is allowed. (check
             // permission function?)
 
-            MySQL_Conn conn;
-            Credential cred = conn.get_credential(values[0].c_str(), 
+            // TODO get_credential should throw an exception if the request was
+            // not valid.
+            Credential cred = get_credential(values[0].c_str(), 
                     stoi(values[1]));
-            // If credential is empty, we will request it, update our database,
-            // and then proceed.
-            if (cred.set_name.empty())
-            {
-                Logger::log("esol: Credential not found, contacting esod.");
-
-                // Try requesting all distribution locations.
-                // Read config file for distribution locations.
-                // TODO config this location somewhere
-                std::ifstream input( "/home/bose/Desktop/eso/global_config/locations_config" );
-                for (std::string line; getline(input, line); )
-                {
-                    auto dist_info = split_string(line, LOC_DELIMITER);
-
-                    TCP_Socket tcp_socket;
-                    TCP_Stream tcp_stream = tcp_socket.connect(
-                            dist_info[0], dist_info[1]);
-
-                    // Form message to send.
-                    // set_name;version
-                    std::string distribution_msg{values[0]};
-                    distribution_msg += MSG_DELIMITER;
-                    distribution_msg += values[1];
-
-                    std::string log_msg{"esol to esod: "};
-                    log_msg += distribution_msg;
-                    Logger::log(log_msg, LogLevel::Debug);
-
-                    tcp_stream.send(GET_CRED);
-                    tcp_stream.send(distribution_msg);
-
-                    std::string tcp_received = tcp_stream.recv();
-                    // Our request was successful. Update our database.
-                    if (tcp_received != INVALID_REQUEST)
-                    {
-                        cred = Credential(tcp_received);
-                        conn.create_credential(cred);
-                        break;
-                    }
-                }
-                // TODO If not valid, throw exception.
-            }
-
+            
             // The length of the data to be encrypted.
             int len;
             // Encrypt and return ciphertext.
@@ -221,6 +238,55 @@ void LocalDaemon::handleUDS() const
                             &len, cred.size);
                 uds_stream.send(std::string{(char*)encyption});
                 free(encyption);
+                free(key);
+            }
+            else if (cred.type == ASYMMETRIC)
+            {
+                // TODO
+            }
+        }
+        else if (received_string == REQUEST_DECRYPT)
+        {
+            received_string = uds_stream.recv();
+
+            std::string log_msg{"esol: Decrypt params: "};
+            log_msg += received_string;
+            Logger::log(log_msg, LogLevel::Debug);
+
+            // According to message_config.h, we should receive:
+            // set_name;version;data_to_encrypt.
+            auto values = split_string(received_string, MSG_DELIMITER);
+            std::string data_to_decrypt = values[2];
+
+            // Check permissions to see if encrypt is allowed. (check
+            // permission function?)
+
+            // TODO get_credential should throw an exception if the request was
+            // not valid.
+            Credential cred = get_credential(values[0].c_str(), 
+                    stoi(values[1]));
+            
+            // The length of the data to be encrypted.
+            int len;
+            // Encrypt and return ciphertext.
+            if (cred.type == USERPASS)
+            {
+                // TODO throw exception
+            }
+            else if (cred.type == SYMMETRIC)
+            {
+                unsigned char *decyption;
+                len = cred.symKey.length();
+                unsigned char *key = base64_decode((unsigned char *)cred.symKey.c_str(), (size_t *)&len);
+                // We add 1 to data_to_encrypt.length() because we want to
+                // preserve the null terminator.
+                len = data_to_decrypt.length() + 1;
+                decyption = 
+                    aes_decrypt(key, 
+                            (unsigned char *) data_to_decrypt.c_str(), 
+                            &len, cred.size);
+                uds_stream.send(std::string{(char*)decyption});
+                free(decyption);
                 free(key);
             }
             else if (cred.type == ASYMMETRIC)
