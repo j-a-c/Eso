@@ -1,5 +1,5 @@
 BUILDS=esod
-TARGETS=all clean
+TARGETS=all clean debug
 
 $(TARGETS):
 	for b in $(BUILDS) ; do $(MAKE) -C $$b $@ ; done
