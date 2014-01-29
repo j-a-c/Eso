@@ -17,15 +17,20 @@
  */
 unsigned char *get_new_AES_key(int size)
 {
+    // Input is in bits! We need to convert to bytes, and then to the amount of
+    // bytes we will need to allocate.
+    // Previously: size / 8
+    int len = size / (8*sizeof(char));
+
     // Convert size from bits to bytes when allocating memory.
-    unsigned char *buf = (unsigned char*) malloc(size / 8);
+    unsigned char *buf = (unsigned char*) malloc(len);
     if(!buf)
         return nullptr;
 
     // RAND_bytes puts num cryptographically strong pseudo-random bytes into
     // buf.
     // int RAND_bytes(unsigned char *buf, int num);
-    if(!RAND_bytes(buf, size / 8))
+    if(!RAND_bytes(buf, len))
         return nullptr;
 
     // buf has now been initialized. 
