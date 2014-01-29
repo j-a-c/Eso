@@ -7,7 +7,7 @@ current:
 	- config for esod, and esol (global config?)
 	- java api
 		- encrypt
-			- asym
+			- asym (evp interface for rsa?)
 		- decrypt
 			- asym
 		- sign
