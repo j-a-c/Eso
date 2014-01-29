@@ -372,7 +372,7 @@ Credential MySQL_Conn::get_credential(const char *set_name,
     MYSQL_ROW mysqlRow;
     // Row pointer in the result set
     // There may be 0 or 1 results.
-    while(mysqlRow = mysql_fetch_row(mysqlResult))
+    while ( (mysqlRow = mysql_fetch_row(mysqlResult)) )
     {
         cred.set_name = std::string{mysqlRow[0]};
         cred.version = strtol(mysqlRow[1], nullptr, 0);
@@ -430,7 +430,7 @@ std::vector<Credential> MySQL_Conn::get_all_credentials(const char * set_name) c
     // Pack query results into return value.
     MYSQL_ROW mysqlRow;
     // Row pointer in the result set
-    while(mysqlRow = mysql_fetch_row(mysqlResult))
+    while ( (mysqlRow = mysql_fetch_row(mysqlResult)) )
     {
         Credential cred;
         cred.set_name = std::string{mysqlRow[0]};
@@ -530,7 +530,7 @@ std::vector<Permission>
     // Row pointer in the result set
     MYSQL_ROW mysqlRow;
     // Pack query results into return value.
-    while(mysqlRow = mysql_fetch_row(mysqlResult)) 
+    while ( (mysqlRow = mysql_fetch_row(mysqlResult)) )
     {
         Permission perm;
         perm.entity = std::string{mysqlRow[0]};

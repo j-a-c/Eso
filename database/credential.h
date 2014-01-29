@@ -20,7 +20,7 @@ public:
     // Create a credential from a string returned from serialize().
     Credential(std::string);
     // Serialize the credential.
-    std::string serialize();
+    std::string serialize() const;
 
     // The set name of the credential.
     std::string set_name;
@@ -81,7 +81,7 @@ Credential::Credential(std::string serialization)
  * Serialize the credential. The credential should be serialized in the exact
  * order as the members are listed above.
  */
-std::string Credential::serialize()
+std::string Credential::serialize() const
 {
     std::string serialization{};
 

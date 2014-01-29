@@ -18,7 +18,7 @@ public:
     // Creates a Permission from a serialized Permission.
     Permission(std::string);
     // Returns the serialized form of this Permission.
-    std::string serialize();
+    std::string serialize() const;
 
     // The name of the set.
     std::string set_name;
@@ -60,7 +60,7 @@ Permission::Permission(std::string serialization)
  * Returns the serialized form of this Permission. The member values should be
  * serialized in the exact same order as they are listed above.
  */
-std::string Permission::serialize()
+std::string Permission::serialize() const
 {
     std::string serialization{};
 
@@ -74,6 +74,8 @@ std::string Permission::serialize()
     serialization += MSG_DELIMITER;
     serialization += loc;
     serialization += MSG_DELIMITER;
+
+    return serialization;
 }
 
 #endif
