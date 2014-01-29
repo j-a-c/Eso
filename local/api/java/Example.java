@@ -55,19 +55,27 @@ class Example
         String setName = "com.joshuac.test.sym";
         String secretMessage = "Hello World";
 
+        System.out.println("====");
+
         // Print the original message.
-        System.out.println("Original message:" + secretMessage);
-        System.out.println("Original bytes: " + secretMessage.getBytes());
+        System.out.println("Original message: " + secretMessage);
+        System.out.println("Original bytes: " + Arrays.toString(secretMessage.getBytes()));
+
+        System.out.println("====");
 
         // Encrypt the secret message.
         byte[] encryptedMsg = example.symmetricEncrypt(setName, secretMessage.getBytes(), 1);
         System.out.println("Encrypted bytes: " + Arrays.toString(encryptedMsg));
+
+        System.out.println("====");
+
         // Decrypt the encrypted message.
         byte[] decryptedMsg = example.symmetricDecrypt(setName, encryptedMsg, 1);
         secretMessage = new String(decryptedMsg);
-        System.out.println("Decrypted message:" + secretMessage);
+        System.out.println("Decrypted message: " + secretMessage);
         System.out.println("Decrypted bytes: " + Arrays.toString(decryptedMsg));
 
+        System.out.println("====");
 
     }
 

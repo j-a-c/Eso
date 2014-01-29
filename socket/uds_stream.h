@@ -28,7 +28,7 @@ private:
     // Max length of data we will read in at a time.
     int MAX_LENGTH = 1024;
     // Buffer holding partially constructed messages.
-    std::string msg_buffer;
+    std::string msg_buffer{};
 };
 
 UDS_Stream::UDS_Stream(int con_fd, sockaddr_un remote, int remote_len)
@@ -89,7 +89,7 @@ std::string UDS_Stream::recv()
         {
             char temp_msg[len];
             strncpy(temp_msg, recv_msg, len);
-            msg_buffer.append(temp_msg);
+            msg_buffer.append(temp_msg, len);
         }
         else
         {

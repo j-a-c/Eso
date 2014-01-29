@@ -1,9 +1,5 @@
 grep -r TODO *
 
-Bugs:
-	- REQUESt_ENCRYPT message is being sent (or received) twice by esol
-	- running Example twice shows garbage in uds stream
-
 current:
 	- update database.h to only use Credentials/Permissions?
 	- switch unsigned char * stuff to strings
