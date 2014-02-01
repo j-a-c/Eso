@@ -52,35 +52,29 @@ public:
     MySQL_Conn();
 
     // Create a new permission.
-    int create_permission(const char *set_name, const char *entity,
-            const unsigned int entity_type, const unsigned int op,
-            const char *loc) const;
+    int create_permission(const Permission perm) const;
 
     // Attempts to insert a new permission, but updates the op value if the
     // permission already exists.
-    int insert_permission(const char *set_name, const char *entity,
-            const unsigned int entity_type, const unsigned int op,
-            const char *loc) const;
+    int insert_permission(const Permission perm) const;
 
     // Update the permission with the given set name and entity with the
     // specified operation value.
-    int update_permission(const char *set_name, const char *entity,
-            const unsigned int op, const char *loc) const;
+    int update_permission(const Permission perm) const;
 
     // Delete the permission with the given set name and entity.
     // This is the primary key for the permissions table.
-    int delete_permission(const char* set_name, const char* entity, 
-            const char * loc) const;
+    int delete_permission(const Permission perm) const;
 
     // Creates a new credential, using all the input fields from the given
     // credential.
-    int create_credential(Credential);
+    int create_credential(const Credential) const;
     
     // TODO
     int delete_credential() const;
 
     // Get the credential with the given primary key.
-    Credential get_credential(const char *set_name, unsigned int version);
+    Credential get_credential(const Credential cred) const;
 
     // Get all credentials associated with the given set name. 
     // Only the set_name, version, type, and expiration fields will be filled.
@@ -88,8 +82,7 @@ public:
 
     // Get the permission with the given set name, enitity, and location.
     // This is the primary key for the permissions table.
-    Permission get_permission(const char * set_name, const char *entity,
-            const char *loc) const;
+    Permission get_permission(const Permission perm) const;
 
     // Get all permissions associated with the given set name.
     std::vector<Permission> get_all_permissions(const char *set_name) const;
@@ -118,9 +111,7 @@ MySQL_Conn::~MySQL_Conn()
  * want to create a credential only once, and not update it if someone else
  * creates a credential with the same primary key.
  */
-int MySQL_Conn::create_permission(const char *set_name, const char *entity,
-        const unsigned int entity_type, const unsigned int op, 
-        const char *loc) const
+int MySQL_Conn::create_permission(const Permission perm) const
 {
     Logger::log("Entering MySQL_Conn::create_permission()", LogLevel::Debug);
 	
@@ -128,15 +119,15 @@ int MySQL_Conn::create_permission(const char *set_name, const char *entity,
     std::string query{"INSERT INTO "};
     query.append(PERM_LOC);
     query += "(set_name, entity, entity_type, op, loc) VALUES ('";
-    query.append(set_name);
+    query.append(perm.set_name);
     query += "', '";
-    query.append(entity); 
+    query.append(perm.entity); 
     query += "', ";
-    query.append(std::to_string(entity_type));
+    query.append(std::to_string(perm.entity_type));
     query += ", ";
-    query.append(std::to_string(op));
+    query.append(std::to_string(perm.op));
     query += ", '";
-    query.append(loc);
+    query.append(perm.loc);
     query +="')";
 
     Logger::log(query.c_str());
@@ -154,8 +145,7 @@ int MySQL_Conn::create_permission(const char *set_name, const char *entity,
 /*
  * Updates a permission. Returns 0 if the permission was updated.
  */
-int  MySQL_Conn::update_permission(const char *set_name, const char *entity,
-            const unsigned int op, const char *loc) const
+int  MySQL_Conn::update_permission(const Permission perm) const
 {
     Logger::log("Entering MySQL_Conn::update_permission()", LogLevel::Debug);
 	
@@ -163,13 +153,13 @@ int  MySQL_Conn::update_permission(const char *set_name, const char *entity,
     std::string query{"UPDATE "};
     query.append(PERM_LOC);
     query += " SET op=";
-    query.append(std::to_string(op));
+    query.append(std::to_string(perm.op));
     query += " WHERE set_name='";
-    query.append(set_name);
+    query.append(perm.set_name);
     query += "' and entity='";
-    query.append(entity);
+    query.append(perm.entity);
     query += "' AND loc='";
-    query.append(loc);
+    query.append(perm.loc);
     query += "'";
 
     Logger::log(query.c_str());
@@ -186,9 +176,7 @@ int  MySQL_Conn::update_permission(const char *set_name, const char *entity,
  * Insert a permission. Updates the op value if the key already exists. 
  * Returns 0 if the permission was inserted/updated successfully.
  */
-int MySQL_Conn::insert_permission(const char *set_name, const char *entity,
-        const unsigned int entity_type, const unsigned int op,
-        const char *loc) const
+int MySQL_Conn::insert_permission(const Permission perm) const 
 {
     Logger::log("Entering MySQL_Conn::insert_permission()", LogLevel::Debug);
 
@@ -196,15 +184,15 @@ int MySQL_Conn::insert_permission(const char *set_name, const char *entity,
     std::string query{"INSERT INTO "};
     query.append(PERM_LOC);
     query += "(set_name, entity, entity_type, op, loc) VALUES ('";
-    query.append(set_name);
+    query.append(perm.set_name);
     query += "', '";
-    query.append(entity); 
+    query.append(perm.entity); 
     query += "', ";
-    query.append(std::to_string(entity_type));
+    query.append(std::to_string(perm.entity_type));
     query += ", ";
-    query.append(std::to_string(op));
+    query.append(std::to_string(perm.op));
     query += ", '";
-    query.append(loc);
+    query.append(perm.loc);
     query += "') ON DUPLICATE KEY UPDATE op=VALUES(op)";
 
     Logger::log(query.c_str());
@@ -222,8 +210,7 @@ int MySQL_Conn::insert_permission(const char *set_name, const char *entity,
  * Deletes the permission with the given set and entity names.
  * (set, entity) is the primary key for the permissions tables.
  */
-int MySQL_Conn::delete_permission(const char *set_name, const char *entity,
-        const char * loc) const
+int MySQL_Conn::delete_permission(const Permission perm) const
 {
     Logger::log("Entering MySQL_Conn::delete_permission()", LogLevel::Debug);
 
@@ -231,11 +218,11 @@ int MySQL_Conn::delete_permission(const char *set_name, const char *entity,
     std::string query{"DELETE FROM "};
     query.append(PERM_LOC);
     query += " WHERE set_name='";
-    query.append(set_name);
+    query.append(perm.set_name);
     query += "' and entity='";
-    query.append(entity);
+    query.append(perm.entity);
     query += "' AND loc='";
-    query.append(loc);
+    query.append(perm.loc);
     query += "';";
 
     Logger::log(query.c_str());
@@ -252,7 +239,7 @@ int MySQL_Conn::delete_permission(const char *set_name, const char *entity,
  * Creates a new credential in the database from the given credential.
  * Returns 0 on success.
  */
-int MySQL_Conn::create_credential(Credential cred)
+int MySQL_Conn::create_credential(const Credential cred) const
 {
     Logger::log("Entering MySQL_Conn::create_credential()", LogLevel::Debug);
 
@@ -346,21 +333,18 @@ int MySQL_Conn::delete_credential() const
  * May return an empty credential if no such credential exists in the current
  * database.
  */
-Credential MySQL_Conn::get_credential(const char *set_name, 
-        unsigned int version)
+Credential MySQL_Conn::get_credential(const Credential cred) const
 {
     Logger::log("Entering MySQL_Conn::get_credential()", LogLevel::Debug);
-
-    Credential cred;
 
     // Build query.
     std::string query{"SELECT set_name, version, type, algo, size, expiration, "};
     query += "symKey, priKey, pubKey, user, pass, p_owner, s_owner FROM ";
     query += CRED_LOC;
     query += " WHERE set_name='";
-    query.append(set_name);
+    query.append(cred.set_name);
     query += "' AND version=";
-    query.append(std::to_string(version));
+    query.append(std::to_string(cred.version));
     query +=";";
 
     Logger::log(query);
@@ -368,41 +352,42 @@ Credential MySQL_Conn::get_credential(const char *set_name,
     // Get results.
     MYSQL_RES* mysqlResult = get_result(query.c_str());
 
+    Credential ret;
     // Pack query results into return value.
     MYSQL_ROW mysqlRow;
     // Row pointer in the result set
     // There may be 0 or 1 results.
     while ( (mysqlRow = mysql_fetch_row(mysqlResult)) )
     {
-        cred.set_name = std::string{mysqlRow[0]};
-        cred.version = strtol(mysqlRow[1], nullptr, 0);
-        cred.type = strtol(mysqlRow[2], nullptr, 0);
-        cred.algo = std::string{mysqlRow[3]};
-        cred.size = strtol(mysqlRow[4], nullptr, 0);
-        cred.expiration = std::string{mysqlRow[5]};
-        switch (cred.type)
+        ret.set_name = std::string{mysqlRow[0]};
+        ret.version = strtol(mysqlRow[1], nullptr, 0);
+        ret.type = strtol(mysqlRow[2], nullptr, 0);
+        ret.algo = std::string{mysqlRow[3]};
+        ret.size = strtol(mysqlRow[4], nullptr, 0);
+        ret.expiration = std::string{mysqlRow[5]};
+        switch (ret.type)
         {
             case SYMMETRIC:
-                cred.symKey = std::string{mysqlRow[6]};
+                ret.symKey = std::string{mysqlRow[6]};
                 break;
             case ASYMMETRIC:
-                cred.priKey = std::string{mysqlRow[7]};
-                cred.pubKey = std::string{mysqlRow[8]};
+                ret.priKey = std::string{mysqlRow[7]};
+                ret.pubKey = std::string{mysqlRow[8]};
                 break;
             case USERPASS:
-                cred.user = std::string{mysqlRow[9]};
-                cred.pass = std::string{mysqlRow[10]};
+                ret.user = std::string{mysqlRow[9]};
+                ret.pass = std::string{mysqlRow[10]};
                 break;
         }
-        cred.p_owner = std::string{mysqlRow[11]};
-        cred.s_owner = std::string{mysqlRow[12]};
+        ret.p_owner = std::string{mysqlRow[11]};
+        ret.s_owner = std::string{mysqlRow[12]};
     }
     
     mysql_free_result(mysqlResult); 
 
     Logger::log("Exiting MySQL_Conn::get_credential()", LogLevel::Debug);
 
-    return cred;
+    return ret;
 }
 
 /*
@@ -459,8 +444,7 @@ std::vector<Credential> MySQL_Conn::get_all_credentials(const char * set_name) c
     op INT UNSIGNED NOT NULL,
     loc VARCHAR(300) NOT NULL
 */
-Permission MySQL_Conn::get_permission(const char *set_name, const char *entity,
-                const char *loc) const
+Permission MySQL_Conn::get_permission(const Permission perm) const
 {
     Logger::log("Entering MySQL_Conn::get_permissions()", LogLevel::Debug);
 
@@ -468,11 +452,11 @@ Permission MySQL_Conn::get_permission(const char *set_name, const char *entity,
     std::string query{"SELECT set_name, entity, entity_type, op, loc FROM "}; 
     query += PERM_LOC;
     query += " WHERE set_name='";
-    query.append(set_name);
+    query.append(perm.set_name);
     query += "' AND entity='";
-    query.append(entity);
+    query.append(perm.entity);
     query += "' AND loc='";
-    query.append(loc);
+    query.append(perm.loc);
     query += "';";
 
     Logger::log(query);

@@ -1,7 +1,9 @@
 grep -r TODO *
 
 current:
-	- update database.h to only use Credentials/Permissions?
+	- delete permission functionality 
+		- tell distro needs to tell local daemon
+
 	- switch unsigned char * stuff to strings
 
 	- config for esod, and esol (global config?)
@@ -66,12 +68,9 @@ Host Daemon:
         - hash database entries to ensure integrity?
         - prepared statements
     - authenticate client
-    - safely erase data (706)
     - signal handling (712)
     - secure directory (45, 55)
-    - logging
 	- generalize output path
-	- add logging levels
 	- integrity checks (encrypt/hash)
     - delete esod tests
     - sanitize env? (6)

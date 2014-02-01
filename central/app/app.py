@@ -164,6 +164,24 @@ def updatePermission():
         # Everything went ok!
         return jsonify(result=0)
 
+'''
+    Attempt to remove a permission.
+    Will result json {result:0} if everything went ok and {result:1} otherwise.
+'''
+@app.route('/_remove_perm')
+def removePermission():
+    set_name = request.args.get('setName', '', type=str)
+    entity = request.args.get('entity', '', type=str)
+    loc = request.args.get('loc', '', type=str)
+
+    # remove_permission(...) returns 0 on success, so will we.
+    if (remove_permission(set_name, entity, loc)):
+        # Something went wrong.
+        return jsonify(result=0)
+    else:
+        # Everything went ok!
+        return jsonify(result=0)
+
 
 
 """

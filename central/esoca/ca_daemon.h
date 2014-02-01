@@ -119,42 +119,54 @@ int CADaemon::work() const
         Logger::log(std::string{"Requested from esoca: "} + recv_msg);
 
         // Check for valid request.
-        if (recv_msg == UPDATE_PERM)
+        if (recv_msg == NEW_PERM)
         {
             recv_msg = uds_stream.recv();
             Logger::log(recv_msg);
 
-            // Tokenize the message we received.
-            std::vector<std::string> recv_values = 
-                split_string(recv_msg, MSG_DELIMITER);
-            
-            const char *set_name = recv_values[0].c_str();
-            const char *entity = recv_values[1].c_str();
-            const char *loc = recv_values[2].c_str();
-            
+            Permission perm = Permission{recv_msg};
+
+            // Attempt to update database.
+            MySQL_Conn conn;
+            int status = conn.create_permission(perm);
+
+            // Propagate to distribution servers.
+            propagate(UPDATE_PERM, perm.serialize());
+
+        }
+        else if (recv_msg == UPDATE_PERM)
+        {
+            recv_msg = uds_stream.recv();
+            Logger::log(recv_msg);
+
+            Permission perm = Permission{recv_msg};
+
+            // Attempt to update database.
+            MySQL_Conn conn;
+            int status = conn.update_permission(perm);
+
             /*
              * Propagate permissions.
              */
 
-            // Get the current result from the database.
-            // We don't trust whoever requested us just in case.
-            MySQL_Conn conn;
-            Permission query_result = conn.get_permission(set_name, entity, loc);
-
-            // Form the message to send from the query result.
-            // set, entity, entity_type, op, loc
-            std::string distribution_msg{query_result.set_name};
-            distribution_msg += ";";
-            distribution_msg.append(query_result.entity);
-            distribution_msg += ";";
-            distribution_msg.append(std::to_string(query_result.entity_type));
-            distribution_msg += ";";
-            distribution_msg.append(std::to_string(query_result.op));
-            distribution_msg += ";";
-            distribution_msg.append(query_result.loc);
+            // Get the most recent result from the database.
+            // This is needed because the distribution server will call
+            // instert_permission because it may have been offline before.
+            perm = conn.get_permission(perm);
 
             // Propagate to distribution servers.
-            propagate(UPDATE_PERM, distribution_msg);
+            propagate(UPDATE_PERM, perm.serialize());
+        }
+        else if (recv_msg == DELETE_PERM)
+        {
+            Permission perm = Permission{uds_stream.recv()};
+
+             // Update esoca's database.
+            MySQL_Conn conn;
+            conn.delete_permission(perm) ;
+
+            // Propagate to distribution servers.
+            propagate(DELETE_PERM, perm.serialize());
         }
         else if (recv_msg == NEW_CRED)
         {

@@ -5,6 +5,7 @@
 #include "EsoLocal_EsoLocal.h"
 
 #include "../../../config/esol_config.h"
+#include "../../../../database/credential.h"
 #include "../../../../global_config/global_config.h"
 #include "../../../../global_config/message_config.h"
 #include "../../../../socket/exception.h"

@@ -23,50 +23,39 @@
  * implemented in C++.
  */
 
-
-/*
- * This function is not called from Python.
- *
- * Contacts the CA daemon to push the permission to the distribution servers.
- * The parameters are the set name and entity of the permission. These make up
- * the primary key of the permission, which the daemon will use to get the row
- * from the database to push to the distribution servers.
- *
- * Returns 0 if no errors occurred, nonzero otherwise.
+/**
+ * Sends a request to esoca.
+ * @param msg_type The type of the message (ex: NEW_CRED).
+ * @param msg The actual message to send.
  */
-int permission_to_daemon(char *set_name, char *entity, char *loc)
+int request_daemon(std::string msg_type, std::string msg)
 {
     // Socket to the CA daemon.
     UDS_Socket uds_socket{std::string{ESOCA_SOCKET_PATH}};
 
+    int status;
+    // Send Credential to esoca for completion.
     try
     {
         UDS_Stream uds_stream = uds_socket.connect();
 
-        // Send permission request
-        std::string msg = UPDATE_PERM;
+        // Send request type.
+        uds_stream.send(msg_type);
+
+        Logger::log(std::string{"Sending to esoca: "} + msg, LogLevel::Debug);
+
+        // Send the actual message.
         uds_stream.send(msg);
 
-        // Send primary key
-        std::string(key){set_name};
-        key += MSG_DELIMITER;
-        key.append(entity);
-        key += MSG_DELIMITER;
-        key.append(loc);
-
-        Logger::log(std::string{"Sending to esoca: "} + key, LogLevel::Debug);
-
-        uds_stream.send(key);
-
-        return 0;
+        status = 0;
     }
     catch (std::exception& e)
     {
-        return 1;
+        status = 1;
     }
 
+    return status;
 }
-
 
 /*
  * Function to be called from Python.
@@ -114,31 +103,7 @@ static PyObject* create_credential(PyObject* self, PyObject* args)
     cred.algo = algo;
     cred.size = size;
 
-    // Socket to the CA daemon.
-    UDS_Socket uds_socket{std::string{ESOCA_SOCKET_PATH}};
-
-    int status;
-    // Send Credential to esoca for completion.
-    try
-    {
-        UDS_Stream uds_stream = uds_socket.connect();
-
-        // Send permission request
-        uds_stream.send(NEW_CRED);
-
-        // Serialize the credential.
-        std::string msg{cred.serialize()};
-
-        Logger::log(std::string{"Sending to esoca: "} + msg, LogLevel::Debug);
-
-        uds_stream.send(msg);
-
-        status = 0;
-    }
-    catch (std::exception& e)
-    {
-        status = 1;
-    }
+    int status = request_daemon(NEW_CRED, cred.serialize()); 
 
     // Return status (0 if ok, nonzero if error).
 	return Py_BuildValue("i", status);
@@ -247,14 +212,17 @@ static PyObject* create_permission(PyObject* self, PyObject* args)
 
     unsigned int entity_type = strtol(input_entity_type, nullptr, 0);
     unsigned int op = strtol(input_op, nullptr, 0);
-    
-    // Attempt to update database.
-    MySQL_Conn conn;
-    int status = conn.create_permission(set_name, entity, entity_type, op, loc);
 
-    // Push the permission to distribution servers.
-    if(!status)
-        status = permission_to_daemon(set_name, entity, loc);
+    // Populate the Permission.
+    Permission perm;
+    perm.set_name = std::string{set_name};
+    perm.entity = std::string{entity};
+    perm.entity_type = entity_type;
+    perm.op = op;
+    perm.loc = std::string{loc};
+
+    // Request permission creation from esoca.
+    int status = request_daemon(NEW_PERM, perm.serialize());
 
     // Return status (0 if ok, nonzero if error).
 	return Py_BuildValue("i", status);
@@ -281,14 +249,46 @@ static PyObject* update_permission(PyObject* self, PyObject* args)
         return nullptr;
 
     unsigned int op = strtol(input_op, nullptr, 0);
-    
-    // Attempt to update database.
-    MySQL_Conn conn;
-    int status = conn.update_permission(set_name, entity, op, loc);
 
-    // Push the permission to distribution servers.
-    if(!status)
-        status = permission_to_daemon(set_name, entity, loc);
+    // Populate the permission.
+    Permission perm;
+    perm.set_name = std::string{set_name};
+    perm.entity = std::string{entity};
+    perm.op = op;
+    perm.loc = std::string{loc};
+ 
+    // Request update from esoca.
+    int status = request_daemon(UPDATE_PERM, perm.serialize());
+
+    // Return status (0 if ok, nonzero if error).
+	return Py_BuildValue("i", status);
+}
+
+/*
+ * Function to be called from Python.
+ * Attempt to remove a permission on a set.
+ *
+ * Python arguments in order are set_name, entity, loc.
+ *
+ * Returns 0 if everything went ok, nonzero otherwise.
+ */
+static PyObject* remove_permission(PyObject* self, PyObject* args)
+{
+    char *set_name;
+    char *entity;
+    char *loc;
+
+    // Parse input.
+    if (!PyArg_ParseTuple(args, "sss", &set_name, &entity, &loc))
+        return nullptr;
+
+    // Create permission object.
+    Permission perm;
+    perm.set_name = std::string{set_name};
+    perm.entity = std::string{entity};
+    perm.loc = std::string{loc};
+
+    int status = request_daemon(DELETE_PERM, perm.serialize());
 
     // Return status (0 if ok, nonzero if error).
 	return Py_BuildValue("i", status);
@@ -304,6 +304,7 @@ static PyMethodDef appExtension_methods[] = {
     {"get_all_permissions", get_all_permissions, METH_VARARGS},
     {"create_permission", create_permission, METH_VARARGS},
     {"update_permission", update_permission, METH_VARARGS},
+    {"remove_permission", remove_permission, METH_VARARGS},
 	{NULL, NULL}
 };
 

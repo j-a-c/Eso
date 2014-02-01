@@ -7,12 +7,20 @@
  * Some constants for connections.
  */
 
+// Request that a new permission be created.
+// Should be followed by the Permission to be updated at the destination.
+std::string NEW_PERM{"NEW_PERM"};
+
 // Request a permission to be updated.
 // Should be followed by the Permission to be updated at the destination.
 std::string UPDATE_PERM{"UPDATE_PERM"};
 
 // Request a permission.
 std::string GET_PERM{"GET_PERM"};
+
+// Request a permission to be deleted.
+// Should be followed by the Permission to be deleted.
+std::string DELETE_PERM{"DELETE_PERM"};
 
 // Request a credential. 
 // Should be followed by set_name;version.
@@ -28,11 +36,13 @@ std::string NEW_CRED("NEW_CRED");
 std::string PING{"PING"};
 
 // Used to request encryption services from the local daemon.
-// Should be followed by set_name;version;data_to_encrypt.
+// Should be followed by the Credential (with set_name and version specified) 
+// and then the actual data to encrypt.
 std::string REQUEST_ENCRYPT("REQUEST_ENCRYPT");
 
 // Used to request decryption services from the local daemon.
-// Should be followed by set_name;version;data_to_encrypt.
+//// Should be followed by the Credential (with set_name and version specified) 
+// and then the actual data to encrypt.
 std::string REQUEST_DECRYPT("REQUEST_DECRYPT");
 
 // The return value if a query is invalid for some reason. For example:

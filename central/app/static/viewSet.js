@@ -122,6 +122,9 @@ $(document).on('click', '.createPermButton', function(){
 			// Update button function to 'edit'.
 			currentButton.attr('class', 'editPermButton');
 			currentButton.text('Edit');
+
+			// Add remove button.
+			currentRow.append('<td><button class="removePermButton">Remove</button></td>');
 		}
 		else
 		{
@@ -130,6 +133,37 @@ $(document).on('click', '.createPermButton', function(){
 		}
 	});
 
+});
+
+/*
+ * Attach a function to the 'Remove' buttons.
+ * Need to use this because the button will be added dynamically.
+ */
+$(document).on('click', '.removePermButton', function(){
+	
+	var currentButton 	= $(this);
+
+	var currentRow 		= $(this).closest('tr');
+	var entityRow	 	= currentRow.find('td').eq(0);
+	var locRow 			= currentRow.find('td').eq(3);
+
+	$.getJSON($SCRIPT_ROOT + '/_remove_perm', {
+		setName: 		$("#setName").html(),
+        entity: 		entityRow.html(),
+		loc: 			locRow.html()
+      }, function(data) {
+		// TODO if result is true, hide row.
+		// data.result will be 0 on success.
+        if(!data.result)
+		{
+			currentRow.hide()
+		}
+		else
+		{
+			// TODO handle error
+			alert('Error removing permission: ' + data.result);
+		}
+	});
 });
 
 /*

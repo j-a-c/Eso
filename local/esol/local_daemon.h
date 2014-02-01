@@ -35,7 +35,7 @@ class LocalDaemon : public Daemon
         void handleTCP() const;
         void handleUDS() const;
         // Retrieves the requested credential.
-        Credential get_credential(const char *, const int) const;
+        Credential get_credential(const Credential) const;
 };
 
 int LocalDaemon::start() const
@@ -83,13 +83,11 @@ void LocalDaemon::handleTCP() const
             received_string = incoming_stream.recv();
             Logger::log(std::string{"esol received: "} + received_string);
 
-            auto values = split_string(received_string, MSG_DELIMITER);
+            Permission perm = Permission{received_string};
 
             // Update distribution server database.
             MySQL_Conn conn;
-            conn.insert_permission(values[0].c_str(), values[1].c_str(), 
-                    std::stol(values[2]), std::stol(values[3]), 
-                    values[4].c_str());
+            conn.insert_permission(perm);
 
             Logger::log("esol is closing TCP connection.", LogLevel::Debug);
         }
@@ -109,11 +107,11 @@ void LocalDaemon::handleTCP() const
  * First checks the local database, and then queries the distribution servers
  * if the Credential was not found locally.
  */
-Credential LocalDaemon::get_credential(const char * set_name, 
-        const int version) const
+Credential LocalDaemon::get_credential(const Credential in_cred) const
 {
     MySQL_Conn conn;
-    Credential cred = conn.get_credential(set_name, version);
+
+    Credential cred = conn.get_credential(in_cred);
     // If credential is empty, we will request it, update our database,
     // and then proceed.
     if (cred.set_name.empty())
@@ -134,22 +132,22 @@ Credential LocalDaemon::get_credential(const char * set_name,
 
             // Form message to send.
             // set_name;version
-            std::string distribution_msg{set_name};
-            distribution_msg += MSG_DELIMITER;
-            distribution_msg += std::to_string(version);
+            Credential req_cred;
+            req_cred.set_name = in_cred.set_name;
+            req_cred.version = in_cred.version;
 
             std::string log_msg{"esol to esod: "};
-            log_msg += distribution_msg;
+            log_msg += req_cred.serialize();
             Logger::log(log_msg, LogLevel::Debug);
 
             tcp_stream.send(GET_CRED);
-            tcp_stream.send(distribution_msg);
+            tcp_stream.send(req_cred.serialize());
 
             std::string tcp_received = tcp_stream.recv();
             // Our request was successful. Update our database.
             if (tcp_received != INVALID_REQUEST)
             {
-                cred = Credential(tcp_received);
+                cred = Credential{tcp_received};
                 conn.create_credential(cred);
                 break;
             }
@@ -205,15 +203,21 @@ void LocalDaemon::handleUDS() const
             // According to message_config.h, we should receive:
             // set_name;version;data_to_encrypt.
             auto values = split_string(received_string, MSG_DELIMITER);
+            Credential cred;
+            cred.set_name = values[0];
+            cred.version = std::stol(values[1]);
             std::string data_to_encrypt = values[2];
+
+            log_msg = std::string{"esol: Data to encrypt: "};
+            log_msg += data_to_encrypt;
+            Logger::log(log_msg, LogLevel::Debug);
 
             // Check permissions to see if encrypt is allowed. (check
             // permission function?)
 
             // TODO get_credential should throw an exception if the request was
             // not valid.
-            Credential cred = get_credential(values[0].c_str(), 
-                    stoi(values[1]));
+            cred = get_credential(cred); 
             
             // The length of the data to be encrypted.
             int len;
@@ -247,13 +251,16 @@ void LocalDaemon::handleUDS() const
         {
             received_string = uds_stream.recv();
 
-            std::string log_msg{"esol: Decrypt params: "};
+            std::string log_msg{"esol: Decrypt cred: "};
             log_msg += received_string;
             Logger::log(log_msg, LogLevel::Debug);
 
             // According to message_config.h, we should receive:
             // set_name;version;data_to_encrypt.
             auto values = split_string(received_string, MSG_DELIMITER);
+            Credential cred;
+            cred.set_name = values[0];
+            cred.version = std::stol(values[1]);
             std::string data_to_decrypt = values[2];
 
             // Check permissions to see if encrypt is allowed. (check
@@ -261,8 +268,7 @@ void LocalDaemon::handleUDS() const
 
             // TODO get_credential should throw an exception if the request was
             // not valid.
-            Credential cred = get_credential(values[0].c_str(), 
-                    stoi(values[1]));
+            cred = get_credential(cred); 
             
             // The length of the data to be encrypted.
             int len;

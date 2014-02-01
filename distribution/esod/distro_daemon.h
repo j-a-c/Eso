@@ -87,29 +87,37 @@ int DistroDaemon::work() const
             received_string = incoming_stream.recv();
             Logger::log(std::string{"esod received: "} + received_string);
 
-            // set, entity, entity_type, op, loc
-            auto values = split_string(received_string, MSG_DELIMITER);
+            Permission perm = Permission{received_string};
 
             // Update distribution server database.
             MySQL_Conn conn;
-            conn.insert_permission(values[0].c_str(), values[1].c_str(), 
-                    std::stol(values[2]), std::stol(values[3]), 
-                    values[4].c_str());
+            conn.insert_permission(perm); 
 
             // Send update to the local daemon.
             // TODO This obvious assumes the local daemon is running...
             TCP_Socket tcp_out_socket;
-            TCP_Stream local_stream = tcp_out_socket.connect(
-                    values[4], std::to_string(ESOL_PORT));
+            TCP_Stream local_stream = 
+                tcp_out_socket.connect(perm.loc, std::to_string(ESOL_PORT));
 
             std::string log_msg{"esod to esol: "};
-            log_msg += received_string;
+            log_msg += perm.serialize();
             Logger::log(log_msg, LogLevel::Debug);
 
             local_stream.send(UPDATE_PERM);
-            local_stream.send(received_string);
+            local_stream.send(perm.serialize());
 
             Logger::log("esod is closing TCP connection.", LogLevel::Debug);
+        }
+        else if (received_string == DELETE_PERM)
+        {
+            // Create Permission object.
+            Permission perm = Permission{incoming_stream.recv()};
+
+            // Update our database
+            MySQL_Conn conn;
+            conn.delete_permission(perm);
+            
+            // TODO tell local daemon.
         }
         else if (received_string == GET_PERM)
         {
@@ -120,22 +128,20 @@ int DistroDaemon::work() const
         }
         else if (received_string == GET_CRED)
         {
-            Credential cred;
-            
             // TODO Ensure that location is authorized to receive this cred.
 
             // Parse request parameters. See the parameter order in
             // message_config.h
             received_string = incoming_stream.recv();
-            auto params = split_string(received_string, MSG_DELIMITER);
+            Credential cred = Credential{received_string};
 
             std::string log_msg{"In esod, cred params: "};
-            log_msg += received_string;
+            log_msg += cred.serialize();
             Logger::log(log_msg);
 
             // Query our database.
             MySQL_Conn conn;
-            cred = conn.get_credential(params[0].c_str(), stoi(params[1]));
+            cred = conn.get_credential(cred);
             // If the result is valid, serialize and send it.
             if (!cred.set_name.empty())
             {
