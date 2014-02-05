@@ -9,6 +9,7 @@
 #include "../config/mysql_config.h"
 #include "../../crypto/aes.h"
 #include "../../crypto/base64.h"
+#include "../../crypto/hmac.h"
 #include "../../crypto/rsa.h"
 #include "../../daemon/daemon.h"
 #include "../../database/db_types.h"
@@ -212,6 +213,7 @@ void LocalDaemon::handleUDS() const
             log_msg += data_to_encrypt;
             Logger::log(log_msg, LogLevel::Debug);
 
+            // TODO
             // Check permissions to see if encrypt is allowed. (check
             // permission function?)
 
@@ -251,7 +253,7 @@ void LocalDaemon::handleUDS() const
         {
             received_string = uds_stream.recv();
 
-            std::string log_msg{"esol: Decrypt cred: "};
+            std::string log_msg{"esol: Decrypt msg: "};
             log_msg += received_string;
             Logger::log(log_msg, LogLevel::Debug);
 
@@ -263,7 +265,8 @@ void LocalDaemon::handleUDS() const
             cred.version = std::stol(values[1]);
             std::string data_to_decrypt = values[2];
 
-            // Check permissions to see if encrypt is allowed. (check
+            // TODO
+            // Check permissions to see if decrypt is allowed. (check
             // permission function?)
 
             // TODO get_credential should throw an exception if the request was
@@ -297,6 +300,48 @@ void LocalDaemon::handleUDS() const
             {
                 // TODO
             }
+        }
+        else if (received_string == REQUEST_HMAC)
+        {
+            received_string = uds_stream.recv();
+
+            std::string log_msg{"esol: HMAC msg: "};
+            log_msg += received_string;
+            Logger::log(log_msg, LogLevel::Debug);
+
+            // According to message_config.h, we should receive:
+            // set_name;version;data;hash
+            auto values = split_string(received_string, MSG_DELIMITER);
+            Credential cred;
+            cred.set_name = values[0];
+            cred.version = std::stol(values[1]);
+            std::string data = values[2];
+            int hash = std::stol(values[3]);
+
+            // TODO
+            // Check permissions to see if HMAC is allowed. (check
+            // permission function?)
+
+            // TODO get_credential should throw an exception if the request was
+            // not valid.
+            cred = get_credential(cred); 
+
+            if (cred.type == USERPASS)
+            {
+                // TODO throw exception
+            }
+            else if (cred.type == SYMMETRIC)
+            {
+                std::string hmac_data = hmac(cred.symKey, data, hash);
+                uds_stream.send(hmac_data);
+            }
+            else if (cred.type == ASYMMETRIC)
+            {
+                // TODO throw exception
+            }
+
+
+
         }
         else
         {

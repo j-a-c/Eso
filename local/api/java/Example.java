@@ -1,6 +1,7 @@
 import EsoLocal.*;
 
 import java.util.Arrays;
+import java.lang.StringBuilder;
 
 /**
  * @author Joshua A. Campbell
@@ -9,16 +10,18 @@ import java.util.Arrays;
  */
 class Example 
 {
-    // Reference to the Eso local client.
-    EsoLocal eso;
-
-    Example(){}
-
+    
     /**
-     * An example of how to request the Eso local service.
+     * Driver for the examples.
      */
-    public void getService()
+    public static void main(String[] args)
     {
+        Example example = new Example();
+
+        // Reference to the Eso local client.
+        EsoLocal eso;
+
+        // Attempt to connect to the Eso local service.
         try
         {
             eso = EsoLocal.getService();
@@ -28,54 +31,48 @@ class Example
             System.out.println(e);
             throw new RuntimeException();
         }
-    }
-
-    public byte[] symmetricEncrypt(String setName, byte[] secretMessage, int version)
-    {
-        return eso.encrypt(setName, secretMessage, 1);
-    }
-
-    public byte[] symmetricDecrypt(String setName, byte[] secretMessage, int version)
-    {
-        return eso.decrypt(setName, secretMessage, 1);
-    }
-
-
-    /**
-     * Driver for the examples.
-     */
-    public static void main(String[] args)
-    {
-        Example example = new Example();
-
-        // Attempt to connect to the Eso local service.
-        example.getService();
         
-        // Sample set name and a secret message.
+        // Sample set name, a secret message, and version.
         String setName = "com.joshuac.test.sym";
-        String secretMessage = "Hello World";
+        String message = "Hello World";
+        int version = 1;
 
-        System.out.println("====");
+        System.out.println("=====");
+        System.out.println("Symmetric encrypt/decrypt example:");
+        System.out.println("-----");
 
         // Print the original message.
-        System.out.println("Original message: " + secretMessage);
-        System.out.println("Original bytes: " + Arrays.toString(secretMessage.getBytes()));
+        System.out.println("Original message: " + message);
+        System.out.println("Original bytes: " + Arrays.toString(message.getBytes()));
 
-        System.out.println("====");
+        System.out.println("-----");
 
         // Encrypt the secret message.
-        byte[] encryptedMsg = example.symmetricEncrypt(setName, secretMessage.getBytes(), 1);
+        byte[] encryptedMsg = eso.encrypt(setName, message.getBytes(), version);
         System.out.println("Encrypted bytes: " + Arrays.toString(encryptedMsg));
 
-        System.out.println("====");
+        System.out.println("-----");
 
         // Decrypt the encrypted message.
-        byte[] decryptedMsg = example.symmetricDecrypt(setName, encryptedMsg, 1);
-        secretMessage = new String(decryptedMsg);
-        System.out.println("Decrypted message: " + secretMessage);
+        byte[] decryptedMsg = eso.decrypt(setName, encryptedMsg, version);
+        message = new String(decryptedMsg);
+        System.out.println("Decrypted message: " + message);
         System.out.println("Decrypted bytes: " + Arrays.toString(decryptedMsg));
 
         System.out.println("====");
+        System.out.println("HMAC example:");
+        System.out.println("-----");
+
+        // HMAC using SHA-1.
+        byte[] hmacMsg = eso.hmac(setName, message.getBytes(), version, EsoLocal.Hash.SHA1);
+        StringBuilder builder = new StringBuilder();
+        for (byte b : hmacMsg)
+            builder.append(String.format("%02x", b));
+        System.out.println("HMAC: " + Arrays.toString(hmacMsg));
+        System.out.println("Hex: " + builder.toString());
+
+        System.out.println("====");
+
 
     }
 

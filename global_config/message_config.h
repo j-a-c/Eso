@@ -41,9 +41,13 @@ std::string PING{"PING"};
 std::string REQUEST_ENCRYPT("REQUEST_ENCRYPT");
 
 // Used to request decryption services from the local daemon.
-//// Should be followed by the Credential (with set_name and version specified) 
+// Should be followed by the Credential (with set_name and version specified) 
 // and then the actual data to encrypt.
 std::string REQUEST_DECRYPT("REQUEST_DECRYPT");
+
+// Used to request HMAC services from the local daemon.
+// Should be followed by the set, data, version, and hash type to use.
+std::string REQUEST_HMAC("REQUEST_HMAC");
 
 // The return value if a query is invalid for some reason. For example:
 // requesting a non-existant credential from a distribution server.

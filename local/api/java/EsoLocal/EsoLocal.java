@@ -10,6 +10,16 @@ import java.lang.reflect.Field;
  */
 public class EsoLocal
 {
+    /**
+     * Allowable hashes. The ordinal values of the enums correspond to their
+     * values in the native library. It is easier to pass the ordinal than the
+     * enum itself.
+     */
+    public static enum Hash
+    {
+        DEFAULT, SHA1;
+    }
+
     // A little hack to find the dynamic library.
     static 
     {
@@ -36,24 +46,53 @@ public class EsoLocal
     private native boolean pingEsoLocal();
 
     /**
-     * TODO
+     * Encrypts the data given using the specified version of the credentials
+     * found at the given set.
+     *
+     * @param set The set containing the credentials.
+     * @param data The data to encrypt.
+     * @param version The version of the credentials to use.
      */
     public native byte[] encrypt(String set, byte[] data, int version);
 
     /**
-     * TODO
+     * Decrypts the data given using the specified version of the credentials
+     * found at the given set.
+     *
+     * @param set The set containing the credentials.
+     * @param data The data to decrypt.
+     * @param version The version of the credentials to use.
      */
+
     public native byte[] decrypt(String set, byte[] data, int version);
 
     /**
      * TODO
      */
-    public native byte[] sign(String set, byte[] data, int version);
+    public native byte[] sign(String set, byte[] data, int version); 
 
     /**
-     * TODO
+     * Computes the message authentication code of the data using the specified
+     * version of the credentials found at the given set and the specified hash
+     * function. This function should only be called from the corresponding
+     * wrapper function.
+     *
+     * @param set The set containing the credentials.
+     * @param data The data to compute the HMAC for.
+     * @param version The version of the credentials to use.
+     * @param hash The hash function to use.
+     *
      */
-    public native byte[] hmac(String set, byte[] data, int version);
+    private native byte[] hmac(String set, byte[] data, int version, int hash);
+
+    /**
+     * Wrapper around the native method because it is easier to pass the
+     * ordinal of the enum than the enum itself.
+     */
+    public byte[] hmac(String set, byte[] data, int version, Hash hash)
+    {
+        return hmac(set, data, version, hash.ordinal());
+    }
 
     /**
      * TODO

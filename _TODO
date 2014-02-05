@@ -13,7 +13,6 @@ current:
 		- decrypt
 			- asym
 		- sign
-		- hmac
 		- verify
 
 	- change exits to exceptions

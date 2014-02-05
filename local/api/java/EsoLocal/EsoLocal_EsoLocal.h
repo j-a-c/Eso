@@ -42,10 +42,10 @@ JNIEXPORT jbyteArray JNICALL Java_EsoLocal_EsoLocal_sign
 /*
  * Class:     EsoLocal_EsoLocal
  * Method:    hmac
- * Signature: (Ljava/lang/String;[BI)[B
+ * Signature: (Ljava/lang/String;[BII)[B
  */
 JNIEXPORT jbyteArray JNICALL Java_EsoLocal_EsoLocal_hmac
-  (JNIEnv *, jobject, jstring, jbyteArray, jint);
+  (JNIEnv *, jobject, jstring, jbyteArray, jint, jint);
 
 /*
  * Class:     EsoLocal_EsoLocal
