@@ -82,5 +82,6 @@ Client API:
 
 Crypto:
 	- aes.h
-		- EVP_EncryptInit_ex & Decrypt
 		- use IV
+	- hmac.h
+		- add more hash types
