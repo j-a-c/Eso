@@ -20,6 +20,8 @@ current:
 
 All:
 	- authenticated communication
+		- uds
+		- tcp
 
 	- using '!' as message terminator means we cannot send 'hello world!'...
 
