@@ -1,83 +1,53 @@
 #ifndef ESO_UTIL_NETWORK
 #define ESO_UTIL_NETWORK
 
-#include <arpa/inet.h>
-#include <ifaddrs.h>
-#include <netinet/in.h>
-#include <stdio.h>
+#include <cstring>
+#include <netdb.h>
 #include <string>
 #include <sys/socket.h>
-#include <sys/types.h>
-#include <vector>
+#include <unistd.h>
 
-/*
- * Returns IP's associated with this machine.
+/**
+ * Returns the fully qualified domain name associated with this machine.
  */
-std::vector<std::string> get_network_interfaces()
+std::string get_fqdn()
 {
-    std::vector<std::string> results;
+    struct addrinfo hints, *info, *p;
 
-    struct ifaddrs *addrs;
-    struct ifaddrs *tmp;
+    // SUSv2 guarantees that "Host names are limited to 255 bytes".
+    char hostname[256];
+    hostname[255] = '\0';
+    // We will first attempt to get the hostname of this machine.
+    gethostname(hostname, 255);
 
-    getifaddrs(&addrs);
-    tmp = addrs;
+    memset(&hints, 0, sizeof hints);
+    //either IPV4 or IPV6
+    hints.ai_family = AF_UNSPEC; 
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_flags = AI_CANONNAME;
 
-    while (tmp) 
-    {
-        if (tmp->ifa_addr && tmp->ifa_addr->sa_family == AF_INET)
-        {
-            struct sockaddr_in *pAddr = (struct sockaddr_in *)tmp->ifa_addr;
-            results.push_back(std::string{inet_ntoa(pAddr->sin_addr)});
-        }
+    // Now we attempt to get Internet addresses associated with the hostname of
+    // this machine.
+    int gai_result;
+    if ((gai_result = getaddrinfo(hostname, "http", &hints, &info)) != 0) {
+        // TODO Throw an exception.
+        exit(1);
+    }
+    
+    // The FQDN that we will return.
+    std::string result;
 
-        tmp = tmp->ifa_next;
+    // Look for the canonical names returned.
+    // (TODO) In my test cases, only one was returned, but this might pose a problem
+    // in enterprise situations.
+    for(p = info; p; p = p->ai_next) {
+        result = std::string{p->ai_canonname};
     }
 
-    freeifaddrs(addrs);  
+    // Free the address structure.
+    freeaddrinfo(info);
 
-    return results;
+    return result;
 }
-
-/*
- * Returns IP addresses
-std::vector<std::string> get_ip()
-{
-    // Hints to resolve the hostname.
-    memset(&hints, 0, sizeof hints); 
-    hints.ai_family   = AF_INET;    
-    hints.ai_socktype = SOCK_STREAM;  
-    hints.ai_flags    = AI_PASSIVE; 
-
-    // Resolve the hostname. 
-    if ((getaddrinfo(hostname.c_str(), nullptr, &hints, &servinfo)) == -1)
-    {
-        Logger::log("getaddrinfo() error in TCP_Socket::connect()", 
-                LogLevel::Error);
-        exit(1);
-    }       
-
-    bool connected = false;
-    // Attempt to connect
-    for (p=servinfo; p; p=p->ai_next) 
-    { 
-        struct in_addr  *addr;  
-        if (p->ai_family == AF_INET) 
-        { 
-            struct sockaddr_in *ipv = (struct sockaddr_in *)p->ai_addr; 
-            addr = &(ipv->sin_addr);  
-        } 
-        // We will keep this just in case we change from AF_INET in the future.
-        else 
-        { 
-            struct sockaddr_in6 *ipv6 = (struct sockaddr_in6 *)p->ai_addr; 
-            addr = (struct in_addr *) &(ipv6->sin6_addr); 
-        }
-
-        // Set the network address structure.
-        serv_addr.sin_addr = *addr;
-
-}
-*/
 
 #endif

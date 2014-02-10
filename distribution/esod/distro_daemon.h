@@ -45,30 +45,45 @@ const char * DistroDaemon::lock_path() const
 
 int DistroDaemon::work() const
 {
-    /*
-     * TODO see the following comment.
-    std::vector<std::string> locations;
-    std::vector<std::string> ports;
+    std::string my_hostname = get_fqdn();
+
+    // The socket that will accept incoming connections.
+    TCP_Socket tcp_in_socket;
+
+    // Will be set to true once we have successfully set up our socket.
+    bool connnected = false;
+
     // Read conifg file for distribution locations.
     // TODO config this location somewhere
     std::ifstream input( "/home/bose/Desktop/eso/global_config/locations_config" );
     for (std::string line; getline(input, line); )
     {
         auto values = split_string(line, LOC_DELIMITER);
+        
+        // If we find our FQDN in the config file, we will listen on the port
+        // specified.
+        if (values[0] == my_hostname)
+        {
+            if(tcp_in_socket.listen(values[1]) != 0)
+            {
+                Logger::log("Socket creation failed in DistroDaemon::work()", 
+                        LogLevel::Fatal);
+                exit(1);
+            }
+            connnected = true;
+            break;
+        }
 
-        locations.push_back(values[0]);
-        ports.push_back(values[1]);
     }
-    */
 
-    // TODO read config file and choose port based on location
-    TCP_Socket tcp_in_socket;
-    if(tcp_in_socket.listen(std::string{"4344"}) != 0)
+    // If we did not find our name in the location config file, exit and log message.
+    if (!connnected)
     {
-        Logger::log("Socket creation failed in DistroDaemon::work()");
+        Logger::log("Config info not found in location config file.", 
+                LogLevel::Fatal);
         exit(1);
     }
-
+    
     Logger::log("esod listening to TCP successfully.");
 
     // TODO multithread

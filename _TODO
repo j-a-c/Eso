@@ -30,6 +30,8 @@ All:
 	- authenticated communication
 		- tcp
 
+    - cronjob to keep deamons alive
+
 	- using '!' as message terminator means we cannot send 'hello world!'...
 
 Central Auth:
@@ -48,7 +50,6 @@ Central Auth:
 		- propagate all
 			- later: propagate changes
 		- time of last propagation?
-		- config file with distribution servers
     - database
 		- clear query strings
 		- logging queries also log the keys -_-
@@ -59,11 +60,8 @@ Central Auth:
         - backup mechanism for database
 		- ensure integrity of database
 
-Distribution Servers:
-    - distribution daemon
 
 Host Daemon:
-    - cronjob
     - save esod pid
     - close all file descriptors? (23)
     - implement protocol
