@@ -37,6 +37,8 @@ class LocalDaemon : public Daemon
         void handleUDS() const;
         // Retrieves the requested credential.
         Credential get_credential(const Credential) const;
+        // Retrieves the requested permission.
+        Permission get_permission(const Permission) const;
 };
 
 int LocalDaemon::start() const
@@ -158,6 +160,62 @@ Credential LocalDaemon::get_credential(const Credential in_cred) const
     return cred;
 }
 
+/**
+ * Returns the Permission with the given set_name, entity, and loc.
+ * First checks the local database, and then queries the distribution servers
+ * if the Permission was not found locally.
+ */
+Permission LocalDaemon::get_permission(const Permission in_perm) const
+{
+    MySQL_Conn conn;
+
+    Permission perm = conn.get_permission(in_perm);
+    // If permission is empty, we will request it, update our database,
+    // and then proceed.
+    if (perm.set_name.empty())
+    {
+        Logger::log("esol: Permission not found, contacting esod.");
+
+        // Try requesting all distribution locations.
+        // Read config file for distribution locations.
+        // TODO config this location somewhere
+        std::ifstream input( "/home/bose/Desktop/eso/global_config/locations_config" );
+        for (std::string line; getline(input, line); )
+        {
+            auto dist_info = split_string(line, LOC_DELIMITER);
+
+            TCP_Socket tcp_socket;
+            TCP_Stream tcp_stream = tcp_socket.connect(
+                    dist_info[0], dist_info[1]);
+
+            // Form message to send.
+            // set_name;version
+            Permission req_perm;
+            req_perm.set_name = in_perm.set_name;
+            req_perm.entity = in_perm.entity;
+            req_perm.loc = in_perm.loc;
+
+            std::string log_msg{"esol to esod: "};
+            log_msg += req_perm.serialize();
+            Logger::log(log_msg, LogLevel::Debug);
+
+            tcp_stream.send(GET_PERM);
+            tcp_stream.send(req_perm.serialize());
+
+            std::string tcp_received = tcp_stream.recv();
+            // Our request was successful. Update our database.
+            if (tcp_received != INVALID_REQUEST)
+            {
+                perm = Permission{tcp_received};
+                conn.create_permission(perm);
+                break;
+            }
+        }
+        // TODO If not valid, throw exception.
+    }
+    return perm;
+}
+
 
 /*
  * Handle incoming UDS connections.
@@ -180,9 +238,10 @@ void LocalDaemon::handleUDS() const
 
         UDS_Stream uds_stream = uds_in_socket.accept();
 
-        Logger::log("esol accepted new UDS connection.", LogLevel::Debug);
+        // Get the username of the user we are connected to.
+        std::string curr_user = uds_stream.get_user();
 
-        // TODO authenticate by checking pid
+        Logger::log("esol accepted new UDS connection.", LogLevel::Debug);
 
         // Implement protocol
 
@@ -339,8 +398,6 @@ void LocalDaemon::handleUDS() const
             {
                 // TODO throw exception
             }
-
-
 
         }
         else

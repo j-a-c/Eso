@@ -470,14 +470,17 @@ Permission MySQL_Conn::get_permission(const Permission perm) const
     // Row pointer in the result set.
     MYSQL_ROW mysqlRow;
     // Pack query results into return value.
-    // There should only be one return value, since (set_name,entity) is the
+    // There should only be one return value, since (set_name,entity, loc) is the
     // primary key for the permissions table.
-    mysqlRow = mysql_fetch_row(mysqlResult);
-    result.set_name= std::string{mysqlRow[0]};
-    result.entity = std::string{mysqlRow[1]};
-    result.entity_type = strtol(mysqlRow[2], nullptr, 0);
-    result.op = strtol(mysqlRow[3], nullptr, 0);
-    result.loc = std::string{mysqlRow[4]};
+    // There may be 0 or 1 results.
+    while ( (mysqlRow = mysql_fetch_row(mysqlResult)) )
+    {
+        result.set_name= std::string{mysqlRow[0]};
+        result.entity = std::string{mysqlRow[1]};
+        result.entity_type = strtol(mysqlRow[2], nullptr, 0);
+        result.op = strtol(mysqlRow[3], nullptr, 0);
+        result.loc = std::string{mysqlRow[4]};
+    }
     
     mysql_free_result(mysqlResult); 
 

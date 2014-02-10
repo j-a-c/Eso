@@ -24,7 +24,7 @@ public:
     // Receive data.
     std::string recv();
     // Set the user we are currenting corresponding with.
-    std::string getUser() const;
+    std::string get_user() const;
 private:
     int _con_fd;
     struct sockaddr_un _remote;
@@ -124,7 +124,7 @@ std::string UDS_Stream::recv()
 /**
  * Returns the user that initially requested access to this stream.
  */
-std::string UDS_Stream::getUser() const
+std::string UDS_Stream::get_user() const
 {
     return _user;
 }

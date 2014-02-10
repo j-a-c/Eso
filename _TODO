@@ -1,6 +1,13 @@
 grep -r TODO *
 
 current:
+	- enforce uds cred check in esol
+	- distro daemon - get perm
+	- network - get curr loc name
+	- esol - use cur loc name to request perm
+	- distro - read config file for port using curr loc
+
+
 	- delete permission functionality 
 		- tell distro needs to tell local daemon
 
@@ -20,7 +27,6 @@ current:
 
 All:
 	- authenticated communication
-		- uds
 		- tcp
 
 	- using '!' as message terminator means we cannot send 'hello world!'...
@@ -54,7 +60,6 @@ Central Auth:
 
 Distribution Servers:
     - distribution daemon
-		- config file for port
 
 Host Daemon:
     - cronjob
