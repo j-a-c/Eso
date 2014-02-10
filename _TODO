@@ -8,7 +8,8 @@ current:
 	- distro - read config file for port using curr loc
 
 
-	- delete permission functionality 
+	- delete permission functionality
+		- perm not removed from ca?
 		- tell distro needs to tell local daemon
 
 	- switch unsigned char * stuff to strings
