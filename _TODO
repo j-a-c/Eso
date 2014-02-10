@@ -1,8 +1,7 @@
 grep -r TODO *
 
 current:
-	- uds_socket set user
-	- enforce uds cred check in esol
+
 	- distro daemon - get perm
 
 	- delete permission functionality
