@@ -2,6 +2,7 @@
 #define ESO_SOCKET_UDS_SOCKET
 
 #include <errno.h>
+#include <pwd.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -28,6 +29,7 @@ private:
     int socket_fd;
     struct sockaddr_un sock_info;
     const int MAX_QUEUE_SIZE = 5;
+    std::string recvCredentials(int sfd);
 };
 
 /*
@@ -82,6 +84,115 @@ int UDS_Socket::listen()
     return 0;
 }
 
+/**
+ * Attempts to receive credentials from the specified socket file descriptor.
+ */
+std::string UDS_Socket::recvCredentials(int sfd)
+{
+    // We must set the SO_PASSCRED socket option in order to receive 
+    // credentials.
+    int optval = 1;
+    if (setsockopt(sfd, SOL_SOCKET, SO_PASSCRED, &optval, 
+                sizeof(optval)) == -1)
+    {
+        Logger::log("Error in setsockopt() in UDS_Socket::recvCredentials()", 
+                LogLevel::Error);
+    }
+
+    // Return status and
+    // Junk data we will receive.
+    int nr, data;
+
+    struct msghdr msgh;
+    struct iovec iov;
+    // Will hold the credential data.
+    struct ucred *ucredp, ucred;
+
+    union 
+    {
+        struct cmsghdr cmh;
+        char   control[CMSG_SPACE(sizeof(struct ucred))];
+    } control_un;
+
+    struct cmsghdr *cmhp;
+
+    // Set 'control_un' to describe ancillary data that we want to receive.
+    control_un.cmh.cmsg_len = CMSG_LEN(sizeof(struct ucred));
+    control_un.cmh.cmsg_level = SOL_SOCKET;
+    control_un.cmh.cmsg_type = SCM_CREDENTIALS;
+
+    // Set 'msgh' fields to describe 'control_un'.
+    msgh.msg_control = control_un.control;
+    msgh.msg_controllen = sizeof(control_un.control);
+
+    // Set fields of 'msgh' to point to buffer used to receive (real)
+    // data read by recvmsg()
+    msgh.msg_iov = &iov;
+    msgh.msg_iovlen = 1;
+    iov.iov_base = &data;
+    iov.iov_len = sizeof(int);
+
+    // Some more fields...
+    msgh.msg_name = nullptr; 
+    msgh.msg_namelen = 0;
+
+    // Receive real plus ancillary data.
+    // The real data is just junk that we send in order to receive the
+    // ancillary data.
+    nr = recvmsg(sfd, &msgh, 0);
+    if (nr == -1)
+        Logger::log("recvmsg", LogLevel::Error);
+
+
+    // Extract credentials information from received ancillary data.
+    cmhp = CMSG_FIRSTHDR(&msgh);
+    if (!cmhp || cmhp->cmsg_len != CMSG_LEN(sizeof(struct ucred)))
+        Logger::log("bad cmsg header / message length in UDS_Socket::recvCredentials()",
+                LogLevel::Error);
+    if (cmhp->cmsg_level != SOL_SOCKET)
+        Logger::log("cmsg_level != SOL_SOCKET in UDS_Socket::recvCredentials()",
+                LogLevel::Error);
+    if (cmhp->cmsg_type != SCM_CREDENTIALS)
+        Logger::log("cmsg_type != SCM_CREDENTIALS in UDS_Socket::recvCredentials()",
+                LogLevel::Error);
+
+    ucredp = (struct ucred *) CMSG_DATA(cmhp);
+
+    // Store the received credentials.
+    pid_t pid = ucredp->pid;
+    uid_t uid = ucredp->uid;
+    gid_t gid = ucredp->gid;
+
+    std::string log_msg{"Receive credentials (pug): "};
+    log_msg += std::to_string(pid);
+    log_msg.append(" ");
+    log_msg += std::to_string(uid);
+    log_msg.append(" ");
+    log_msg += std::to_string(gid);
+    log_msg.append(" : ");
+
+    // Get the username of the connected user.
+    struct passwd *pws;
+    pws = getpwuid(uid);
+
+    // The username of the user we are currently connected to.
+    std::string user;
+
+    if (pws)
+    {
+        user = std::string{pws->pw_name};
+        log_msg += user;
+    }
+    else
+    {
+        // TODO Throw some sort of exception or close exception.
+    }
+
+    Logger::log(log_msg);
+
+    return user;
+}
+
 /*
  * Accept an incoming connection.
  */
@@ -120,6 +231,9 @@ UDS_Stream UDS_Socket::accept()
         exit(1);
     }
 
+    std::string user = recvCredentials(connection_fd);
+
+    // Initialize a new stream and set the corresponding user.
     return UDS_Stream{connection_fd, client, client_len};
 }
 
@@ -130,13 +244,39 @@ UDS_Stream UDS_Socket::accept()
  */
 UDS_Stream UDS_Socket::connect()
 {
+    struct msghdr msgh;
+    struct iovec iov;
+
+    // Junk data to send along with credentials.
+    int data = 12345;
+
+    msgh.msg_iov = &iov;
+    msgh.msg_iovlen = 1;
+    iov.iov_base = &data;
+    iov.iov_len = sizeof(int);
+
+    msgh.msg_name = nullptr;
+    msgh.msg_namelen = 0;
+
+    // We are sending our real credentials, so we don't specify an explicit
+    // credential structure.
+    msgh.msg_control = nullptr;
+    msgh.msg_controllen = 0;
+
+    // Attempt to connect to the socket.
     if (::connect(socket_fd, (struct sockaddr *)&sock_info, sock_len) == -1)
     {
         // Error connecting to socket.
         Logger::log("Error connecting to host in UDS_Socket::connect().", 
-                LogLevel::Error);
+                LogLevel::Fatal);
         throw connect_exception();
     }
+
+    // Send our credentials.
+    int ns = sendmsg(socket_fd, &msgh, 0);
+    if (ns == -1)
+        Logger::log("Error sending credentials in UDS_Socket::connect()",
+                LogLevel::Fatal);
 
     return UDS_Stream{socket_fd, sock_info, sock_len};
 }

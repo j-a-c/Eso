@@ -16,11 +16,15 @@ class UDS_Stream
 {
 public:
     UDS_Stream(int con_fd, sockaddr_un remote, int remote_len);
+    UDS_Stream(int con_fd, sockaddr_un remote, int remote_len,
+            std::string user);
     ~UDS_Stream();
     // Send data.
     void send(std::string msg) const;
     // Receive data.
     std::string recv();
+    // Set the user we are currenting corresponding with.
+    std::string getUser() const;
 private:
     int _con_fd;
     struct sockaddr_un _remote;
@@ -29,6 +33,8 @@ private:
     int MAX_LENGTH = 1024;
     // Buffer holding partially constructed messages.
     std::string msg_buffer{};
+    // The user we are corresponding with.
+    std::string _user;
 };
 
 UDS_Stream::UDS_Stream(int con_fd, sockaddr_un remote, int remote_len)
@@ -37,12 +43,20 @@ UDS_Stream::UDS_Stream(int con_fd, sockaddr_un remote, int remote_len)
     _remote = remote;
 }
 
+UDS_Stream::UDS_Stream(int con_fd, sockaddr_un remote, int remote_len, 
+        std::string user)
+    : _con_fd{con_fd}, _remote_len{remote_len}
+{
+    _remote = remote;
+    _user = user;
+}
+
 UDS_Stream::~UDS_Stream()
 {
     close(_con_fd);
 }
 
-/*
+/**
  * Send data. Includes MSG_END to allow the receiver to distinguish between 
  * messages.
  */
@@ -75,7 +89,7 @@ void UDS_Stream::send(std::string msg) const
     }
 }
 
-/* 
+/** 
  * Returns a completed message, not including the MSG_END character.
  */
 std::string UDS_Stream::recv()
@@ -106,5 +120,14 @@ std::string UDS_Stream::recv()
 
     return ret_msg;
 }
+
+/**
+ * Returns the user that initially requested access to this stream.
+ */
+std::string UDS_Stream::getUser() const
+{
+    return _user;
+}
+
 
 #endif

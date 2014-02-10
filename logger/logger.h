@@ -5,7 +5,7 @@
 #include <fstream> 
 #include <time.h>
 
-enum class LogLevel {Error, Warning, Info, Debug, Debug1};
+enum class LogLevel {Fatal, Error, Warning, Info, Debug, Debug1};
 
 /* Class for logging */
 class Logger
