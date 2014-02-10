@@ -20,6 +20,7 @@
 #include "../../socket/uds_socket.h"
 #include "../../socket/uds_stream.h"
 #include "../../util/parser.h"
+#include "../../util/network.h"
 
 #include "../../database/mysql_conn.h"
 
@@ -38,7 +39,11 @@ class LocalDaemon : public Daemon
         // Retrieves the requested credential.
         Credential get_credential(const Credential) const;
         // Retrieves the requested permission.
-        Permission get_permission(const Permission) const;
+        Permission get_permission(Permission) const;
+        // Checks whether the entity has permission to execute the given
+        // operation. It is assumed that the entity is on this machine.
+        bool has_permission_to(const std::string entity, 
+                const std::string set_name, const int op) const;
 };
 
 int LocalDaemon::start() const
@@ -161,14 +166,22 @@ Credential LocalDaemon::get_credential(const Credential in_cred) const
 }
 
 /**
- * Returns the Permission with the given set_name, entity, and loc.
+ * Returns the Permission with the given set_name, entity.
  * First checks the local database, and then queries the distribution servers
  * if the Permission was not found locally.
+ *
+ * This method will reset in_perm.loc to the machine's current FQDN in order to
+ * prevent masquerading. Thus, it does not matter is loc is not set when the
+ * Permission is originally given to this function.
  */
-Permission LocalDaemon::get_permission(const Permission in_perm) const
+Permission LocalDaemon::get_permission(Permission in_perm) const
 {
+    // Set our current FQDN.
+    in_perm.loc = get_fqdn();
+
     MySQL_Conn conn;
 
+    // This is the permission that we will return.
     Permission perm = conn.get_permission(in_perm);
     // If permission is empty, we will request it, update our database,
     // and then proceed.
@@ -216,6 +229,32 @@ Permission LocalDaemon::get_permission(const Permission in_perm) const
     return perm;
 }
 
+/**
+ * Checks to see if the entity has permission to execute the specified
+ * operation on the specified set. It is implicitly assumed that the entity is
+ * executing the operation on the current machine.
+ *
+ * @param entity The name of the user requesting the operation.
+ * @param set The set the enitity wishes to perform the operation on.
+ * @param op The operation the entity wishes to perform.
+ * 
+ * @return true if the entity can execute the operation, false otherwise.
+ */
+bool LocalDaemon::has_permission_to(const std::string entity, const std::string set_name,
+        const int op) const
+{
+    Permission perm;
+    perm.entity = entity;
+    perm.set_name = set_name;
+
+    // Attempt to retrieve this permission.
+    perm = get_permission(perm);
+
+    // The entity has permission if the op bit is set in the returned 
+    // permission.
+    return (perm.op & op); 
+
+}
 
 /*
  * Handle incoming UDS connections.
@@ -239,9 +278,11 @@ void LocalDaemon::handleUDS() const
         UDS_Stream uds_stream = uds_in_socket.accept();
 
         // Get the username of the user we are connected to.
-        std::string curr_user = uds_stream.get_user();
+        std::string curr_user = uds_in_socket._user;
 
-        Logger::log("esol accepted new UDS connection.", LogLevel::Debug);
+        std::string log_msg("esol accepted new UDS connection with: ");
+        log_msg += uds_stream.get_user();
+        Logger::log(log_msg, LogLevel::Debug);
 
         // Implement protocol
 
@@ -256,7 +297,7 @@ void LocalDaemon::handleUDS() const
         {
             received_string = uds_stream.recv();
 
-            std::string log_msg{"esol: Encrypt params: "};
+            log_msg = std::string{"esol: Encrypt params: "};
             log_msg += received_string;
             Logger::log(log_msg, LogLevel::Debug);
 
@@ -272,9 +313,14 @@ void LocalDaemon::handleUDS() const
             log_msg += data_to_encrypt;
             Logger::log(log_msg, LogLevel::Debug);
 
-            // TODO
-            // Check permissions to see if encrypt is allowed. (check
-            // permission function?)
+            // Check permissions to see if encrypt is allowed.
+            // If the entity does not have permission, we will send an empty
+            // string and continue.
+            if (!has_permission_to(curr_user, cred.set_name, ENCRYPT_OP))
+            {
+                uds_stream.send(std::string{});
+                continue; 
+            }
 
             // TODO get_credential should throw an exception if the request was
             // not valid.
@@ -324,9 +370,15 @@ void LocalDaemon::handleUDS() const
             cred.version = std::stol(values[1]);
             std::string data_to_decrypt = values[2];
 
-            // TODO
-            // Check permissions to see if decrypt is allowed. (check
-            // permission function?)
+            // Check permissions to see if encrypt is allowed.
+            // If the entity does not have permission, we will send an empty
+            // string and continue.
+            if (!has_permission_to(curr_user, cred.set_name, DECRYPT_OP))
+            {
+                uds_stream.send(std::string{});
+                continue; 
+            }
+
 
             // TODO get_credential should throw an exception if the request was
             // not valid.
@@ -377,9 +429,15 @@ void LocalDaemon::handleUDS() const
             std::string data = values[2];
             int hash = std::stol(values[3]);
 
-            // TODO
-            // Check permissions to see if HMAC is allowed. (check
-            // permission function?)
+            // Check permissions to see if encrypt is allowed.
+            // If the entity does not have permission, we will send an empty
+            // string and continue.
+            if (!has_permission_to(curr_user, cred.set_name, HMAC_OP))
+            {
+                uds_stream.send(std::string{});
+                continue; 
+            }
+
 
             // TODO get_credential should throw an exception if the request was
             // not valid.

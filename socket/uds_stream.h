@@ -16,8 +16,6 @@ class UDS_Stream
 {
 public:
     UDS_Stream(int con_fd, sockaddr_un remote, int remote_len);
-    UDS_Stream(int con_fd, sockaddr_un remote, int remote_len,
-            std::string user);
     ~UDS_Stream();
     // Send data.
     void send(std::string msg) const;
@@ -41,14 +39,6 @@ UDS_Stream::UDS_Stream(int con_fd, sockaddr_un remote, int remote_len)
     : _con_fd{con_fd}, _remote_len{remote_len}
 {
     _remote = remote;
-}
-
-UDS_Stream::UDS_Stream(int con_fd, sockaddr_un remote, int remote_len, 
-        std::string user)
-    : _con_fd{con_fd}, _remote_len{remote_len}
-{
-    _remote = remote;
-    _user = user;
 }
 
 UDS_Stream::~UDS_Stream()
@@ -128,6 +118,5 @@ std::string UDS_Stream::get_user() const
 {
     return _user;
 }
-
 
 #endif

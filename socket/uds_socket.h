@@ -24,6 +24,12 @@ public:
     UDS_Stream accept();
     // Connect to the location this socket was created with.
     UDS_Stream connect();
+    // The current user we are connected to.
+    // We are keeping this public as a hack in order to allow the local daemon
+    // to access this. For some reason (TODO) when we set this as a parameter
+    // in accept(), accept() resulted in an EIO error. I'm still not sure why
+    // this is happening. So I will leave it like this for now.
+    std::string _user;
 private:
     int sock_len; // sock_info 
     int socket_fd;
@@ -190,6 +196,7 @@ std::string UDS_Socket::recvCredentials(int sfd)
 
     Logger::log(log_msg);
 
+    _user = user;
     return user;
 }
 
@@ -278,7 +285,7 @@ UDS_Stream UDS_Socket::connect()
         Logger::log("Error sending credentials in UDS_Socket::connect()",
                 LogLevel::Fatal);
 
-    return UDS_Stream{socket_fd, sock_info, sock_len};
+    return UDS_Stream{socket_fd, sock_info, sock_len}; 
 }
 
 #endif
