@@ -132,7 +132,19 @@ int DistroDaemon::work() const
             MySQL_Conn conn;
             conn.delete_permission(perm);
             
-            // TODO tell local daemon.
+            // Send DELETE_PERM to the local daemon.
+            // TODO This obvious assumes the local daemon is running...
+            TCP_Socket tcp_out_socket;
+            TCP_Stream local_stream = 
+                tcp_out_socket.connect(perm.loc, std::to_string(ESOL_PORT));
+
+            std::string log_msg{"esod to esol: "};
+            log_msg += perm.serialize();
+            Logger::log(log_msg, LogLevel::Debug);
+
+            local_stream.send(DELETE_PERM);
+            local_stream.send(perm.serialize());
+
         }
         else if (received_string == GET_PERM)
         {

@@ -177,7 +177,7 @@ def removePermission():
     # remove_permission(...) returns 0 on success, so will we.
     if (remove_permission(set_name, entity, loc)):
         # Something went wrong.
-        return jsonify(result=0)
+        return jsonify(result=1)
     else:
         # Everything went ok!
         return jsonify(result=0)

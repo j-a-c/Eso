@@ -96,14 +96,25 @@ void LocalDaemon::handleTCP() const
             // Update distribution server database.
             MySQL_Conn conn;
             conn.insert_permission(perm);
+        }
+        else if (received_string == DELETE_PERM)
+        {
+            received_string = incoming_stream.recv();
+            Logger::log(std::string{"esol received: "} + received_string);
 
-            Logger::log("esol is closing TCP connection.", LogLevel::Debug);
+            Permission perm = Permission{received_string};
+
+            // Update distribution server database.
+            MySQL_Conn conn;
+            conn.delete_permission(perm);
         }
         else
         {
             // TODO
             // Invalid request.
         }
+
+        Logger::log("esol is closing TCP connection.", LogLevel::Debug);
 
     }
 
