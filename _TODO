@@ -3,7 +3,6 @@ grep -r TODO *
 current:
 	- switch unsigned char * stuff to strings
 
-	- config for esod, and esol (global config?)
 	- java api
 		- encrypt
 			- asym (evp interface for rsa?)
@@ -49,11 +48,10 @@ Central Auth:
         - backup mechanism for database
 		- ensure integrity of database
 
-Distribution
-	- GET_PERM
+Distribution:
 
 Host Daemon:
-    - save esod pid
+    - save esol pid
     - close all file descriptors? (23)
     - implement protocol
     - key management
@@ -68,7 +66,6 @@ Host Daemon:
     - secure directory (45, 55)
 	- generalize output path
 	- integrity checks (encrypt/hash)
-    - delete esod tests
     - sanitize env? (6)
     - error 'constant' files
 
