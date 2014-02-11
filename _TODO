@@ -10,7 +10,9 @@ current:
 			- asym
 		- sign
 		- verify
-	- esol: enforce expiration dates
+	- esol
+		- enforce expiration dates
+		- db encryption
 
 	- change exits to exceptions
 		- current: uds connect
