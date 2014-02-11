@@ -97,6 +97,10 @@ int DistroDaemon::work() const
         std::string received_string = incoming_stream.recv();
         Logger::log(std::string{"Requested from esod: "} + received_string);
 
+        /*
+         * Occurs when the CA sends an updated Permission to this distribution
+         * daemon.
+         */
         if (received_string == UPDATE_PERM)
         {
             received_string = incoming_stream.recv();
@@ -123,6 +127,10 @@ int DistroDaemon::work() const
 
             Logger::log("esod is closing TCP connection.", LogLevel::Debug);
         }
+        /*
+         * Occurs when the CA requests that a Permission be deleted due to a
+         * deletion on the admin interface.
+         */
         else if (received_string == DELETE_PERM)
         {
             // Create Permission object.
@@ -146,13 +154,35 @@ int DistroDaemon::work() const
             local_stream.send(perm.serialize());
 
         }
+        /*
+         * Occurs when a local daemon queries this distribution daemon for a
+         * Permission.
+         */
         else if (received_string == GET_PERM)
         {
-            // Receive primary key
-            // Query our database
-            // Package and send results
-        
+            received_string = incoming_stream.recv();
+            Logger::log(std::string{"esod received: "} + received_string);
+
+            Permission perm = Permission{received_string};
+
+            // TODO ensure the local daemon is the designated location for this
+            // credential? esol only uses Permissions that are marked with its
+            // FQDN so this may not matter.
+
+            // Update distribution server database.
+            MySQL_Conn conn;
+            conn.get_permission(perm); 
+
+            std::string log_msg{"esod to esol: "};
+            log_msg += perm.serialize();
+            Logger::log(log_msg, LogLevel::Debug);
+
+            incoming_stream.send(perm.serialize());
         }
+        /*
+         * Occurs when a local daemon queries this distribution daemon for a
+         * Credential.
+         */
         else if (received_string == GET_CRED)
         {
             // TODO Ensure that location is authorized to receive this cred.
@@ -184,6 +214,10 @@ int DistroDaemon::work() const
             }
 
         }
+        /*
+         * Occurs when a new Credential has been created by the CA due to some
+         * interaction with the admin interface.
+         */
         else if (received_string == NEW_CRED)
         {
             // Receive serialized Credential.

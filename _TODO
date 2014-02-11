@@ -1,12 +1,6 @@
 grep -r TODO *
 
 current:
-
-	- distro daemon - get perm
-
-	- delete permission functionality
-		- tell distro needs to tell local daemon
-
 	- switch unsigned char * stuff to strings
 
 	- config for esod, and esol (global config?)
@@ -17,6 +11,7 @@ current:
 			- asym
 		- sign
 		- verify
+	- esol: enforce expiration dates
 
 	- change exits to exceptions
 		- current: uds connect
