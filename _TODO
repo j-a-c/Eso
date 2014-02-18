@@ -1,6 +1,9 @@
 grep -r TODO *
 
 current:
+	
+	- admin interface view set: string representation of entity type & op
+
 	- switch unsigned char * stuff to strings
 
 	- java api
@@ -31,10 +34,7 @@ Central Auth:
 			- query to see if cred/perm already exists
 			- create user/pass set
         - view current set
-			- delete perm functionality
 			- add/edit perm: error handling, string cleaning
-			- login to edit permissions
-		- flask templates
 	- daemon
 		- config file for distro locations
 		- propagate all

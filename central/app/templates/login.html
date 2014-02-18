@@ -1,15 +1,18 @@
-<!doctype html>
-<title>Login</title>
-<link rel=stylesheet type=text/css href="{{ url_for('static', filename='style.css') }}">
+{% extends "layout.html" %}
+{% block body %}
+	
+	<h1>Login</h1>
 
-<div class=page>
-	<form action = "/form/" method="post">
+	<br/><br/>
+	
+	<form method="post">
 		<b>Username:</b>
 		<input type="text" name="username"/>
 		<br />
 		<b>Password:</b>
 		<input type="password" name="password"/>
 		<br />
-	<input type="submit"/>
+	<input type="submit" value="Login"/>
 	</form>
-</div>
+
+{% endblock %}

@@ -1,63 +1,75 @@
-<!doctype html>
-<title>View a Set</title>
-<link rel=stylesheet type=text/css href="{{ url_for('static', filename='style.css') }}">
-<script type=text/javascript src="{{ url_for('static', filename='jquery.js') }}"></script>
-<script type=text/javascript src="{{ url_for('static', filename='viewSet.js') }}"></script>
+{% extends "layout.html" %}
+{% block body %}
 
-<script type=text/javascript>
-  $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
-</script>
+	<link rel=stylesheet type=text/css href="{{ url_for('static', filename='style.css') }}">
+	<script type=text/javascript src="{{ url_for('static', filename='jquery.js') }}"></script>
+	<script type=text/javascript src="{{ url_for('static', filename='viewSet.js') }}"></script>
 
-<div class=page>
+	<script type=text/javascript>
+	  $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+	</script>
+
 	<!-- A little hack to preserve the set name -->
-	<h1>Showing Set: <div id="setName">{{setName}}</div> </h1>
+	<h1>Showing Set: <span id="setName">{{setName}}</span> </h1>
 
 	<br/><br/>
 	{% if not setCreds %}
-	Set does not exist.
+		Set does not exist.
 	{% else %}
-	Credentials:<br/>
-	<!-- Credentials Table -->
-	<table id="viewSet">
-	<tr>
-		<th>Set</th>
-		<th>Version</th>
-		<th>Type</th>
-		<th>Expiration</th>
-	</tr>
-	{% for cred in setCreds %}
-	<tr>
-		<td>{{cred[0]}}</td>
-		<td>{{cred[1]}}</td>
-		<td>{{cred[2]}}</td>
-		<td>{{cred[3]}}</td>
-	</tr>
-	{% endfor %}
-	</table>
+		<!-- Owners -->	
+		Primary Owner: <b><span id="p_owner">{{primary}}</span></b>
+		<br/>
+		Secondary Owner: <b><span id="s_owner">{{secondary}}</span></b>
+		<br/>
+		<br/>
 
-	<br/><br/>
+		Credentials:<br/>
+		<!-- Credentials Table -->
+		<table id="viewSet">
+		<tr>
+			<th>Set</th>
+			<th>Version</th>
+			<th>Type</th>
+			<th>Expiration</th>
+		</tr>
+		{% for cred in setCreds %}
+		<tr>
+			<td>{{cred[0]}}</td>
+			<td>{{cred[1]}}</td>
+			<td>{{cred[2]}}</td>
+			<td>{{cred[3]}}</td>
+		</tr>
+		{% endfor %}
+		</table>
 
-	Permissions:<br/>
-	<table id="viewPermissions">
-	<tr>
-		<th>Entity</th>
-		<th>Entity Type</th>
-		<th>Operation</th>
-		<th>Location</th>
-	</tr>
-	<!-- Permissions Table -->
-	{% for perm in setPerms %}
-	<tr>
-		<td>{{perm[0]}}</td>
-		<td>{{perm[1]}}</td>
-		<td>{{perm[2]}}</td>
-		<td>{{perm[3]}}</td>
-		<td><button class="editPermButton">Edit</button></td>
-		<td><button class="removePermButton">Remove</button></td>
-	</tr>
-	{% endfor %}
-	</table>
+		<br/><br/>
 
-	<button type="button" onclick="addPermRow()">Add New Permission</button>
+		Permissions:<br/>
+		<table id="viewPermissions">
+		<tr>
+			<th>Entity</th>
+			<th>Entity Type</th>
+			<th>Operation</th>
+			<th>Location</th>
+		</tr>
+		<!-- Permissions Table -->
+		{% for perm in setPerms %}
+		<tr>
+			<td>{{perm[0]}}</td>
+			<td>{{perm[1]}}</td>
+			<td>{{perm[2]}}</td>
+			<td>{{perm[3]}}</td>
+			{% if canModify %}
+			<td><button class="editPermButton">Edit</button></td>
+			<td><button class="removePermButton">Remove</button></td>
+			{% endif %}
+		</tr>
+		{% endfor %}
+		</table>
+
+		{% if canModify %}
+		<button type="button" onclick="addPermRow()">Add New Permission</button>
+		{% endif %}
 	{% endif %}
-</div>
+
+{% endblock %}

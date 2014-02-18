@@ -115,7 +115,8 @@ static PyObject* create_credential(PyObject* self, PyObject* args)
  * The function argument in Python should be a string containing the set name
  * to be queried.
  *
- * Returns a list of tuples (set_name, version, type, expiration).
+ * Returns a list of tuples: 
+ *  (set_name, version, type, expiration, p_owner, s_owner).
  */
 static PyObject* get_all_credentials(PyObject* self, PyObject* args)
 {
@@ -138,8 +139,9 @@ static PyObject* get_all_credentials(PyObject* self, PyObject* args)
     for (auto &cred : results) 
     {
         // TODO check for initialization
-        pyTup = Py_BuildValue("(siis)", cred.set_name.c_str(), cred.version, 
-                cred.type, cred.expiration.c_str());
+        pyTup = Py_BuildValue("(siisss)", cred.set_name.c_str(), cred.version, 
+                cred.type, cred.expiration.c_str(), cred.p_owner.c_str(), 
+                cred.s_owner.c_str());
 
         // TODO check for initialization
         PyList_Append(pyList, pyTup);

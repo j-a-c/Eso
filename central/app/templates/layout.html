@@ -1,0 +1,19 @@
+<!doctype html>
+
+<link rel=stylesheet type=text/css href="{{ url_for('static', filename='style.css') }}">
+
+<title>Eso Admin Interface</title>
+
+<div class=page>
+	<div class=topnav>
+		<a href ="{{ url_for('index') }}">Home</a>
+	</div>
+	<div class=metanav>
+	{% if not session.LOGGED_IN %}
+		<a href ="{{ url_for('login') }}">Log In</a>
+	{% else %}
+		Welcome {{session.USER}}! <a href ="{{ url_for('logout') }}">Log Out</a>
+	{% endif %}
+	</div>
+	{% block body %}{% endblock %}
+</div>

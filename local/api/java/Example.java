@@ -16,7 +16,6 @@ class Example
      */
     public static void main(String[] args)
     {
-        Example example = new Example();
 
         // Reference to the Eso local client.
         EsoLocal eso;

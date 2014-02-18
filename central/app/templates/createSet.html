@@ -1,8 +1,6 @@
-<!doctype html>
-<title>Create a New Set</title>
-<link rel=stylesheet type=text/css href="{{ url_for('static', filename='style.css') }}">
+{% extends "layout.html" %}
+{% block body %}
 
-<div class=page>
 	<h1>Create a new set:</h1>
 
 	<br /><br />
@@ -49,4 +47,5 @@
 
 		<input type="submit"/>
 	</form>
-</div>
+
+{% endblock %}

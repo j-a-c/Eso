@@ -1,8 +1,6 @@
-<!doctype html>
-<title>Eso Admin Interface</title>
-<link rel=stylesheet type=text/css href="{{ url_for('static', filename='style.css') }}">
+{% extends "layout.html" %}
+{% block body %}
 
-<div class=page>
 	<h1>Eso Admin Interface</h1>
 	<br/>
 
@@ -17,4 +15,5 @@
 	<input type="text" name="setName"/>
 	<input type="submit" name="submit" value="View Set"/>
 	</form>
-</div>
+
+{% endblock %}

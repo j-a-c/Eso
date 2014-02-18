@@ -1,24 +1,35 @@
-from flask import Flask, jsonify, request, redirect, url_for, render_template
+from flask import Flask, jsonify, request, redirect, session, url_for, render_template
 from appExtension import *
 import datetime
+import os
 import re
 
 app = Flask(__name__)
 
+# Secret key used to sign session cookies.
+app.secret_key = os.urandom(24)
+
+# Keys for the session map.
+LOGGED_IN = 'LOGGED_IN'
+USER = 'USER'
 
 '''
     The 'home page' for the central authority admin interface.
 '''
 @app.route('/', methods=['GET', 'POST'])
 def index():
+
     if request.method == 'POST':
         # View a set.
         if request.form['submit'] == 'View Set':
             setName = request.form.get('setName')
             return redirect('set/' + setName)
-        # Create a set.
-        elif request.form['submit'] == 'Create Set':
+        # Create a set enabled if user is logged in.
+        elif request.form['submit'] == 'Create Set' and session.get(LOGGED_IN):
             return redirect(url_for('createSet'))
+        # Redirect if user tries to create a set while not logged in.
+        elif request.form['submit'] == 'Create Set':
+            return redirect(url_for('login'))
     return render_template('index.html')
 
 
@@ -112,9 +123,29 @@ def viewSet(setName):
     setCreds = get_all_credentials(setName)
     setPerms = get_all_permissions(setName)
 
-    # TODO add option to edit
+    # Set the primary and secondary owners.
+    # We are setting the owners here so we can choose whether to generate
+    # buttons 'edit' buttons for them later. We want to enforce that only the
+    # owners can modify this set.
+    primary = setCreds[0][4]
+    secondary = setCreds[0][5]
+
+    # We will only allow the user to allow the modify the set if its username
+    # matches either the primary or secondary username. We use try/except
+    # instead of session.get(USER) because a username might actually be None
+    # (or whatever we specify and the default return value from
+    # session.get(USER).
+    canModify = False
+    try:
+        if session[USER] == primary or session[USER] == secondary:
+            canModify = True
+    except KeyError:
+        print 'error'
+        pass
+
     return render_template('viewSet.html', setName=setName, setCreds=setCreds,
-            setPerms=setPerms)
+            setPerms=setPerms, primary=primary, secondary=secondary,
+            canModify=canModify)
 
 
 '''
@@ -123,6 +154,7 @@ def viewSet(setName):
 '''
 @app.route('/_create_perm')
 def createPermission():
+
     set_name = request.args.get('setName', '', type=str)
     entity = request.args.get('entity', '', type=str)
     entity_type = request.args.get('entity_type', '', type=str)
@@ -184,21 +216,34 @@ def removePermission():
 
 
 
-"""
 '''
-    Sample login page.
+    Login page.
 '''
 @app.route('/login/', methods=['GET', 'POST'])
 def login():
+    # Handle
     if request.method == 'POST':
         username = request.form.get('username')
-        password = request.form.get('username')
+        password = request.form.get('password')
 
-        # TODO process login
-        return redirect(url_for('greet', name=username))
+
+        # TODO in a real implementation, this is where the login would be
+        # processed. In the debug implementation, the username and password
+        # need to be equal.
+        if username == password:
+            session[LOGGED_IN] = True
+            session[USER] = username
+            return redirect(url_for('index'))
 
     return render_template('login.html')
-"""
+
+'''
+    Logout page.
+'''
+@app.route('/logout')
+def logout():
+    session.pop(LOGGED_IN, None)
+    return redirect(url_for('index'))
 
 if __name__ == '__main__':
     app.run(debug=True)
