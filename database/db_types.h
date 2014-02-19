@@ -9,6 +9,11 @@ const int SYMMETRIC     = 2;
 const int ASYMMETRIC    = 3;
 
 /*
+ * Entity-type types.
+ */
+
+
+/*
  * Operation types.
  */
 const int RETRIEVE_OP   = 1;

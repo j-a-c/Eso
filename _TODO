@@ -2,8 +2,6 @@ grep -r TODO *
 
 current:
 	
-	- admin interface view set: string representation of entity type & op
-
 	- switch unsigned char * stuff to strings
 
 	- java api

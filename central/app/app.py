@@ -123,6 +123,45 @@ def viewSet(setName):
     setCreds = get_all_credentials(setName)
     setPerms = get_all_permissions(setName)
 
+    # We will change the integer representation of entity_type and operation
+    # into the string representation for the permission.
+    # See the db_types.h for the constants.
+    # One problem is that get_all_permissions returns a tuple. Since we cannot
+    # modify a tuple, we to create a copy of permissions.
+    setPermsCopy = []
+    for perm in setPerms:
+        # Replace the entity type.
+        entityType = ""
+        if perm[1] == 1:
+            entityType = "User"
+        else:
+            entityType = "POSIX Group"
+
+        # Create an array of the operation allowed.
+        op = perm[2]
+        opArray = []
+        if op % 1 == 0:
+            opArray.append("Retrieve")
+        if op % 2 == 0:
+            opArray.append("Sign")
+        if op % 4 == 0:
+            opArray.append("Verify")
+        if op % 8 == 0:
+            opArray.append("Encrypt")
+        if op % 16 == 0:
+            opArray.append("Decrypt")
+        if op % 32 == 0:
+            opArray.append("HMAC")
+
+        # Join the strings and replace the original value.
+        opString = ", ".join(opArray)
+
+        # Append the modified tuple.
+        setPermsCopy.append( (perm[0], entityType, opString, perm[3]) )
+
+    # Replace the old copy of the permissions with the modified version.
+    setPerms = setPermsCopy
+
     # Set the primary and secondary owners.
     # We are setting the owners here so we can choose whether to generate
     # buttons 'edit' buttons for them later. We want to enforce that only the

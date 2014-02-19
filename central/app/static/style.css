@@ -11,12 +11,13 @@ a, h1, h2
 
 h1, h2
 { 
-	font-family: 'Georgia', serif; 
+	font-family: 'Arial',  sans-serif; 
 	margin: 0; 
 }
 
 h1
 { 
+	font-size: 1.5em;
 	border-bottom: 2px solid #000; 
 }
 
@@ -34,50 +35,20 @@ h2
 	background: white; 
 }
 
-.entries
-{ 
-	list-style: none; 
-	margin: 0; 
-	padding: 0; 
-}
-
-.entries li
-{ 
-	margin: 0.8em 1.2em; 
-}
-
-.entries li h2
-{ 
-	margin-left: -1em; 
-}
-
-.add-entry
-{ 
-	font-size: 0.9em; 
-	border-bottom: 1px solid #ccc; 
-}
-
-.add-entry dl
-{ 
-	font-weight: bold;
-}
-
 .topnav
 { 
 	text-align: left; 
-	font-size: 0.8em; 
+	font-size: 0.9em; 
 	padding: 0.3em;
 	margin-bottom: 1em; 
-	background: #fafafa; 
 }
 
 .metanav
 { 
 	text-align: right; 
-	font-size: 0.8em; 
+	font-size: 0.9em; 
 	padding: 0.3em;
-	margin-bottom: 1em; 
-	background: #fafafa; 
+	margin-bottom: 1em;
 }
 
 .flash
@@ -113,6 +84,6 @@ h2
 	text-align:left;
 	padding-top:5px;
 	padding-bottom:4px;
-	background-color:#A7C942;
+	background-color:#000099;
 	color:#ffffff;
 }
