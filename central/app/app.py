@@ -123,6 +123,24 @@ def viewSet(setName):
     setCreds = get_all_credentials(setName)
     setPerms = get_all_permissions(setName)
 
+
+    # We will form the string that shows the type of the credential.
+    # Because get_all_credentials() returns a tuple, we need to create a copy
+    # of the credentials and modify that.
+    # cred[4] = primary owner, cred[5] = secondary owner.
+    setCredsCopy = []
+    for cred in setCreds:
+        credTypeString = ''
+        if cred[3] == 1:
+            credTypeString = 'User/Pass'
+        else:
+            credTypeString = cred[6] + '-' + str(cred[7])
+        setCredsCopy.append( (cred[0], cred[1], credTypeString, cred[3],
+            cred[4], cred[5]) )
+
+    # Replaces the old credentials with the modified version.
+    setCreds = setCredsCopy
+
     # We will change the integer representation of entity_type and operation
     # into the string representation for the permission.
     # See the db_types.h for the constants.
@@ -140,17 +158,17 @@ def viewSet(setName):
         # Create an array of the operation allowed.
         op = perm[2]
         opArray = []
-        if op % 1 == 0:
+        if op & 1:
             opArray.append("Retrieve")
-        if op % 2 == 0:
+        if op & 2:
             opArray.append("Sign")
-        if op % 4 == 0:
+        if op & 4:
             opArray.append("Verify")
-        if op % 8 == 0:
+        if op & 8:
             opArray.append("Encrypt")
-        if op % 16 == 0:
+        if op & 16:
             opArray.append("Decrypt")
-        if op % 32 == 0:
+        if op & 32:
             opArray.append("HMAC")
 
         # Join the strings and replace the original value.

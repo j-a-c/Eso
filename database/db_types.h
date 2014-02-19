@@ -11,7 +11,8 @@ const int ASYMMETRIC    = 3;
 /*
  * Entity-type types.
  */
-
+const int USER_TYPE     = 1;
+const int POSIX_TYPE    = 2;
 
 /*
  * Operation types.

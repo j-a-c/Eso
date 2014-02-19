@@ -401,7 +401,8 @@ std::vector<Credential> MySQL_Conn::get_all_credentials(const char * set_name) c
     std::vector<Credential> results;
 
     // Build query.
-    std::string query{"SELECT set_name, version, type, expiration, p_owner, s_owner FROM "};
+    std::string query{"SELECT set_name, version, type, expiration, p_owner,"};
+    query += " s_owner, algo, size FROM ";
     query += CRED_LOC;
     query += " WHERE set_name='";
     query.append(set_name);
@@ -424,6 +425,8 @@ std::vector<Credential> MySQL_Conn::get_all_credentials(const char * set_name) c
         cred.expiration = std::string{mysqlRow[3]};
         cred.p_owner = std::string{mysqlRow[4]};
         cred.s_owner = std::string{mysqlRow[5]};
+        cred.algo = std::string{mysqlRow[6]};
+        cred.size = strtol(mysqlRow[7], nullptr, 0);
 
         results.push_back(cred);
     }

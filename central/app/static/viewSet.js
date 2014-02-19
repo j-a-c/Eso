@@ -6,6 +6,7 @@ var operationSelect = '<select multiple><option value="1">Retrieve</option><opti
 
 /*
  * Utility function to map entity types numbers to values.
+ * See db_types.h
  */
 function getEntityTypeString(typeNumber)
 {
@@ -16,6 +17,42 @@ function getEntityTypeString(typeNumber)
 	case 2:
 		return 'POSIX Group';
 	}
+}
+
+/*
+ * Utility function to map operation number to string.
+ * See db_types.h
+ */
+function getOpString(opNumber)
+{
+	var arr = [];
+
+	if (opNumber & 1)
+	{
+		arr.push("Retrieve");
+	}
+	if (opNumber & 2)
+	{
+		arr.push("Sign");
+	}	
+	if (opNumber & 4)
+	{
+		arr.push("Verify");
+	}	
+	if (opNumber & 8)
+	{
+		arr.push("Encrypt");
+	}	
+	if (opNumber & 16)
+	{
+		arr.push("Decrypt");
+	}
+	if (opNumber & 32)
+	{
+		arr.push("HMAC");
+	}
+
+	return arr.join(", ");
 }
 
 /*
@@ -70,7 +107,7 @@ $(document).on('click', '.updatePermButton', function(){
 			// Show new operation values.
 			currentButton.attr('class', 'editPermButton');
 			currentButton.text('Edit');
-			currentRow.find('td').eq(2).html(ops);
+			currentRow.find('td').eq(2).html(getOpString(ops));
 		}
 		else
 		{
@@ -115,8 +152,8 @@ $(document).on('click', '.createPermButton', function(){
 		{
 			// Update row values.
 			currentRow.find('td').eq(0).html(entityRow.val());
-			currentRow.find('td').eq(1).html(entityOptions.find(":selected").val());
-			currentRow.find('td').eq(2).html(ops);
+			currentRow.find('td').eq(1).html( getEntityTypeString( parseInt(entityOptions.find(":selected").val()) ) );
+			currentRow.find('td').eq(2).html(getOpString(ops));
 			currentRow.find('td').eq(3).html(locRow.val());
 
 			// Update button function to 'edit'.

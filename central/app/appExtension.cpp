@@ -139,9 +139,9 @@ static PyObject* get_all_credentials(PyObject* self, PyObject* args)
     for (auto &cred : results) 
     {
         // TODO check for initialization
-        pyTup = Py_BuildValue("(siisss)", cred.set_name.c_str(), cred.version, 
+        pyTup = Py_BuildValue("(siissssi)", cred.set_name.c_str(), cred.version, 
                 cred.type, cred.expiration.c_str(), cred.p_owner.c_str(), 
-                cred.s_owner.c_str());
+                cred.s_owner.c_str(), cred.algo.c_str(), cred.size);
 
         // TODO check for initialization
         PyList_Append(pyList, pyTup);

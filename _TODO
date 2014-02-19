@@ -1,7 +1,7 @@
 grep -r TODO *
 
 current:
-	
+
 	- switch unsigned char * stuff to strings
 
 	- java api
