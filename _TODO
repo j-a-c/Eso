@@ -2,6 +2,8 @@ grep -r TODO *
 
 current:
 
+	- create new credential for set
+
 	- switch unsigned char * stuff to strings
 
 	- java api
@@ -12,7 +14,6 @@ current:
 		- sign
 		- verify
 	- esol
-		- enforce expiration dates
 		- db encryption
 
 	- change exits to exceptions

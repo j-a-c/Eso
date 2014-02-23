@@ -44,6 +44,8 @@ class LocalDaemon : public Daemon
         // operation. It is assumed that the entity is on this machine.
         bool has_permission_to(const std::string entity, 
                 const std::string set_name, const int op) const;
+        // Returns true if the Credential is expired.
+        bool is_expired(const Credential cred) const;
 };
 
 int LocalDaemon::start() const
@@ -267,6 +269,48 @@ bool LocalDaemon::has_permission_to(const std::string entity, const std::string 
 
 }
 
+/**
+ * Checks to see if the specified credential has expired.
+ *
+ * @param cred The credential with the expiration date that will be checked.
+ *
+ * @return true if the Credential has not expired.
+ */
+bool LocalDaemon::is_expired(const Credential cred) const
+{
+    // Get the current time.
+    std::time_t now = std::time(nullptr);
+
+    // Clear the tm struct before we use it.
+    struct tm texp;
+    memset(&texp, 0, sizeof(struct tm));
+    // The Credential expiration date is in ISO 8601 date format.
+    if(!strptime(cred.expiration.c_str(), "%F", &texp))
+    {
+        // There was an error in strptime
+        Logger::log("Error in strptime in LocalDaemon::is_expired", 
+                LogLevel::Error);
+        // We will return true by default.
+        return true;
+    }
+    // Get the expiration data into time_t format.
+    time_t exp = mktime(&texp);
+
+    // Compare the current time and the expiration date.
+    if (difftime(exp, now) <= 0.0)
+    {
+        // The Credential is expired.
+        return true;
+    }
+    else
+    {
+        // The Credential is not expired.
+        return false;
+    }
+
+}
+
+
 /*
  * Handle incoming UDS connections.
  */
@@ -336,6 +380,13 @@ void LocalDaemon::handleUDS() const
             // TODO get_credential should throw an exception if the request was
             // not valid.
             cred = get_credential(cred); 
+
+            // Check if the credential has expired.
+            if (is_expired(cred))
+            {
+                uds_stream.send(std::string{});
+                continue; 
+            }
             
             // The length of the data to be encrypted.
             int len;
@@ -394,7 +445,10 @@ void LocalDaemon::handleUDS() const
             // TODO get_credential should throw an exception if the request was
             // not valid.
             cred = get_credential(cred); 
-            
+
+            // We will not check if the credential is expired because data
+            // should be able to be decrypted with an expired credential.
+
             // The length of the data to be encrypted.
             int len;
             // Encrypt and return ciphertext.
@@ -449,10 +503,16 @@ void LocalDaemon::handleUDS() const
                 continue; 
             }
 
-
             // TODO get_credential should throw an exception if the request was
             // not valid.
             cred = get_credential(cred); 
+
+            // Check if the credential has expired.
+            if (is_expired(cred))
+            {
+                uds_stream.send(std::string{});
+                continue; 
+            }
 
             if (cred.type == USERPASS)
             {
