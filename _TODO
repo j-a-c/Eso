@@ -1,8 +1,9 @@
 grep -r TODO *
 
-current:
+bugs:
+	- after creating a cred, page says does not exist. refreshing page shows it does exist
 
-	- create new credential for set
+current:
 
 	- switch unsigned char * stuff to strings
 

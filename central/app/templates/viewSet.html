@@ -41,6 +41,9 @@
 		</tr>
 		{% endfor %}
 		</table>
+		{% if canModify %}
+		<td><button onclick="addCredRow()">Create New Credential</button></td>
+		{% endif %}
 
 		<br/><br/>
 

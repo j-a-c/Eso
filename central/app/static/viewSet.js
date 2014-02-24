@@ -56,6 +56,47 @@ function getOpString(opNumber)
 }
 
 /*
+ * Attach a function to the "Create" Credential buttons.
+ * Need to use this because the button will be added dynamically.
+ */
+$(document).on('click', '.createCredButton', function(){
+	var currentButton 	= $(this);
+
+	var currentRow 		= $(this).closest('tr');
+
+	var setName	 		= currentRow.find('td').eq(0).html();
+	var version 		= currentRow.find('td').eq(1).html();
+	var credType 		= currentRow.find('td').eq(2).html();
+	var expiration 		= currentRow.find('input').eq(0).val();
+
+	$.getJSON($SCRIPT_ROOT + '/_create_cred', {
+		setName: 		setName,
+        version: 		version,
+        credType: 			credType,
+		expiration: 	expiration,
+		primary: 		$("#p_owner").html(),
+		secondary: 		$("#s_owner").html()
+      }, function(data) {
+		// If result is true, hide expiration textbox and replace with text.
+		// data.result will be 0 on success.
+        if(!data.result)
+		{
+			// Update row values.
+			currentRow.find('td').eq(3).html(expiration);
+
+			// Hide the create button
+			currentButton.hide();
+		}
+		else
+		{
+			// TODO handle error
+			alert('Error creating credential: ' + data.result);
+		}
+	});
+
+});
+
+/*
  * Attach a function to the 'Edit' buttons.
  * Current only allows operation to be updated.
  * Need to use this because the button will be added dynamically.
@@ -99,7 +140,7 @@ $(document).on('click', '.updatePermButton', function(){
 		op:				ops,
 		loc: 			locRow.html()
       }, function(data) {
-		// TODO if result is true, hide input and replace with values.
+		// If result is true, hide input and replace with values.
 		// data.result will be 0 on success.
         if(!data.result)
 		{
@@ -118,7 +159,7 @@ $(document).on('click', '.updatePermButton', function(){
 });
 
 /*
- * Attach a function to the "Create" buttons.
+ * Attach a function to the "Create" Permission buttons.
  * Need to use this because the button will be added dynamically.
  */
 $(document).on('click', '.createPermButton', function(){
@@ -146,7 +187,7 @@ $(document).on('click', '.createPermButton', function(){
 		op:				ops,
 		loc: 			locRow.val()
       }, function(data) {
-		// TODO if result is true, hide input and replace with values.
+		// If result is true, hide input and replace with values.
 		// data.result will be 0 on success.
         if(!data.result)
 		{
@@ -205,11 +246,18 @@ $(document).on('click', '.removePermButton', function(){
 
 /*
  * Occurs when the "Add New Permission" button is clicked.
- * Adds a new row to the table.
+ * Adds a new row to the permission table.
  */
 function addPermRow()
 {
 	$('#viewPermissions tr:last').after('<tr><td><input type="text"/></td><td>'+entityTypeSelect+'</td><td>'+operationSelect+'</td><td><input type="text"/></td><td><button class="createPermButton">Create</button></td></tr>');
+}
 
-
+/*
+ * Occurs when the "Create New Credential" button is clicked.
+ * Adds a new row to the credential table.
+ */
+function addCredRow()
+{
+	$('#viewSet tr:last').after('<tr><td>'+ $("#setName").html() +'</td><td>'+(1+parseInt($('#viewSet tr:last').find('td').eq(1).html(),10))+'</td><td>'+$('#viewSet tr:last').find('td').eq(2).html()+'</td><td><input type="text"/></td><td><button class="createCredButton">Create</button></td></tr>');
 }

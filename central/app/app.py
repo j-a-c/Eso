@@ -34,10 +34,18 @@ def index():
 
 
 '''
-    Form for creating a new set.
+    This method requests that the credential be created by the CA daemon.
+    credType is the type of the credential (ex: AES-256). See the credMap for
+    accepted credTypes. primary and secondary are the primary and secondary
+    owners, respectively.
+
+    This method does some minor checking to make sure the inputs are in the
+    correct format, but nothing crazy.
+
+    Returns true if the credential was created successfully.
 '''
-@app.route('/create/', methods=['GET', 'POST'])
-def createSet():
+def requestCreateCredential(setName, version, credType, expiration, primary,
+        secondary):
     # Maps the the selected credential type to its algorithm, key size, 
     # and type. Type 1 = credential, 2 = symmetric, 3 = asymmetric.
     # See db_types.h
@@ -50,58 +58,69 @@ def createSet():
                 'RSA-4096'              : ('RSA', '4096', '3')
             }
 
+    (credAlgo, credSize, credType) = credMap[credType]
+
+    # Are all the contents of the form 'clean'?
+    # (In the expected form and satisfy the constraints.)
+    isClean = True
+
+    # Check set name.
+    if not re.match('^\w+(\.\w+)*$', setName):
+        isClean = False
+
+    # Check version.
+    # Must be an integer greater than 0 and less than 4294967295 .
+    if (not version.isdigit()) or (int(version) <= 0 or int(version) >= 4294967295):
+        isClean = False
+
+    # Check expiration.
+    # Must be of the form YYYY-MM-DD
+    try:
+        datetime.datetime.strptime(expiration, '%Y-%m-%d')
+    except ValueError:
+        isClean = False
+
+    # Check primary.
+    # Must be a name with no special characters.
+    if not re.match('^\w+$', primary):
+        isClean = False
+
+    # Check secondary.
+    # Must be a name with no special characters.
+    if not re.match('^\w+$', secondary):
+        isClean = False
+
+    if not isClean:
+        # TODO Error message
+        return False
+
+    # Request from the CA daemon that the credential be created.
+    if create_credential(setName, version, expiration, primary, secondary,
+            credType, credAlgo, credSize) == 0:
+        return True
+
+    return False
+
+
+
+'''
+    Form for creating a new set.
+'''
+@app.route('/create/', methods=['GET', 'POST'])
+def createSet():
+
     if request.method == 'POST':
 
         # Get form contents.
         setName = request.form.get('setName')
-        version = request.form.get('version')
-        (credAlgo, credSize, credType) = credMap[request.form.get('credType')]
+        version = '1' #request.form.get('version')
+        credType = request.form.get('credType')
         expiration = request.form.get('expiration')
         primary = request.form.get('primary')
         secondary = request.form.get('secondary')
 
-        # Are all the contents of the form 'clean'?
-        # (In the expected form and satisfy the constraints.)
-        isClean = True
-
-        # Check set name.
-        if not re.match('^\w+(\.\w+)*$', setName):
-            isClean = False
-
-        # Check version.
-        # Must be an integer greater than 0 and less than 4294967295 .
-        if (not version.isdigit()) or (int(version) <= 0 or int(version) >= 4294967295):
-            isClean = False
-
-        # Check expiration.
-        # Must be of the form YYYY-MM-DD
-        try:
-            datetime.datetime.strptime(expiration, '%Y-%m-%d')
-        except ValueError:
-            isClean = False
-
-        # Check primary.
-        # Must be a name with no special characters.
-        if not re.match('^\w+$', primary):
-            isClean = False
-
-        # Check secondary.
-        # Must be a name with no special characters.
-        if not re.match('^\w+$', secondary):
-            isClean = False
-
-        if not isClean:
-            # TODO Error message
-            return render_template('createSet.html')
-
-        # Was the set actually created?
-        isCreated = False
-
-        # TODO handle algo, size, etc.
-        # (credAlgo, credSize, credType)
-        if create_credential(setName, version, expiration, primary, secondary,
-                credType, credAlgo, credSize) == 0:
-            isCreated = True
+        isCreated = requestCreateCredential(setName, version, credType,
+                expiration, primary, secondary)
 
         if not isCreated:
             # TODO Error message and save form input.
@@ -184,8 +203,11 @@ def viewSet(setName):
     # We are setting the owners here so we can choose whether to generate
     # buttons 'edit' buttons for them later. We want to enforce that only the
     # owners can modify this set.
-    primary = setCreds[0][4]
-    secondary = setCreds[0][5]
+    primary = None
+    secondary = None
+    if setCreds:
+        primary = setCreds[0][4]
+        secondary = setCreds[0][5]
 
     # We will only allow the user to allow the modify the set if its username
     # matches either the primary or secondary username. We use try/except
@@ -203,6 +225,35 @@ def viewSet(setName):
     return render_template('viewSet.html', setName=setName, setCreds=setCreds,
             setPerms=setPerms, primary=primary, secondary=secondary,
             canModify=canModify)
+
+
+'''
+    Attempt to create a credential.
+    Will result json {result:0} if everything went ok and {result:1} otherwise.
+'''
+@app.route('/_create_cred')
+def createCredential():
+
+    # Get message contents.
+    setName = request.args.get('setName', '', type=str)
+    version = request.args.get('version', '', type=str)
+    credType = request.args.get('credType', '', type=str)
+    expiration = request.args.get('expiration', '', type=str)
+    primary = request.args.get('primary', '', type=str)
+    secondary = request.args.get('secondary', '', type=str)
+
+    print setName, version, credType, expiration, primary, secondary
+
+    isCreated = requestCreateCredential(setName, version, credType, expiration,
+                primary, secondary)
+
+    # create_permission(...) returns 0 on success, so will we.
+    if not isCreated:
+        # Something went wrong.
+        return jsonify(result=1)
+    else:
+        # Everything went ok!
+        return jsonify(result=0)
 
 
 '''
