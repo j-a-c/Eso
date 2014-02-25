@@ -34,8 +34,10 @@ public:
 
 /** 
  * The default constructor for an empty Permission.
+ * We initialize entity_type and op to prevent any std::out_of_range errors.
  */
 Permission::Permission()
+    : entity_type{0}, op{0}
 {
 
 }
@@ -43,8 +45,10 @@ Permission::Permission()
 /**
  * Creates a Permission from a serialized Permission. The values of the
  * serialization should be the exact same order as the members above.
+ * We initialize entity_type and op to prevent any std::out_of_range errors.
  */
 Permission::Permission(std::string serialization)
+    : entity_type{0}, op{0}
 {
 
     auto values = split_string(serialization, MSG_DELIMITER);

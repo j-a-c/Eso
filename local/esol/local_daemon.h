@@ -10,6 +10,7 @@
 #include "../../crypto/aes.h"
 #include "../../crypto/base64.h"
 #include "../../crypto/hmac.h"
+#include "../../crypto/memory.h"
 #include "../../crypto/rsa.h"
 #include "../../daemon/daemon.h"
 #include "../../database/db_types.h"
@@ -397,24 +398,89 @@ void LocalDaemon::handleUDS() const
             }
             else if (cred.type == SYMMETRIC)
             {
-                unsigned char *encyption;
+                unsigned char *encryption;
                 len = cred.symKey.length();
+                // Base64 decode the returned symmetric key.
+                // TODO Error check len because base64_decode might fail.
                 unsigned char *key = base64_decode((unsigned char *)cred.symKey.c_str(), (size_t *)&len);
                 // We add 1 to data_to_encrypt.length() because we want to
                 // preserve the null terminator.
                 len = data_to_encrypt.length() + 1;
-                encyption = 
+                encryption = 
                     aes_encrypt(key, 
                             (unsigned char *) data_to_encrypt.c_str(), 
                             &len, cred.size);
-                uds_stream.send(std::string{(char*)encyption});
-                free(encyption);
+                uds_stream.send(std::string{(char*)encryption});
+
+                Logger::log("esol: Clearing encryption data.", LogLevel::Debug);
+                // Securely zero out memory.
+                // TODO Debug zeroing the key.
+                //Logger::log("esol: Zeroing key.", LogLevel::Debug);
+                //secure_memset(key, 0, cred.symKey.length() - 1);
+                Logger::log("esol: Zeroing msg data.", LogLevel::Debug);
+                secure_memset(encryption, 0, len);
+                // Free memory.
+                Logger::log("esol: Freeing msg data.", LogLevel::Debug);
+                free(encryption);
+                Logger::log("esol: Freeing key data.", LogLevel::Debug);
                 free(key);
+                Logger::log("esol: Done freeing encryption data.", LogLevel::Debug);
+
+
+            // This ends the symmetric encryption case.
             }
             else if (cred.type == ASYMMETRIC)
             {
+                int len;
+                // Base64 decode the returned public key.
+                // TODO Error check len because base64_decode might fail.
+                unsigned char *public_store = base64_decode((unsigned char*) cred.pubKey.c_str(), (size_t *) &len);
+
+                // DER decode the public key.
+                RSA *public_key = DER_decode_RSA_public(public_store, len);
+
+                // Will hold the ciphertext.
+                unsigned char *cipher = new unsigned char[RSA_size(public_key)];
+                memset(cipher,'\0', RSA_size(public_key));
+
+                // TODO seed PRNG
+                // Encrypt msg using the public key.
+                // We add one to the length to preserve the null terminator.
+                int encrypted_length = RSA_public_encrypt(data_to_encrypt.length()+1, 
+                        reinterpret_cast<unsigned char *>(const_cast<char *>(data_to_encrypt.c_str())), 
+                        cipher, public_key, RSA_PKCS1_OAEP_PADDING);
+
+                if (!encrypted_length)
+                {
+                    Logger::log("Error: encrypted_length was not valid.", LogLevel::Error);
+                }
+
                 // TODO
+                // We send the base64 encoded message due to transportation
+                // problems.
+                unsigned char *bcipher = base64_encode(cipher, encrypted_length);
+
+                // Send the encrypted message. We do not need to send the
+                // length since the return for RSA_public_encrypt is 
+                // RSA_size(rsa).
+                //uds_stream.send(std::string{(char*)bcipher, encrypted_length});
+                uds_stream.send(std::string{(char*)bcipher});
+
+
+                // Securely zero out memory.
+                // TODO Debug secure_memset calls.
+                // secure_memset(public_store, 0, len);
+                // secure_memset(cipher, 0, encrypted_length);
+                // secure_memset(bcipher, 0, strlen(bcipher));
+                // Free memory.
+                RSA_free(public_key);
+                free(public_store);
+                free(bcipher);
+                delete[] cipher;
+
+            // This ends the asymmetric encrypt case.
             }
+        // This ends the encrypt case.
         }
         else if (received_string == REQUEST_DECRYPT)
         {
@@ -460,6 +526,8 @@ void LocalDaemon::handleUDS() const
             {
                 unsigned char *decyption;
                 len = cred.symKey.length();
+                // Base64 decode the returned symmetric key.
+                // TODO Error check len because base64_decode might fail.
                 unsigned char *key = base64_decode((unsigned char *)cred.symKey.c_str(), (size_t *)&len);
                 // We add 1 to data_to_encrypt.length() because we want to
                 // preserve the null terminator.
@@ -469,13 +537,69 @@ void LocalDaemon::handleUDS() const
                             (unsigned char *) data_to_decrypt.c_str(), 
                             &len, cred.size);
                 uds_stream.send(std::string{(char*)decyption});
+
+                Logger::log("esol: Clearing decryption data", LogLevel::Debug);
+                // Securely zero out memory.
+                // TODO Debug zeroing the key.
+                //Logger::log("esol: Zeroing key.", LogLevel::Debug);
+                //secure_memset(key, 0, cred.symKey.length());
+                Logger::log("esol: Zeroing msg.", LogLevel::Debug);
+                secure_memset(decyption, 0, data_to_decrypt.length());
+                // Free memory.
+                Logger::log("esol: Freeing msg.", LogLevel::Debug);
                 free(decyption);
+                Logger::log("esol: Freeing key.", LogLevel::Debug);
                 free(key);
+                Logger::log("esol: Done clearing decryption data.", LogLevel::Debug);
+
+            
+            // This ends the symmetric decypt case.
             }
             else if (cred.type == ASYMMETRIC)
             {
+                int len;
+                // Base64 decode the returned private key.
+                // TODO Error check len because base64_decode might fail.
+                unsigned char *private_store = base64_decode((unsigned char*) cred.priKey.c_str(), (size_t *) &len);
+                // DER decode the private key.
+                RSA *private_key = DER_decode_RSA_private(private_store, len);
+
+                // Will contain the original message.
+                unsigned char* orig = new unsigned char[RSA_size(private_key)];
+
                 // TODO
+                // We receive the base64 encoded message due to transportation
+                // problems.
+                int mlen;
+                unsigned char *msg = base64_decode((unsigned char*) data_to_decrypt.c_str(), (size_t *) &mlen);
+
+                // Decrypt.
+                int orig_size = RSA_private_decrypt(mlen, msg, orig, private_key, RSA_PKCS1_OAEP_PADDING);
+                /*
+                int orig_size = RSA_private_decrypt(data_to_decrypt.length(), 
+                        reinterpret_cast<unsigned char *>(const_cast<char *>(data_to_decrypt.c_str())), 
+                        orig, private_key, RSA_PKCS1_OAEP_PADDING);
+                */
+
+                // Send the decrypted messge.
+                // We preserved the null terminator so there is no need to
+                // specify a size.
+                uds_stream.send(std::string{(char*)orig});
+
+                // Securely zero out memory.
+                // TODO Debug secure_memset calls.
+                // secure_memset(private_store, 0, len);
+                // secure_memset(orig, 0, orig_size);
+                // secure_memset(msg, 0, mlen); 
+                // Free memory.
+                RSA_free(private_key);
+                free(private_store);
+                free(msg);
+                delete[] orig;
+            // This ends the asymmetric decrypt case.
             }
+
+        // This ends the decrypt case.
         }
         else if (received_string == REQUEST_HMAC)
         {

@@ -10,35 +10,25 @@ import java.lang.StringBuilder;
  */
 class Example 
 {
-    
+
     /**
-     * Driver for the examples.
+     * Eso examples for symmetric keys.
      */
-    public static void main(String[] args)
+    private static void symmetricKeyExamples(EsoLocal eso)
     {
-
-        // Reference to the Eso local client.
-        EsoLocal eso;
-
-        // Attempt to connect to the Eso local service.
-        try
-        {
-            eso = EsoLocal.getService();
-        }
-        catch(Exception e)
-        {
-            System.out.println(e);
-            throw new RuntimeException();
-        }
-        
-        // Sample set name, a secret message, and version.
-        String setName = "com.joshuac.test.sym";
-        String message = "Hello World";
-        int version = 1;
+        /*
+         * Symmetric key examples.
+         */
 
         System.out.println("=====");
         System.out.println("Symmetric encrypt/decrypt example:");
         System.out.println("-----");
+
+        // Parameters for the symmetric example.
+        // Sample set name, a secret message, and key version.
+        String setName = "com.joshuac.test.sym";
+        String message = "Hello World";
+        int version = 2;
 
         // Print the original message.
         System.out.println("Original message: " + message);
@@ -72,7 +62,72 @@ class Example
 
         System.out.println("====");
 
+    }
 
+    /**
+     * Some asymmetric key examples for Eso.
+     */
+    private static void asymmetricKeyExamples(EsoLocal eso)
+    {
+        /*
+         * Asymmetric key examples.
+         */
+
+        System.out.println("=====");
+        System.out.println("Asymmetric encrypt/decrypt example:");
+        System.out.println("-----");
+
+        // Parameters of the asymmetric example.
+        // Sample set name, a secret message, and key version.
+        String setName = "com.joshuac.test.asym";
+        String message = "Josh is cool";
+        int version = 1;
+
+        System.out.println("Original message: " + message);
+        System.out.println("Original bytes: " + Arrays.toString(message.getBytes()));
+
+        System.out.println("-----");
+
+        // Encrypt the secret message.
+        byte[] encryptedMsg = eso.encrypt(setName, message.getBytes(), version);
+        System.out.println("Encrypted bytes: " + Arrays.toString(encryptedMsg));
+
+        System.out.println("-----");
+
+        // Decrypt the encrypted message.
+        byte[] decryptedMsg = eso.decrypt(setName, encryptedMsg, version);
+        message = new String(decryptedMsg);
+        System.out.println("Decrypted message: " + message);
+        System.out.println("Decrypted bytes: " + Arrays.toString(decryptedMsg));
+
+        System.out.println("=====");
+    }
+
+    
+    /**
+     * Driver for the examples.
+     */
+    public static void main(String[] args)
+    {
+
+        // Reference to the Eso local client.
+        EsoLocal eso;
+
+        // Attempt to connect to the Eso local service.
+        try
+        {
+            eso = EsoLocal.getService();
+        }
+        catch(Exception e)
+        {
+            System.out.println(e);
+            throw new RuntimeException();
+        }
+        
+
+        symmetricKeyExamples(eso);
+
+        asymmetricKeyExamples(eso); 
     }
 
 }

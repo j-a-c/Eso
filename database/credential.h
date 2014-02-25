@@ -48,17 +48,21 @@ public:
 
 /**
  * Default constructor for a Credential.
+ * We initialize version, type, and size to stop any std::out_of_range errors.
  */
-Credential::Credential()
+Credential::Credential() 
+    : version{0}, type{0}, size{0}
 {
 
 }
 
 /**
  * Create a Credential from a string return from serialize().
- * The serialization should be the exact order of the member above.
+ * The serialization should be the exact order of the members above.
+ * We initialize version, type, and size to stop any std::out_of_range errors.
  */
-Credential::Credential(std::string serialization)
+Credential::Credential(std::string serialization) 
+    : version{0}, type{0}, size{0}
 {
     auto values = split_string(serialization, MSG_DELIMITER);
 

@@ -1,5 +1,5 @@
 #include <jni.h>
-#include <iostream>
+#include <iostream> // Only for debug purposes.
 #include <string>
 
 #include "EsoLocal_EsoLocal.h"

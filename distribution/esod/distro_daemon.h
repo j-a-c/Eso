@@ -190,9 +190,14 @@ int DistroDaemon::work() const
             // Parse request parameters. See the parameter order in
             // message_config.h
             received_string = incoming_stream.recv();
+
+            std::string log_msg{"esod: GET_CRED received: "};
+            log_msg += received_string;
+            Logger::log(log_msg, LogLevel::Debug);
+
             Credential cred = Credential{received_string};
 
-            std::string log_msg{"In esod, cred params: "};
+            log_msg = std::string{"In esod, cred params: "};
             log_msg += cred.serialize();
             Logger::log(log_msg);
 

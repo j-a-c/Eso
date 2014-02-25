@@ -2,16 +2,15 @@ grep -r TODO *
 
 bugs:
 	- after creating a cred, page says does not exist. refreshing page shows it does exist
+	- padding error when asymmetric key is decrypted
+	- currently we transport the base64 encoding of the asymmetric key encryptions because of transportation errors.
+		- change transporation scheme to "size then message"?
 
 current:
 
 	- switch unsigned char * stuff to strings
 
 	- java api
-		- encrypt
-			- asym (evp interface for rsa?)
-		- decrypt
-			- asym
 		- sign
 		- verify
 	- esol
