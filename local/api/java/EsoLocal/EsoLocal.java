@@ -13,11 +13,11 @@ public class EsoLocal
     /**
      * Allowable hashes. The ordinal values of the enums correspond to their
      * values in the native library. It is easier to pass the ordinal than the
-     * enum itself.
+     * enum itself. See crypto/constants.h for the constant's values.
      */
     public static enum Hash
     {
-        DEFAULT, SHA1;
+        DEFAULT, SHA1, SHA256;
     }
 
     // A little hack to find the dynamic library.
@@ -42,6 +42,8 @@ public class EsoLocal
 
     /**
      * Native method that returns true if the Eso local client can be reached.
+     *
+     * @return True if the service could be reached, false otherwise.
      */
     private native boolean pingEsoLocal();
 
@@ -52,8 +54,10 @@ public class EsoLocal
      * @param set The set containing the credentials.
      * @param data The data to encrypt.
      * @param version The version of the credentials to use.
+     *
+     * @return The encrypted data.
      */
-    public native byte[] encrypt(String set, byte[] data, int version);
+    public native byte[] encrypt(String set, int version, byte[] data);
 
     /**
      * Decrypts the data given using the specified version of the credentials
@@ -62,14 +66,10 @@ public class EsoLocal
      * @param set The set containing the credentials.
      * @param data The data to decrypt.
      * @param version The version of the credentials to use.
+     *
+     * @return The decrypted data.
      */
-
-    public native byte[] decrypt(String set, byte[] data, int version);
-
-    /**
-     * TODO
-     */
-    public native byte[] sign(String set, byte[] data, int version); 
+    public native byte[] decrypt(String set, int version, byte[] data);
 
     /**
      * Computes the message authentication code of the data using the specified
@@ -78,26 +78,90 @@ public class EsoLocal
      * wrapper function.
      *
      * @param set The set containing the credentials.
-     * @param data The data to compute the HMAC for.
      * @param version The version of the credentials to use.
+     * @param data The data to compute the HMAC for.
      * @param hash The hash function to use.
      *
+     * @return The HMAC.
+     *
      */
-    private native byte[] hmac(String set, byte[] data, int version, int hash);
+    private native byte[] hmac(String set, int version, byte[] data, int hash);
 
     /**
      * Wrapper around the native method because it is easier to pass the
      * ordinal of the enum than the enum itself.
+     *
+     * @param set The set containing the credentials.
+     * @param version The version of the credentials to use.
+     * @param data The data to compute the HMAC for.
+     * @param hash The hash function to use.
+     *
+     * @return The HMAC.
      */
-    public byte[] hmac(String set, byte[] data, int version, Hash hash)
+    public byte[] hmac(String set, int version, byte[] data, Hash hash)
     {
-        return hmac(set, data, version, hash.ordinal());
+        return hmac(set, version, data, hash.ordinal());
     }
 
     /**
-     * TODO
+     * Computes the signaure of the data using the specified algorithm.
+     *
+     * @param set The set containing the credentials.
+     * @param version The version of the credentials to use.
+     * @param data The data to sign.
+     * @param algo The hash function to use.
+     *
+     * @return The signature.
      */
-    public native byte[] verify(String set, byte[] data, int version);
+    private native byte[] sign(String set, int version, byte[] data, int algo); 
+
+    /**
+     * Wrapper around the native method because it is easier to pass the
+     * ordinal of the enum than the enum itself.
+     *
+     * @param set The set containing the credentials.
+     * @param version The version of the credentials to use.
+     * @param data The data to sign.
+     * @param algo The hash function to use.
+     *
+     * @return The signature.
+     */
+    public byte[] sign(String set, int version, byte[] data, Hash algo)
+    {
+        return sign(set, version, data, algo.ordinal());
+    }
+
+
+    /**
+     * Verifies the signature.
+     * 
+     * @param set The set containing the credentials.
+     * @param version The version of the credentials to use.
+     * @param sig The signature to verify.
+     * @param data The data to compare against.
+     * @param algo The hash function to use.
+     *
+     * @return True if the signature was verified, false otherwise.
+     */
+    private native boolean verify(String set, int version, byte[] sig, byte[] data, int algo);
+
+    /**
+     * Wrapper around the native method because it is easier to pass the
+     * ordinal of the enum that the enum itself.
+     *
+     * @param set The set containing the credentials.
+     * @param version The version of the credentials to use.
+     * @param sig The signature to verify.
+     * @param data The data to compare against.
+     * @param algo The hash function to use.
+     *
+     * @return True if the signature was verified, false otherwise.
+     */
+    public boolean verify(String set, int version, byte[] sig, byte[] data, Hash algo)
+    {
+        return verify(set, version, sig, data, algo.ordinal()); 
+    }
+
 
     /**
      * Private constructor to force user to test for service.

@@ -49,6 +49,14 @@ char_vec REQUEST_DECRYPT{'R','E','Q','U','E','S','T','_','D','E','C','R','Y','P'
 // Should be followed by the set, data, version, and hash type to use.
 char_vec REQUEST_HMAC{'R','E','Q','U','E','S','T','_','H','M','A','C'};
 
+// Used to request signing services from the local daemon.
+// Should be follow by the set, version, data ,and hash type to use.
+char_vec REQUEST_SIGN{'R','E','Q','U','E','S','T', '_','S','I','G','N'};
+
+// Used to request verification services from the local daemon.
+// Should be follow by the set, version, signature, data ,and hash type to use.
+char_vec REQUEST_VERIFY{'R','E','Q','U','E','S','T','_','V','E','R','I','F','Y'};
+
 // The return value if a query is invalid for some reason. For example:
 // requesting a non-existant credential from a distribution server.
 char_vec INVALID_REQUEST{'I','N','V','A','L','I','D','_','R','E','Q','U','E','S','T'};

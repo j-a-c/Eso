@@ -6,19 +6,16 @@ bugs:
 		- I think it is a transportation prob
 
 current:
+	- esolocal.cpp - send message in parts?
 
 	- rsa encrypt/decrypt no longer need b64 before/after
  	- move rsa encrpyt / decrypt methods to header
-	
-	- add rsa sign/verify
-		- add esol java calls and impl in esol
 
 	- switch unsigned char * stuff to char_vec
 		- params and rets
 
 	- java api
-		- sign
-		- verify
+		- retrieve
 	- esol
 		- db encryption
 

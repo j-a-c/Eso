@@ -37,13 +37,13 @@ class Example
         System.out.println("-----");
 
         // Encrypt the secret message.
-        byte[] encryptedMsg = eso.encrypt(setName, message.getBytes(), version);
+        byte[] encryptedMsg = eso.encrypt(setName, version, message.getBytes());
         System.out.println("Encrypted bytes: " + Arrays.toString(encryptedMsg));
 
         System.out.println("-----");
 
         // Decrypt the encrypted message.
-        byte[] decryptedMsg = eso.decrypt(setName, encryptedMsg, version);
+        byte[] decryptedMsg = eso.decrypt(setName, version, encryptedMsg);
         message = new String(decryptedMsg);
         System.out.println("Decrypted message: " + message);
         System.out.println("Decrypted bytes: " + Arrays.toString(decryptedMsg));
@@ -53,7 +53,7 @@ class Example
         System.out.println("-----");
 
         // HMAC using SHA-1.
-        byte[] hmacMsg = eso.hmac(setName, message.getBytes(), version, EsoLocal.Hash.SHA1);
+        byte[] hmacMsg = eso.hmac(setName, version, message.getBytes(), EsoLocal.Hash.SHA1);
         StringBuilder builder = new StringBuilder();
         for (byte b : hmacMsg)
             builder.append(String.format("%02x", b));
@@ -81,6 +81,7 @@ class Example
         // Sample set name, a secret message, and key version.
         String setName = "com.joshuac.test.asym";
         String message = "Josh is cool";
+        String origMessage = message;
         int version = 1;
 
         System.out.println("Original message: " + message);
@@ -89,16 +90,24 @@ class Example
         System.out.println("-----");
 
         // Encrypt the secret message.
-        byte[] encryptedMsg = eso.encrypt(setName, message.getBytes(), version);
+        byte[] encryptedMsg = eso.encrypt(setName, version, message.getBytes());
         System.out.println("Encrypted bytes: " + Arrays.toString(encryptedMsg));
 
         System.out.println("-----");
 
         // Decrypt the encrypted message.
-        byte[] decryptedMsg = eso.decrypt(setName, encryptedMsg, version);
+        byte[] decryptedMsg = eso.decrypt(setName, version, encryptedMsg);
         message = new String(decryptedMsg);
         System.out.println("Decrypted message: " + message);
         System.out.println("Decrypted bytes: " + Arrays.toString(decryptedMsg));
+
+        System.out.println("-----");
+        byte[] signature = eso.sign(setName, version, origMessage.getBytes(), EsoLocal.Hash.SHA256);
+        System.out.println("Signature: " + Arrays.toString(signature));
+
+        System.out.println("-----");
+        boolean validity = eso.verify(setName, version, signature, origMessage.getBytes(), EsoLocal.Hash.SHA256);
+        System.out.println("Was signature valid?: " +  validity);
 
         System.out.println("=====");
     }

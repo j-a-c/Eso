@@ -654,6 +654,132 @@ void LocalDaemon::handleUDS() const
             }
 
         }
+        else if (recv_msg == REQUEST_SIGN)
+        {
+            // Receive parameters.
+            recv_msg = uds_stream.recv();
+            std::string set_name{recv_msg.begin(), recv_msg.end()};
+
+            recv_msg= uds_stream.recv();
+            int version = std::stol(std::string{recv_msg.begin(), recv_msg.end()});
+
+            char_vec data = uds_stream.recv();
+
+            recv_msg= uds_stream.recv();
+            int hash = std::stol(std::string{recv_msg.begin(), recv_msg.end()});
+
+            Credential cred;
+            cred.set_name = set_name;
+            cred.version = version;
+
+            // Check permissions to see if sign is allowed.
+            // If the entity does not have permission, we will send an empty
+            // string and continue.
+            if (!has_permission_to(curr_user, cred.set_name, SIGN_OP))
+            {
+                uds_stream.send(char_vec{});
+                continue; 
+            }
+
+            // TODO get_credential should throw an exception if the request was
+            // not valid.
+            cred = get_credential(cred); 
+
+            // Check if the credential has expired.
+            if (is_expired(cred))
+            {
+                uds_stream.send(char_vec{});
+                continue; 
+            }
+
+            if (cred.type == ASYMMETRIC)
+            {
+                int len;
+                // Base64 decode the returned private key.
+                // TODO Error check len because base64_decode might fail.
+                unsigned char *private_store = base64_decode((unsigned char*) cred.priKey.c_str(), (size_t *) &len);
+                // DER decode the private key.
+                RSA *private_key = DER_decode_RSA_private(private_store, len);
+
+                // Compute the signature.
+                char_vec sig = rsa_sign(private_key, data, hash);
+
+                // Free allocated material.
+                RSA_free(private_key);
+                free(private_store);
+
+                uds_stream.send(sig);
+            }
+            else
+            {
+                // TODO throw exception
+            }
+        }
+        else if (recv_msg == REQUEST_VERIFY)
+        {
+            recv_msg = uds_stream.recv();
+            std::string set_name{recv_msg.begin(), recv_msg.end()};
+
+            recv_msg= uds_stream.recv();
+            int version = std::stol(std::string{recv_msg.begin(), recv_msg.end()});
+
+            char_vec sig = uds_stream.recv();
+            char_vec data = uds_stream.recv();
+
+            recv_msg= uds_stream.recv();
+            int hash = std::stol(std::string{recv_msg.begin(), recv_msg.end()});
+
+            Credential cred;
+            cred.set_name = set_name;
+            cred.version = version;
+
+            // Check permissions to see if verify is allowed.
+            // If the entity does not have permission, we will send an empty
+            // string and continue.
+            if (!has_permission_to(curr_user, cred.set_name, VERIFY_OP))
+            {
+                uds_stream.send(char_vec{});
+                continue; 
+            }
+
+            // TODO get_credential should throw an exception if the request was
+            // not valid.
+            cred = get_credential(cred); 
+
+            // Check if the credential has expired.
+            if (is_expired(cred))
+            {
+                uds_stream.send(char_vec{});
+                continue; 
+            }
+
+            if (cred.type == ASYMMETRIC)
+            {
+                int len;
+                // Base64 decode the returned public key.
+                // TODO Error check len because base64_decode might fail.
+                unsigned char *public_store = base64_decode((unsigned char*) cred.pubKey.c_str(), (size_t *) &len);
+                // DER decode the public key.
+                RSA *public_key = DER_decode_RSA_public(public_store, len);
+
+                // Verify the signature.
+                bool validity = rsa_verify(public_key, sig, data, hash);
+
+                // Free materials.
+                RSA_free(public_key);
+                free(public_store);
+
+                // Send validity.
+                char_vec ret_msg{};
+                ret_msg.push_back(validity);
+                uds_stream.send(ret_msg);
+            }
+            else
+            {
+                // TODO throw exception
+            }
+
+        }
         else
         {
             // TODO 

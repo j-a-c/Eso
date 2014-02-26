@@ -18,42 +18,42 @@ JNIEXPORT jboolean JNICALL Java_EsoLocal_EsoLocal_pingEsoLocal
 /*
  * Class:     EsoLocal_EsoLocal
  * Method:    encrypt
- * Signature: (Ljava/lang/String;[BI)[B
+ * Signature: (Ljava/lang/String;I[B)[B
  */
 JNIEXPORT jbyteArray JNICALL Java_EsoLocal_EsoLocal_encrypt
-  (JNIEnv *, jobject, jstring, jbyteArray, jint);
+  (JNIEnv *, jobject, jstring, jint, jbyteArray);
 
 /*
  * Class:     EsoLocal_EsoLocal
  * Method:    decrypt
- * Signature: (Ljava/lang/String;[BI)[B
+ * Signature: (Ljava/lang/String;I[B)[B
  */
 JNIEXPORT jbyteArray JNICALL Java_EsoLocal_EsoLocal_decrypt
-  (JNIEnv *, jobject, jstring, jbyteArray, jint);
-
-/*
- * Class:     EsoLocal_EsoLocal
- * Method:    sign
- * Signature: (Ljava/lang/String;[BI)[B
- */
-JNIEXPORT jbyteArray JNICALL Java_EsoLocal_EsoLocal_sign
-  (JNIEnv *, jobject, jstring, jbyteArray, jint);
+  (JNIEnv *, jobject, jstring, jint, jbyteArray);
 
 /*
  * Class:     EsoLocal_EsoLocal
  * Method:    hmac
- * Signature: (Ljava/lang/String;[BII)[B
+ * Signature: (Ljava/lang/String;I[BI)[B
  */
 JNIEXPORT jbyteArray JNICALL Java_EsoLocal_EsoLocal_hmac
-  (JNIEnv *, jobject, jstring, jbyteArray, jint, jint);
+  (JNIEnv *, jobject, jstring, jint, jbyteArray, jint);
+
+/*
+ * Class:     EsoLocal_EsoLocal
+ * Method:    sign
+ * Signature: (Ljava/lang/String;I[BI)[B
+ */
+JNIEXPORT jbyteArray JNICALL Java_EsoLocal_EsoLocal_sign
+  (JNIEnv *, jobject, jstring, jint, jbyteArray, jint);
 
 /*
  * Class:     EsoLocal_EsoLocal
  * Method:    verify
- * Signature: (Ljava/lang/String;[BI)[B
+ * Signature: (Ljava/lang/String;I[B[BI)Z
  */
-JNIEXPORT jbyteArray JNICALL Java_EsoLocal_EsoLocal_verify
-  (JNIEnv *, jobject, jstring, jbyteArray, jint);
+JNIEXPORT jboolean JNICALL Java_EsoLocal_EsoLocal_verify
+  (JNIEnv *, jobject, jstring, jint, jbyteArray, jbyteArray, jint);
 
 #ifdef __cplusplus
 }
