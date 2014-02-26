@@ -86,26 +86,29 @@ void LocalDaemon::handleTCP() const
         TCP_Stream incoming_stream = tcp_socket.accept();
         Logger::log("esol accepted new TCP connection.", LogLevel::Debug);
 
-        std::string received_string = incoming_stream.recv();
-        Logger::log(std::string{"Requested from esol: "} + received_string);
+        char_vec recv_msg = incoming_stream.recv();
+        Logger::log(std::string{"Requested from esol: "} + 
+                std::string{recv_msg.begin(), recv_msg.end()});
 
-        if (received_string == UPDATE_PERM)
+        if (recv_msg == UPDATE_PERM)
         {
-            received_string = incoming_stream.recv();
-            Logger::log(std::string{"esol received: "} + received_string);
+            recv_msg = incoming_stream.recv();
+            Logger::log(std::string{"esol received: "} + 
+                    std::string{recv_msg.begin(), recv_msg.end()});
 
-            Permission perm = Permission{received_string};
+            Permission perm = Permission{recv_msg};
 
             // Update distribution server database.
             MySQL_Conn conn;
             conn.insert_permission(perm);
         }
-        else if (received_string == DELETE_PERM)
+        else if (recv_msg == DELETE_PERM)
         {
-            received_string = incoming_stream.recv();
-            Logger::log(std::string{"esol received: "} + received_string);
+            recv_msg = incoming_stream.recv();
+            Logger::log(std::string{"esol received: "} + 
+                    std::string{recv_msg.begin(), recv_msg.end()});
 
-            Permission perm = Permission{received_string};
+            Permission perm = Permission{recv_msg};
 
             // Update distribution server database.
             MySQL_Conn conn;
@@ -165,7 +168,7 @@ Credential LocalDaemon::get_credential(const Credential in_cred) const
             tcp_stream.send(GET_CRED);
             tcp_stream.send(req_cred.serialize());
 
-            std::string tcp_received = tcp_stream.recv();
+            char_vec tcp_received = tcp_stream.recv();
             // Our request was successful. Update our database.
             if (tcp_received != INVALID_REQUEST)
             {
@@ -229,7 +232,7 @@ Permission LocalDaemon::get_permission(Permission in_perm) const
             tcp_stream.send(GET_PERM);
             tcp_stream.send(req_perm.serialize());
 
-            std::string tcp_received = tcp_stream.recv();
+            char_vec tcp_received = tcp_stream.recv();
             // Our request was successful. Update our database.
             if (tcp_received != INVALID_REQUEST)
             {
@@ -342,24 +345,25 @@ void LocalDaemon::handleUDS() const
 
         // Implement protocol
 
-        std::string received_string = uds_stream.recv();
-        Logger::log(std::string{"Requested from esol: "} + received_string);
+        char_vec recv_msg = uds_stream.recv();
+        Logger::log(std::string{"Requested from esol: "} + 
+                std::string{recv_msg.begin(), recv_msg.end()});
 
-        if (received_string == PING)
+        if (recv_msg == PING)
         {
             uds_stream.send(PING);
         }
-        else if (received_string == REQUEST_ENCRYPT)
+        else if (recv_msg == REQUEST_ENCRYPT)
         {
-            received_string = uds_stream.recv();
+            recv_msg = uds_stream.recv();
 
             log_msg = std::string{"esol: Encrypt params: "};
-            log_msg += received_string;
+            log_msg += std::string{recv_msg.begin(), recv_msg.end()};
             Logger::log(log_msg, LogLevel::Debug);
 
             // According to message_config.h, we should receive:
             // set_name;version;data_to_encrypt.
-            auto values = split_string(received_string, MSG_DELIMITER);
+            auto values = split_string(recv_msg, MSG_DELIMITER);
             Credential cred;
             cred.set_name = values[0];
             cred.version = std::stol(values[1]);
@@ -482,17 +486,17 @@ void LocalDaemon::handleUDS() const
             }
         // This ends the encrypt case.
         }
-        else if (received_string == REQUEST_DECRYPT)
+        else if (recv_msg == REQUEST_DECRYPT)
         {
-            received_string = uds_stream.recv();
+            recv_msg = uds_stream.recv();
 
             std::string log_msg{"esol: Decrypt msg: "};
-            log_msg += received_string;
+            log_msg += std::string{recv_msg.begin(), recv_msg.end()};
             Logger::log(log_msg, LogLevel::Debug);
 
             // According to message_config.h, we should receive:
             // set_name;version;data_to_encrypt.
-            auto values = split_string(received_string, MSG_DELIMITER);
+            auto values = split_string(recv_msg, MSG_DELIMITER);
             Credential cred;
             cred.set_name = values[0];
             cred.version = std::stol(values[1]);
@@ -601,17 +605,17 @@ void LocalDaemon::handleUDS() const
 
         // This ends the decrypt case.
         }
-        else if (received_string == REQUEST_HMAC)
+        else if (recv_msg == REQUEST_HMAC)
         {
-            received_string = uds_stream.recv();
+            recv_msg = uds_stream.recv();
 
             std::string log_msg{"esol: HMAC msg: "};
-            log_msg += received_string;
+            log_msg += std::string{recv_msg.begin(), recv_msg.end()};
             Logger::log(log_msg, LogLevel::Debug);
 
             // According to message_config.h, we should receive:
             // set_name;version;data;hash
-            auto values = split_string(received_string, MSG_DELIMITER);
+            auto values = split_string(recv_msg, MSG_DELIMITER);
             Credential cred;
             cred.set_name = values[0];
             cred.version = std::stol(values[1]);
@@ -658,7 +662,7 @@ void LocalDaemon::handleUDS() const
             // TODO 
             // Invalid request.
             std::string log_msg{"esol invalid request: "};
-            log_msg += received_string;
+            log_msg += std::string{recv_msg.begin(), recv_msg.end()};
             Logger::log(log_msg);
         }
         Logger::log("esol is closing UDS connection.");

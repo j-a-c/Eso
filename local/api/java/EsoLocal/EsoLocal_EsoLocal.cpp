@@ -76,12 +76,12 @@ JNIEXPORT jbyteArray JNICALL Java_EsoLocal_EsoLocal_encrypt(JNIEnv *env,
         uds_stream.send(msg);
 
         // Receive the encrypted string.
-        std::string encryption = uds_stream.recv();
+        char_vec encryption = uds_stream.recv();
 
         // Convert encryption from native to Java.
-        len = encryption.length();
+        len = encryption.size();
         jbyteArray encArray = env->NewByteArray(len);
-        env->SetByteArrayRegion(encArray, 0, len, (jbyte*)encryption.c_str());
+        env->SetByteArrayRegion(encArray, 0, len, (jbyte*)&encryption[0]);
 
         // Release the set_name.
         env->ReleaseStringUTFChars(in_set, set_name);
@@ -131,12 +131,12 @@ JNIEXPORT jbyteArray JNICALL Java_EsoLocal_EsoLocal_decrypt
         uds_stream.send(msg);
 
         // Receive the decrypted string.
-        std::string decryption = uds_stream.recv();
+        char_vec decryption = uds_stream.recv();
 
         // Convert decryption from native to Java.
-        len = decryption.length();
+        len = decryption.size();
         jbyteArray decArray = env->NewByteArray(len);
-        env->SetByteArrayRegion(decArray, 0, len, (jbyte*)decryption.c_str());
+        env->SetByteArrayRegion(decArray, 0, len, (jbyte*)&decryption[0]);
 
         // Release the set_name.
         env->ReleaseStringUTFChars(in_set, set_name);
@@ -189,12 +189,12 @@ JNIEXPORT jbyteArray JNICALL Java_EsoLocal_EsoLocal_hmac
         uds_stream.send(msg);
 
         // Receive the decrypted string.
-        std::string hmac = uds_stream.recv();
+        char_vec hmac = uds_stream.recv();
 
         // Convert decryption from native to Java.
-        len = hmac.length();
+        len = hmac.size();
         jbyteArray jhmac = env->NewByteArray(len);
-        env->SetByteArrayRegion(jhmac, 0, len, (jbyte*)hmac.c_str());
+        env->SetByteArrayRegion(jhmac, 0, len, (jbyte*)&hmac[0]);
 
         // Release the set_name.
         env->ReleaseStringUTFChars(in_set, set_name);

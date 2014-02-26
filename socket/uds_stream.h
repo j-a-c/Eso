@@ -5,6 +5,7 @@
 #include <sys/socket.h>
 #include <sys/types.h> 
 #include <sys/un.h>
+#include <vector>
 
 #include "../global_config/message_config.h"
 #include "../logger/logger.h"
@@ -18,9 +19,10 @@ public:
     UDS_Stream(int con_fd, sockaddr_un remote, int remote_len);
     ~UDS_Stream();
     // Send data.
+    void send(char_vec msg) const;
     void send(std::string msg) const;
     // Receive data.
-    std::string recv();
+    char_vec recv();
     // Set the user we are currenting corresponding with.
     std::string get_user() const;
 private:
@@ -29,8 +31,10 @@ private:
     int _remote_len;
     // Max length of data we will read in at a time.
     int MAX_LENGTH = 1024;
+    // Size of the message header. Contains the size of the following message.
+    int MSG_HEADER_SIZE = 2;
     // Buffer holding partially constructed messages.
-    std::string msg_buffer{};
+    char_vec msg_buffer{};
     // The user we are corresponding with.
     std::string _user;
 };
@@ -50,20 +54,19 @@ UDS_Stream::~UDS_Stream()
  * Send data. Includes MSG_END to allow the receiver to distinguish between 
  * messages.
  */
-void UDS_Stream::send(std::string msg) const
+void UDS_Stream::send(char_vec msg) const
 {
-    // Manually append MSG_END here to allow receiver to distinguish between
-    // messages.
-    msg.append(MSG_END);
-
-    // Buffer to send.
-    const char *buff = msg.c_str();
     // Position in buffer.
-    char *pos = (char *) buff;
+    char *pos = &msg[0];
     // Length of data to send
-    size_t len = strlen(buff);
+    size_t len = msg.size();
     // Number of characters sent.
     ssize_t n;
+
+    char msg_header[MSG_HEADER_SIZE];
+    msg_header[0] = len >> 8;   // Upper 8 bits.
+    msg_header[1] = len & 0xFF; // Lower 8 bits.
+    ::send(_con_fd, msg_header, MSG_HEADER_SIZE, 0);
 
     // Ensure that all data is sent.
     while (len > 0 && (n = ::send(_con_fd, pos, len, 0)) > 0)
@@ -79,21 +82,52 @@ void UDS_Stream::send(std::string msg) const
     }
 }
 
+/**
+ * Included for backwards compatibility.
+ * Delegates to send(char_vec).
+ */
+void UDS_Stream::send(std::string msg) const
+{
+    UDS_Stream::send(char_vec{msg.begin(), msg.end()});
+}
+
 /** 
  * Returns a completed message, not including the MSG_END character.
  */
-std::string UDS_Stream::recv()
+char_vec UDS_Stream::recv()
 {
     char recv_msg[MAX_LENGTH];
-    std::size_t end_pos;
+    // The total message size and the amount we have left to read.
+    int total, remaining;
+
+    // We need to recv() until we have MSG_HEADER_SIZE bytes.
+    while (msg_buffer.size() < MSG_HEADER_SIZE)
+    {
+        // Read the size of the message.
+        if(int len = ::recv(_con_fd, recv_msg, MAX_LENGTH, 0))
+        {
+            msg_buffer.insert(msg_buffer.end(), &recv_msg[0], &recv_msg[len]);
+       }
+        else
+        {
+            std::string error_msg{"Something went wrong in UDS_Stream::recv() "};
+            error_msg += std::to_string(len);
+            Logger::log(error_msg, LogLevel::Error);
+        }
+    }
+
+    // Compute the message size.
+    total = remaining = (msg_buffer[0] << 8) + msg_buffer[1];
+    msg_buffer = char_vec{msg_buffer.begin()+2, msg_buffer.end()};
+    remaining -= msg_buffer.size();
+
     // Read until we find a complete message.
-    while ((end_pos = msg_buffer.find_first_of(MSG_END)) == std::string::npos)
+    while (remaining > 0)
     {
         if(int len = ::recv(_con_fd, recv_msg, MAX_LENGTH, 0))
         {
-            char temp_msg[len];
-            strncpy(temp_msg, recv_msg, len);
-            msg_buffer.append(temp_msg, len);
+            msg_buffer.insert(msg_buffer.end(), &recv_msg[0], &recv_msg[len]);
+            remaining -= len;
         }
         else
         {
@@ -103,10 +137,11 @@ std::string UDS_Stream::recv()
         }
     }
 
-    // Return message does not include MSG_END
-    std::string ret_msg = msg_buffer.substr(0, end_pos);
-    // Update message buffer to exclude MSG_END
-    msg_buffer = msg_buffer.substr(end_pos+1);
+    // Return message.
+    char_vec ret_msg = char_vec{msg_buffer.begin(), msg_buffer.begin()+total};
+
+    // Update message buffer to exclude return message.
+    msg_buffer = char_vec{msg_buffer.begin()+total, msg_buffer.end()};
 
     return ret_msg;
 }

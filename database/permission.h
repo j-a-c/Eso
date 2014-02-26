@@ -17,6 +17,7 @@ public:
     Permission();
     // Creates a Permission from a serialized Permission.
     Permission(std::string);
+    Permission(char_vec);
     // Returns the serialized form of this Permission.
     std::string serialize() const;
 
@@ -59,6 +60,18 @@ Permission::Permission(std::string serialization)
     op = stol(values[3]);
     loc = values[4];
 }
+
+/**
+ * Constructs a std::string from the char_vec and delegates to another
+ * constructor. This constructor was introduced during when sockets were
+ * changed.
+ */
+Permission::Permission(char_vec c)
+    : Permission(std::string{c.begin(), c.end()})
+{
+
+}
+
 
 /**
  * Returns the serialized form of this Permission. The member values should be

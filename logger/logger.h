@@ -3,7 +3,9 @@
 
 #include <iostream>
 #include <fstream> 
+#include <string>
 #include <time.h>
+#include "../global_config/types.h"
 
 enum class LogLevel {Fatal, Error, Warning, Info, Debug, Debug1};
 
@@ -12,17 +14,27 @@ class Logger
 {
 public:
     static void log(std::string msg, LogLevel level = LogLevel::Info);
+    static void log(char_vec msg, LogLevel level = LogLevel::Info);
+
 private: 
     Logger();
     ~Logger();
 };
 
+
 // TODO generalize output path and add logging level
 // TODO integrity checks
+/**
+ * Logs the message to the output location.
+ */
 void Logger::log(std::string msg, LogLevel level)
 {
+    // The logger output location.
+    // TODO Configure.
+    std::string log_loc{"/home/bose/Desktop/eso/default.log"};
+
     std::ofstream out;
-    out.open("/home/bose/Desktop/eso/default.log", 
+    out.open(log_loc, 
             std::ios_base::app | std::ios_base::in | std::ios_base::out);
 
     // Formatted time
@@ -36,6 +48,15 @@ void Logger::log(std::string msg, LogLevel level)
     out << time_buffer 
         << msg << std::endl;
     out.close();
+}
+
+/**
+ * Delegates to another logging method.
+ * Added to support logging char_vec's.
+ */
+void Logger::log(char_vec msg, LogLevel level)
+{
+    Logger::log(std::string{msg.begin(), msg.end()}, level);
 }
 
 #endif

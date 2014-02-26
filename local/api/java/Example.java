@@ -27,7 +27,7 @@ class Example
         // Parameters for the symmetric example.
         // Sample set name, a secret message, and key version.
         String setName = "com.joshuac.test.sym";
-        String message = "Hello World";
+        String message = "Hello World!";
         int version = 2;
 
         // Print the original message.

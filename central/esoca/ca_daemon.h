@@ -35,7 +35,7 @@ class CADaemon : public Daemon
         int work() const;
         const char * lock_path() const;
         // Propagates a message to the distribution servers.
-        void propagate(const std::string msg_type, const std::string msg) const;
+        void propagate(const char_vec msg_type, const std::string msg) const;
 };
 
 int CADaemon::start() const
@@ -56,8 +56,7 @@ const char * CADaemon::lock_path() const
  * @param msg_type The type of the message (ex: UPDATE_PERM).
  * @param msg The message to send
  */
-void CADaemon::propagate(const std::string msg_type, 
-        const std::string msg) const
+void CADaemon::propagate(const char_vec msg_type, const std::string msg) const
 {
     // Read conifg file for distribution locations.
     // Send distribution_msg to all distribution servers.
@@ -111,12 +110,11 @@ int CADaemon::work() const
          */
 
         // Holds the message we receive.
-        std::string recv_msg;
-        // Holds the message we send.
-        std::string msg;
-
+        char_vec recv_msg;
+        
         recv_msg = uds_stream.recv();
-        Logger::log(std::string{"Requested from esoca: "} + recv_msg);
+        Logger::log(std::string{"Requested from esoca: "} + 
+                std::string{recv_msg.begin(), recv_msg.end()});
 
         // Check for valid request.
         if (recv_msg == NEW_PERM)
@@ -174,7 +172,7 @@ int CADaemon::work() const
             recv_msg = uds_stream.recv();
             
             std::string log_msg{"esoca: Serialized credential: "};
-            log_msg += recv_msg;
+            log_msg += std::string{recv_msg.begin(), recv_msg.end()};
             Logger::log(log_msg, LogLevel::Debug);
 
             Credential cred = Credential(recv_msg);
@@ -244,7 +242,7 @@ int CADaemon::work() const
         else
         {
             std::string log_msg{"esoca invalid request: "};
-            log_msg += recv_msg;
+            log_msg += std::string{recv_msg.begin(), recv_msg.end()};
             Logger::log(log_msg);
         }
 

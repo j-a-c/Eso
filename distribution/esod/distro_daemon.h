@@ -94,19 +94,21 @@ int DistroDaemon::work() const
         TCP_Stream incoming_stream = tcp_in_socket.accept();
         Logger::log("esod accepted new TCP connection.", LogLevel::Debug);
 
-        std::string received_string = incoming_stream.recv();
-        Logger::log(std::string{"Requested from esod: "} + received_string);
+        char_vec recv_msg = incoming_stream.recv();
+        Logger::log(std::string{"Requested from esod: "} + 
+                std::string{recv_msg.begin(), recv_msg.end()});
 
         /*
          * Occurs when the CA sends an updated Permission to this distribution
          * daemon.
          */
-        if (received_string == UPDATE_PERM)
+        if (recv_msg == UPDATE_PERM)
         {
-            received_string = incoming_stream.recv();
-            Logger::log(std::string{"esod received: "} + received_string);
+            recv_msg = incoming_stream.recv();
+            Logger::log(std::string{"esod received: "} + 
+                    std::string{recv_msg.begin(), recv_msg.end()});
 
-            Permission perm = Permission{received_string};
+            Permission perm = Permission{recv_msg};
 
             // Update distribution server database.
             MySQL_Conn conn;
@@ -131,7 +133,7 @@ int DistroDaemon::work() const
          * Occurs when the CA requests that a Permission be deleted due to a
          * deletion on the admin interface.
          */
-        else if (received_string == DELETE_PERM)
+        else if (recv_msg == DELETE_PERM)
         {
             // Create Permission object.
             Permission perm = Permission{incoming_stream.recv()};
@@ -158,12 +160,13 @@ int DistroDaemon::work() const
          * Occurs when a local daemon queries this distribution daemon for a
          * Permission.
          */
-        else if (received_string == GET_PERM)
+        else if (recv_msg == GET_PERM)
         {
-            received_string = incoming_stream.recv();
-            Logger::log(std::string{"esod received: "} + received_string);
+            recv_msg = incoming_stream.recv();
+            Logger::log(std::string{"esod received: "} + 
+                    std::string{recv_msg.begin(), recv_msg.end()});
 
-            Permission perm = Permission{received_string};
+            Permission perm = Permission{recv_msg};
 
             // TODO ensure the local daemon is the designated location for this
             // credential? esol only uses Permissions that are marked with its
@@ -183,19 +186,19 @@ int DistroDaemon::work() const
          * Occurs when a local daemon queries this distribution daemon for a
          * Credential.
          */
-        else if (received_string == GET_CRED)
+        else if (recv_msg == GET_CRED)
         {
             // TODO Ensure that location is authorized to receive this cred.
 
             // Parse request parameters. See the parameter order in
             // message_config.h
-            received_string = incoming_stream.recv();
+            recv_msg = incoming_stream.recv();
 
             std::string log_msg{"esod: GET_CRED received: "};
-            log_msg += received_string;
+            log_msg += std::string{recv_msg.begin(), recv_msg.end()};
             Logger::log(log_msg, LogLevel::Debug);
 
-            Credential cred = Credential{received_string};
+            Credential cred = Credential{recv_msg};
 
             log_msg = std::string{"In esod, cred params: "};
             log_msg += cred.serialize();
@@ -223,21 +226,21 @@ int DistroDaemon::work() const
          * Occurs when a new Credential has been created by the CA due to some
          * interaction with the admin interface.
          */
-        else if (received_string == NEW_CRED)
+        else if (recv_msg == NEW_CRED)
         {
             // Receive serialized Credential.
-            received_string = incoming_stream.recv();
+            recv_msg = incoming_stream.recv();
 
             std::string log_msg{"In esod, new cred: "};
-            log_msg += received_string;
+            log_msg += std::string{recv_msg.begin(), recv_msg.end()};
             Logger::log(log_msg, LogLevel::Debug);
 
             // Insert Credential into database.
-            Credential cred = Credential{received_string};
+            Credential cred = Credential{recv_msg};
             MySQL_Conn conn;
             conn.create_credential(cred);
         }
-        else if (received_string == PING)
+        else if (recv_msg == PING)
         {
             incoming_stream.send(PING);
         }
@@ -246,7 +249,7 @@ int DistroDaemon::work() const
             // TODO
             // Invalid request.
             std::string log_msg{"esod invalid request: "};
-            log_msg += received_string;
+            log_msg += std::string{recv_msg.begin(), recv_msg.end()};
             Logger::log(log_msg);
 
         }

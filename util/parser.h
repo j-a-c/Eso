@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 
+#include "../global_config/types.h"
 
 /*
  * Some parser-related functions, including reading a file and splitting a
@@ -30,6 +31,15 @@ std::vector<std::string> split_string(std::string to_split, char delimiter)
     }
 
     return strings;
+}
+
+/**
+ * Delegates to split_string(std::string, char).
+ * Added for forward compatibility.
+ */
+std::vector<std::string> split_string(char_vec to_split, char delimiter)
+{
+    return split_string(std::string{to_split.begin(), to_split.end()}, delimiter);
 }
 
 /*
