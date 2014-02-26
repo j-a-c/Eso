@@ -11,6 +11,9 @@ current:
 	- rsa encrypt/decrypt no longer need b64 before/after
  	- move rsa encrpyt / decrypt methods to header
 
+	- sign/verify/hmac - add more algos
+		- add sha 256 to hmac
+
 	- switch unsigned char * stuff to char_vec
 		- params and rets
 
