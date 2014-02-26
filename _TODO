@@ -8,6 +8,8 @@ bugs:
 
 current:
 
+ 	- move rsa encrpyt / decrypt methods to header
+
 	- switch unsigned char * stuff to strings
 
 	- java api
