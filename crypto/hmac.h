@@ -4,7 +4,7 @@
 #include <string>
 #include <openssl/hmac.h>
 
-const int SHA1 = 1;
+#include "constants.h"
 
 /**
  * Implements HMAC-*, where * is one of the allowable modes specified above. If

@@ -2,16 +2,19 @@ grep -r TODO *
 
 bugs:
 	- after creating a cred, page says does not exist. refreshing page shows it does exist
-	- padding error when asymmetric key is decrypted
+	- padding error when asymmetric / symmetric key is decrypted
+		- I think it is a transportation prob
 
 current:
 
-	- do not save null byte when encrypted (aes & rsa)
 	- rsa encrypt/decrypt no longer need b64 before/after
  	- move rsa encrpyt / decrypt methods to header
-	- add rsa sign/verify 
+	
+	- add rsa sign/verify
+		- add esol java calls and impl in esol
 
-	- switch unsigned char * stuff to strings
+	- switch unsigned char * stuff to char_vec
+		- params and rets
 
 	- java api
 		- sign

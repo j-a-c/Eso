@@ -10,6 +10,10 @@
 #include <openssl/rsa.h>
 #include <tuple>
 
+#include "constants.h"
+#include "../global_config/types.h"
+#include "../logger/logger.h"
+
 /* 
  * Returns the malloc'd buffer, and puts the size of the buffer into the integer
  * pointed to by the second argument. Don't forget to free the returned buffer!
@@ -101,6 +105,260 @@ std::tuple<unsigned char *, int, unsigned char *, int> get_new_RSA_pair(int bits
 
     return std::make_tuple(public_store, public_len, 
             private_store, private_len);
+}
+
+
+/**
+ * Signs the message using RSA and the specified algorithm.
+ *
+ * @param private_key The private key to sign with.
+ * @param msg The message to sign.
+ * @param algo The algorithm to use to sign.
+ *
+ * @return The signature or an empty char_vec{} if something went wrong.
+ */
+char_vec rsa_sign(RSA *private_key, char_vec msg, int algo)
+{
+    // Allocate the EVP signing key.
+    EVP_PKEY *signing_key = EVP_PKEY_new();
+    if (!signing_key)
+    {
+        Logger::log("Error allocating mem for signing_key ", LogLevel::Error);
+        return char_vec{};
+    }
+
+    // Set the signing key.
+    if(EVP_PKEY_set1_RSA(signing_key, private_key) <= 0)
+    {
+        /* Error setting key */ 
+        Logger::log("Error setting key.", LogLevel::Error);
+
+        EVP_PKEY_free(signing_key);
+    
+        return char_vec{};
+    }
+
+    EVP_MD_CTX *ctx = EVP_MD_CTX_create();
+
+    // Configure the message digest algorithm.
+    OpenSSL_add_all_algorithms();
+
+    const EVP_MD *md;
+
+    // Try to obtain the message digest algorithm.
+    switch (algo)
+    {
+        case SHA256:
+            md = EVP_get_digestbyname("sha256");
+            break;
+        default:
+            EVP_PKEY_free(signing_key);
+            return char_vec{};
+    }
+
+    // Check to ensure we have obtained the message algorithm.
+    if (!md)
+    {
+        Logger::log("Unable to get message digest algo.", LogLevel::Error);
+        EVP_PKEY_free(signing_key);
+        EVP_cleanup();
+        EVP_MD_CTX_cleanup(ctx);
+        EVP_MD_CTX_destroy(ctx);
+
+        return char_vec{};
+    }
+
+    // Initalize the EVP sign.
+    if (!EVP_SignInit(ctx, md))
+    {
+        Logger::log("EVP_SignInit: failed.", LogLevel::Error);
+
+        EVP_cleanup();
+        EVP_PKEY_free(signing_key);
+        EVP_MD_CTX_cleanup(ctx);
+        EVP_MD_CTX_destroy(ctx);
+
+        return char_vec{};
+    } 
+
+    // Update the signature with the message.
+    if (!EVP_SignUpdate(ctx, (unsigned char*) &msg[0], msg.size()))
+    {
+        Logger::log("EVP_SignUpdate: failed.", LogLevel::Error);
+
+        EVP_cleanup();
+        EVP_PKEY_free(signing_key);
+        EVP_MD_CTX_cleanup(ctx);
+        EVP_MD_CTX_destroy(ctx);
+
+        return char_vec{};
+    }
+
+    // Will hold the signature and length.
+    unsigned char *sig;
+    size_t siglen;
+
+    sig = (unsigned char *) malloc(EVP_PKEY_size(signing_key));
+
+    // Check that the allocation worked.
+    if (!sig)
+    {
+        Logger::log("malloc failed", LogLevel::Error);
+
+        EVP_cleanup();
+        EVP_PKEY_free(signing_key);
+        EVP_MD_CTX_cleanup(ctx);
+        EVP_MD_CTX_destroy(ctx);
+
+        return char_vec{};
+    }
+
+    // Retrieve the signature.
+    if (!EVP_SignFinal(ctx, sig, &siglen, signing_key))
+    {
+        Logger::log("EVP_SignFinal: failed.", LogLevel::Error);
+
+        free(sig);
+        EVP_cleanup();
+        EVP_PKEY_free(signing_key);
+        EVP_MD_CTX_cleanup(ctx);
+        EVP_MD_CTX_destroy(ctx);
+
+        return char_vec{};
+    }
+
+    // Clean up EVP context.
+    EVP_cleanup();
+    EVP_PKEY_free(signing_key);
+    EVP_MD_CTX_cleanup(ctx);
+    EVP_MD_CTX_destroy(ctx);
+
+    // Free allocated material.
+    free(sig);
+
+    return char_vec{&sig[0], &sig[0]+siglen};
+}
+
+/**
+ * Verifies the signature using RSA and the specified algorithm.
+ *
+ * @param public_key The public key to use.
+ * @param sig The signature to verify.
+ * @param msg The message to compare to.
+ * @param algo The algorithm to use.
+ *
+ * @return True if the signature is verified, false otherwise or if an error
+ * occurred.
+ */
+bool rsa_verify(RSA *public_key, char_vec sig, char_vec msg, int algo)
+{
+    EVP_PKEY *verify_key = EVP_PKEY_new();
+
+    // Allocate the verify key.
+    if (!verify_key)
+    {
+        Logger::log("Error allocating key.", LogLevel::Error);
+        return false;
+    }
+
+    // Set the public key.
+    if(EVP_PKEY_set1_RSA(verify_key, public_key) <= 0)
+    {
+        /* Error setting key */ 
+        Logger::log("Error setting key.", LogLevel::Error);
+
+        EVP_PKEY_free(verify_key);
+        return false;
+    }
+
+    // Configure the message digest algorithm.
+    OpenSSL_add_all_algorithms();
+
+    const EVP_MD *md;
+
+    // Try to obtain the message digest algorithm.
+    switch (algo)
+    {
+        case SHA256:
+            md = EVP_get_digestbyname("sha256");
+            break;
+        default:
+            EVP_PKEY_free(verify_key);
+            return false;
+    }
+
+    // Check to ensure we have obtained the message digest algorithm.
+    if (!md)
+    {
+        Logger::log("Unable to get message digest algo.", LogLevel::Error);
+
+        EVP_PKEY_free(verify_key);
+        EVP_cleanup();
+
+        return false;
+    }
+
+    // Now we verify the signature.
+    EVP_MD_CTX *ctx = EVP_MD_CTX_create();
+
+    // Check to ensure we have allocated a context.
+    if (!ctx)
+    {
+        Logger::log("Error allocating context.", LogLevel::Error);
+
+        EVP_PKEY_free(verify_key);
+        EVP_cleanup();
+
+        return false;
+    }
+
+    // Initalize the context with the specified algorithm.
+    if(!EVP_VerifyInit(ctx, md))
+    {
+        Logger::log("Error init verify.", LogLevel::Error);
+
+        // Free everything
+        EVP_PKEY_free(verify_key);
+        EVP_MD_CTX_cleanup(ctx);
+        EVP_MD_CTX_destroy(ctx);
+        EVP_cleanup();
+
+        return false;
+    }
+
+    // Update the context with our data.
+    if(!EVP_VerifyUpdate(ctx, (unsigned char*) &msg[0], msg.size()))
+    {
+        Logger::log("Error update verify.", LogLevel::Error);
+
+        // Free everything
+        EVP_PKEY_free(verify_key);
+        EVP_MD_CTX_cleanup(ctx);
+        EVP_MD_CTX_destroy(ctx);
+        EVP_cleanup();
+
+        return false;
+    }
+
+    bool ret = false;
+    
+    // Verify the signature.
+    if(EVP_VerifyFinal(ctx, (unsigned char*) &sig[0], sig.size(), verify_key))
+    {
+        ret = true;
+    }
+    else
+    {
+        ret = false;
+    }
+
+    // Clean up
+    EVP_cleanup();
+    EVP_PKEY_free(verify_key);
+    EVP_MD_CTX_cleanup(ctx);
+    EVP_MD_CTX_destroy(ctx);
+
+    return ret;
 }
 
 #endif

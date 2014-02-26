@@ -407,9 +407,7 @@ void LocalDaemon::handleUDS() const
                 // Base64 decode the returned symmetric key.
                 // TODO Error check len because base64_decode might fail.
                 unsigned char *key = base64_decode((unsigned char *)cred.symKey.c_str(), (size_t *)&len);
-                // We add 1 to data_to_encrypt.length() because we want to
-                // preserve the null terminator.
-                len = data_to_encrypt.length() + 1;
+                len = data_to_encrypt.length();
                 encryption = 
                     aes_encrypt(key, 
                             (unsigned char *) data_to_encrypt.c_str(), 
@@ -449,8 +447,7 @@ void LocalDaemon::handleUDS() const
 
                 // TODO seed PRNG
                 // Encrypt msg using the public key.
-                // We add one to the length to preserve the null terminator.
-                int encrypted_length = RSA_public_encrypt(data_to_encrypt.length()+1, 
+                int encrypted_length = RSA_public_encrypt(data_to_encrypt.length(), 
                         reinterpret_cast<unsigned char *>(const_cast<char *>(data_to_encrypt.c_str())), 
                         cipher, public_key, RSA_PKCS1_OAEP_PADDING);
 
@@ -467,7 +464,7 @@ void LocalDaemon::handleUDS() const
                 // Send the encrypted message. We do not need to send the
                 // length since the return for RSA_public_encrypt is 
                 // RSA_size(rsa).
-                //uds_stream.send(std::string{(char*)bcipher, encrypted_length});
+                //uds_stream.send(char_vec{&cipher[0], &cipher[0]+encrypted_length});
                 uds_stream.send(std::string{(char*)bcipher});
 
 
