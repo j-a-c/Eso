@@ -40,13 +40,15 @@ unsigned char *get_new_AES_key(int size)
 
 /*
  * This will encrypt *len bytes of data using AES-CBC mode.
- * The return value has been malloc'd and must be freed after use.
  * 
  * @param size The size of the key in bits.
  */
-unsigned char *aes_encrypt(unsigned char *key, unsigned char *plaintext, 
-        int *len, int size)
+char_vec aes_encrypt(unsigned char *key, char_vec plaintext, int size)
 {
+    // Used to keep track of the length of the ciphertext.
+    int l = plaintext.size();
+    int *len = &l;
+
     EVP_CIPHER_CTX e;
 
     EVP_CIPHER_CTX_init(&e);
@@ -71,7 +73,7 @@ unsigned char *aes_encrypt(unsigned char *key, unsigned char *plaintext,
 
     // Update ciphertext, c_len is filled with the length of ciphertext 
     // generated, *len is the size of plaintext in bytes.
-    EVP_EncryptUpdate(&e, ciphertext, &c_len, plaintext, *len);
+    EVP_EncryptUpdate(&e, ciphertext, &c_len, (unsigned char *) &plaintext[0], *len);
 
     // update ciphertext with the final remaining bytes.
     EVP_EncryptFinal_ex(&e, ciphertext+c_len, &f_len);
@@ -80,7 +82,13 @@ unsigned char *aes_encrypt(unsigned char *key, unsigned char *plaintext,
 
     EVP_CIPHER_CTX_cleanup(&e);
 
-    return ciphertext;
+    // Construct the return value.
+    char_vec ret{&ciphertext[0], &ciphertext[0]+l};
+
+    // Free allocated memory.
+    free(ciphertext);
+
+    return ret;
 }
 
 /*
@@ -88,9 +96,12 @@ unsigned char *aes_encrypt(unsigned char *key, unsigned char *plaintext,
  *
  * @param size The size of the key in bits.
  */
-char_vec aes_decrypt(unsigned char *key, unsigned char *ciphertext, 
-        int *len, int size)
+char_vec aes_decrypt(unsigned char *key, char_vec ciphertext, int size)
 {
+    // Used to keep track of the length of the ciphertext.
+    int l = ciphertext.size();
+    int *len = &l;
+
     EVP_CIPHER_CTX e;
 
     EVP_CIPHER_CTX_init(&e);
@@ -110,7 +121,7 @@ char_vec aes_decrypt(unsigned char *key, unsigned char *ciphertext,
 
     // TODO Check these params.
     EVP_DecryptInit_ex(&e, NULL, NULL, NULL, NULL);
-    EVP_DecryptUpdate(&e, plaintext, &p_len, ciphertext, *len);
+    EVP_DecryptUpdate(&e, plaintext, &p_len, (unsigned char *) &ciphertext[0], *len);
     EVP_DecryptFinal_ex(&e, plaintext+p_len, &f_len);
 
     *len = p_len + f_len;

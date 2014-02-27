@@ -2,21 +2,16 @@ grep -r TODO *
 
 bugs:
 	- after creating a cred, page says does not exist. refreshing page shows it does exist
-	- padding error when asymmetric / symmetric key is decrypted
-		- I think it is a transportation prob
-	- does hmac work? it is returning different values..
 
 current:
-	- esolocal.cpp - send message in parts?
-
 	- message_config update protocol
 
  	- move rsa encrpyt / decrypt methods to header
 
 	- sign/verify/hmac - add more algos
-		- add sha 256 to hmac
+		- add sha256 to hmac
 
-	- switch unsigned char * stuff to char_vec
+	- switch unsigned char * stuff to char_vec (crypto methods)
 		- params and rets
 
 	- java api

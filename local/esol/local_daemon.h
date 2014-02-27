@@ -355,23 +355,18 @@ void LocalDaemon::handleUDS() const
         }
         else if (recv_msg == REQUEST_ENCRYPT)
         {
+            // Receive parameters.
             recv_msg = uds_stream.recv();
+            std::string set_name = std::string{recv_msg.begin(), recv_msg.end()};
 
-            log_msg = std::string{"esol: Encrypt params: "};
-            log_msg += std::string{recv_msg.begin(), recv_msg.end()};
-            Logger::log(log_msg, LogLevel::Debug);
+            recv_msg = uds_stream.recv();
+            int version = std::stol(std::string{recv_msg.begin(), recv_msg.end()});
 
-            // According to message_config.h, we should receive:
-            // set_name;version;data_to_encrypt.
-            auto values = split_string(recv_msg, MSG_DELIMITER);
+            char_vec data = uds_stream.recv();
+
             Credential cred;
-            cred.set_name = values[0];
-            cred.version = std::stol(values[1]);
-            std::string data_to_encrypt = values[2];
-
-            log_msg = std::string{"esol: Data to encrypt: "};
-            log_msg += data_to_encrypt;
-            Logger::log(log_msg, LogLevel::Debug);
+            cred.set_name = set_name;
+            cred.version = version;
 
             // Check permissions to see if encrypt is allowed.
             // If the entity does not have permission, we will send an empty
@@ -393,8 +388,6 @@ void LocalDaemon::handleUDS() const
                 continue; 
             }
             
-            // The length of the data to be encrypted.
-            int len;
             // Encrypt and return ciphertext.
             if (cred.type == USERPASS)
             {
@@ -402,17 +395,17 @@ void LocalDaemon::handleUDS() const
             }
             else if (cred.type == SYMMETRIC)
             {
-                unsigned char *encryption;
-                len = cred.symKey.length();
+                int len = cred.symKey.length();
                 // Base64 decode the returned symmetric key.
                 // TODO Error check len because base64_decode might fail.
                 unsigned char *key = base64_decode((unsigned char *)cred.symKey.c_str(), (size_t *)&len);
-                len = data_to_encrypt.length();
-                encryption = 
-                    aes_encrypt(key, 
-                            (unsigned char *) data_to_encrypt.c_str(), 
-                            &len, cred.size);
-                uds_stream.send(std::string{(char*)encryption});
+                
+                // Encrypt data.
+                char_vec encryption = 
+                    aes_encrypt(key, data, cred.size);
+                
+                // Send data.
+                uds_stream.send(encryption);
 
                 Logger::log("esol: Clearing encryption data.", LogLevel::Debug);
                 // Securely zero out memory.
@@ -420,14 +413,12 @@ void LocalDaemon::handleUDS() const
                 //Logger::log("esol: Zeroing key.", LogLevel::Debug);
                 //secure_memset(key, 0, cred.symKey.length() - 1);
                 Logger::log("esol: Zeroing msg data.", LogLevel::Debug);
-                secure_memset(encryption, 0, len);
+                secure_memset(&encryption[0], 0, encryption.size());
                 // Free memory.
                 Logger::log("esol: Freeing msg data.", LogLevel::Debug);
-                free(encryption);
                 Logger::log("esol: Freeing key data.", LogLevel::Debug);
                 free(key);
                 Logger::log("esol: Done freeing encryption data.", LogLevel::Debug);
-
 
             // This ends the symmetric encryption case.
             }
@@ -447,8 +438,8 @@ void LocalDaemon::handleUDS() const
 
                 // TODO seed PRNG
                 // Encrypt msg using the public key.
-                int encrypted_length = RSA_public_encrypt(data_to_encrypt.length(), 
-                        reinterpret_cast<unsigned char *>(const_cast<char *>(data_to_encrypt.c_str())), 
+                int encrypted_length = RSA_public_encrypt(data.size(), 
+                        (unsigned char *) &data[0], 
                         cipher, public_key, RSA_PKCS1_OAEP_PADDING);
 
                 if (!encrypted_length)
@@ -488,7 +479,7 @@ void LocalDaemon::handleUDS() const
             cred.set_name = set_name;
             cred.version = version;
 
-            // Check permissions to see if encrypt is allowed.
+            // Check permissions to see if decrypt is allowed.
             // If the entity does not have permission, we will send an empty
             // string and continue.
             if (!has_permission_to(curr_user, cred.set_name, DECRYPT_OP))
@@ -520,11 +511,8 @@ void LocalDaemon::handleUDS() const
                 unsigned char *key = base64_decode((unsigned char *)cred.symKey.c_str(), (size_t *)&len);
 
                 // Decrypt the data.
-                int data_len = data.size();
-                char_vec decryption = 
-                    aes_decrypt(key, 
-                            (unsigned char *) &data[0], &data_len, 
-                            cred.size);
+                char_vec decryption = aes_decrypt(key, data, cred.size);
+                // Send the decryption.
                 uds_stream.send(decryption);
 
                 Logger::log("esol: Clearing decryption data", LogLevel::Debug);

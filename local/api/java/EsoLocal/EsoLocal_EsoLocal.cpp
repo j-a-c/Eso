@@ -64,16 +64,13 @@ JNIEXPORT jbyteArray JNICALL Java_EsoLocal_EsoLocal_encrypt(JNIEnv *env,
 
         // Get the data array.
         int len = env->GetArrayLength(in_data);
-        unsigned char* buf = new unsigned char[len];
-        env->GetByteArrayRegion(in_data, 0, len, reinterpret_cast<jbyte*>(buf));
+        unsigned char* data = new unsigned char[len];
+        env->GetByteArrayRegion(in_data, 0, len, reinterpret_cast<jbyte*>(data));
 
         // Send encryption parameters.
-        std::string msg{set_name};
-        msg += MSG_DELIMITER;
-        msg += std::to_string((int) version);
-        msg += MSG_DELIMITER;
-        msg += std::string{(char*)buf};
-        uds_stream.send(msg);
+        uds_stream.send(set_name);
+        uds_stream.send(std::to_string(version));
+        uds_stream.send(char_vec{&data[0], &data[0]+len});
 
         // Receive the encrypted data.
         char_vec encryption = uds_stream.recv();
@@ -86,7 +83,7 @@ JNIEXPORT jbyteArray JNICALL Java_EsoLocal_EsoLocal_encrypt(JNIEnv *env,
         // Release the set_name.
         env->ReleaseStringUTFChars(in_set, set_name);
         // Free the data message. 
-        free(buf);
+        delete [] data;
 
         return encArray; 
     }
@@ -138,7 +135,7 @@ JNIEXPORT jbyteArray JNICALL Java_EsoLocal_EsoLocal_decrypt
         // Release the set_name.
         env->ReleaseStringUTFChars(in_set, set_name);
         // Free the data message. 
-        free(data);
+        delete [] data;
 
         return decArray; 
     }
@@ -191,7 +188,7 @@ JNIEXPORT jbyteArray JNICALL Java_EsoLocal_EsoLocal_hmac
         // Release the set_name.
         env->ReleaseStringUTFChars(in_set, set_name);
         // Free the data message. 
-        free(data);
+        delete [] data;
 
         return jhmac; 
 
@@ -245,7 +242,7 @@ JNIEXPORT jbyteArray JNICALL Java_EsoLocal_EsoLocal_sign
         // Release the set_name.
         env->ReleaseStringUTFChars(in_set, set_name);
         // Free the data message. 
-        free(buf);
+        delete [] buf;
 
         return sigArray; 
     }
@@ -299,8 +296,8 @@ JNIEXPORT jboolean JNICALL Java_EsoLocal_EsoLocal_verify
         // Release the set_name.
         env->ReleaseStringUTFChars(in_set, set_name);
         // Free the allocated memory. 
-        free(sigbuf);
-        free(databuf);
+        delete [] sigbuf;
+        delete [] databuf;
 
         // If the value is logically true, return true.
         if (valid_msg[0])
