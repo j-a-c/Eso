@@ -11,6 +11,7 @@
 #include <tuple>
 
 #include "constants.h"
+#include "memory.h"
 #include "../global_config/types.h"
 #include "../logger/logger.h"
 
@@ -65,14 +66,11 @@ RSA *DER_decode_RSA_private(const unsigned char *buf, long len)
 
 /*
  * The modulus size will be of length bits. Returns a tuple containing the
- * DER-encoded representations of the public and private keys as well and the
- * key lengths.
+ * DER-encoded representations of the public and private keys.
  *
- * Tuple is <public, public_len, private, private_len>
- *
- * The key stores must be freed AND safely erased immediately after use!
+ * Tuple is <public_key, private_key>
  */
-std::tuple<unsigned char *, int, unsigned char *, int> get_new_RSA_pair(int bits)
+std::tuple<uchar_vec, uchar_vec> get_new_RSA_pair(int bits)
 {
     // TODO most functions in here need error checking..
 
@@ -103,8 +101,63 @@ std::tuple<unsigned char *, int, unsigned char *, int> get_new_RSA_pair(int bits
     // The key is erased before the memory is returned to the system.
     RSA_free(rsa);
 
-    return std::make_tuple(public_store, public_len, 
-            private_store, private_len);
+    // The encoded public key.
+    uchar_vec pub{&public_store[0], &public_store[0]+public_len};
+    // The encoded private key.
+    uchar_vec pri(&private_store[0], &private_store[0]+private_len);
+
+    // Safely delete the keys.
+    free((void*)secure_memset(&public_store[0], 0, public_len));
+    free((void*)secure_memset(&private_store[0], 0, private_len));
+
+    return std::make_tuple(pub, pri);
+}
+
+/**
+ * Encrypts data using the given public key.
+ *
+ * @param public_key The public RSA key.
+ * @param data The data to encrypt.
+ */
+uchar_vec rsa_encrypt(RSA* public_key, uchar_vec data)
+{
+    // Will hold the ciphertext.
+    unsigned char *cipher = new unsigned char[RSA_size(public_key)];
+    memset(cipher,'\0', RSA_size(public_key));
+
+    // TODO seed PRNG
+    // Encrypt msg using the public key.
+    int encrypted_length = RSA_public_encrypt(data.size(), &data[0],
+            cipher, public_key, RSA_PKCS1_OAEP_PADDING);
+
+    if (!encrypted_length)
+    {
+        Logger::log("Error: encrypted_length was not valid.", LogLevel::Error);
+    }
+
+    uchar_vec result{&cipher[0], &cipher[0]+encrypted_length};
+
+    delete [] cipher;
+
+    return result;
+}
+
+/**
+ *
+ */
+uchar_vec rsa_decrypt(RSA* private_key, uchar_vec data)
+{
+    // Will contain the original message.
+    unsigned char* orig = new unsigned char[RSA_size(private_key)];
+
+    // Decrypt.
+    int orig_size = RSA_private_decrypt(data.size(), &data[0], orig, private_key, RSA_PKCS1_OAEP_PADDING);
+
+    uchar_vec result{&orig[0], &orig[0]+orig_size};
+
+    delete [] orig;
+
+    return result;
 }
 
 

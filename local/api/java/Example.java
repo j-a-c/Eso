@@ -82,7 +82,7 @@ class Example
         String setName = "com.joshuac.test.asym";
         String message = "Josh is cool";
         String origMessage = message;
-        int version = 1;
+        int version = 2;
 
         System.out.println("Original message: " + message);
         System.out.println("Original bytes: " + Arrays.toString(message.getBytes()));

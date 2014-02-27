@@ -189,14 +189,13 @@ int CADaemon::work() const
 
                 // Get keys
                 auto key_store = get_new_RSA_pair(size);
-                unsigned char *pubKey = std::get<0>(key_store);
-                int pubLen = std::get<1>(key_store);
-                unsigned char *priKey = std::get<2>(key_store);
-                int priLen = std::get<3>(key_store);
+                
+                uchar_vec pub_key = std::get<0>(key_store);
+                uchar_vec pri_key = std::get<1>(key_store);
 
                 // Encode keys
-                unsigned char *pubKey_enc = base64_encode(pubKey, pubLen);
-                unsigned char *priKey_enc = base64_encode(priKey, priLen);
+                unsigned char *pubKey_enc = base64_encode(&pub_key[0], pub_key.size());
+                unsigned char *priKey_enc = base64_encode(&pri_key[0], pri_key.size());
 
                 cred.pubKey = std::string{(char*) pubKey_enc};
                 cred.priKey = std::string{(char*) priKey_enc};
@@ -204,10 +203,8 @@ int CADaemon::work() const
                 // Add to query
                 // TODO encrypt + mac
                 // Free keys
-                free((void*)secure_memset(pubKey, 0, pubLen));
                 free((void*)secure_memset(pubKey_enc, 0, 
                             strlen(reinterpret_cast<const char *>(pubKey_enc))));
-                free((void*)secure_memset(priKey, 0, priLen));
                 free((void*)secure_memset(priKey_enc, 0, 
                             strlen(reinterpret_cast<const char *>(priKey_enc))));
             }

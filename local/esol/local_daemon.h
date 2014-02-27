@@ -428,22 +428,10 @@ void LocalDaemon::handleUDS() const
                 // DER decode the public key.
                 RSA *public_key = DER_decode_RSA_public(public_store, len);
 
-                // Will hold the ciphertext.
-                unsigned char *cipher = new unsigned char[RSA_size(public_key)];
-                memset(cipher,'\0', RSA_size(public_key));
-
-                // TODO seed PRNG
-                // Encrypt msg using the public key.
-                int encrypted_length = RSA_public_encrypt(data.size(), &data[0],
-                        cipher, public_key, RSA_PKCS1_OAEP_PADDING);
-
-                if (!encrypted_length)
-                {
-                    Logger::log("Error: encrypted_length was not valid.", LogLevel::Error);
-                }
+                uchar_vec encryption = rsa_encrypt(public_key, data);
 
                 // Send the encrypted message.
-                uds_stream.send(uchar_vec{&cipher[0], &cipher[0]+encrypted_length});
+                uds_stream.send(encryption);
 
                 // Securely zero out memory.
                 // TODO Debug secure_memset calls.
@@ -453,8 +441,6 @@ void LocalDaemon::handleUDS() const
                 // Free memory.
                 RSA_free(public_key);
                 free(public_store);
-                delete[] cipher;
-
             // This ends the asymmetric encrypt case.
             }
         // This ends the encrypt case.
@@ -534,14 +520,10 @@ void LocalDaemon::handleUDS() const
                 // DER decode the private key.
                 RSA *private_key = DER_decode_RSA_private(private_store, len);
 
-                // Will contain the original message.
-                unsigned char* orig = new unsigned char[RSA_size(private_key)];
-
-                // Decrypt.
-                int orig_size = RSA_private_decrypt(data.size(), &data[0], orig, private_key, RSA_PKCS1_OAEP_PADDING);
+                uchar_vec decryption = rsa_decrypt(private_key, data);
 
                 // Send the decrypted messge.
-                uds_stream.send(uchar_vec{&orig[0], &orig[0]+orig_size});
+                uds_stream.send(decryption);
 
                 // Securely zero out memory.
                 // TODO Debug secure_memset calls.
@@ -551,7 +533,6 @@ void LocalDaemon::handleUDS() const
                 // Free memory.
                 RSA_free(private_key);
                 free(private_store);
-                delete[] orig;
             // This ends the asymmetric decrypt case.
             }
 

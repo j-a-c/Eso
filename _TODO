@@ -4,17 +4,8 @@ bugs:
 	- after creating a cred, page says does not exist. refreshing page shows it does exist
 
 current:
-	- change char_vec to uchar_vec
-
- 	- move rsa encrpyt / decrypt methods to header
-
 	- sign/verify/hmac - add more algos
 		- add sha256 to hmac
-
-	- switch unsigned char * stuff to char_vec (crypto methods)
-		- params and rets
-		- unsigned char * mallocs
-		- rsa der endcode / decodes
 
 	- java api
 		- retrieve
