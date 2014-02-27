@@ -36,25 +36,24 @@ char_vec NEW_CRED{'N','E','W','_','C','R','E','D'};
 char_vec PING{'P','I','N','G'};
 
 // Used to request encryption services from the local daemon.
-// Should be followed by the Credential (with set_name and version specified) 
-// and then the actual data to encrypt.
+// Should be followed by the set, version, and then the actual data to encrypt.
 char_vec REQUEST_ENCRYPT{'R','E','Q','U','E','S','T','_','E','N','C','R','Y','P','T'};
 
 // Used to request decryption services from the local daemon.
-// Should be followed by the Credential (with set_name and version specified) 
-// and then the actual data to encrypt.
+// Should be followed by the set, version, and then the actual data to encrypt.
 char_vec REQUEST_DECRYPT{'R','E','Q','U','E','S','T','_','D','E','C','R','Y','P','T'};
 
 // Used to request HMAC services from the local daemon.
-// Should be followed by the set, data, version, and hash type to use.
+// Should be followed by the set, version, data, and then the hash type to use.
 char_vec REQUEST_HMAC{'R','E','Q','U','E','S','T','_','H','M','A','C'};
 
 // Used to request signing services from the local daemon.
-// Should be follow by the set, version, data ,and hash type to use.
+// Should be followed by the set, version, data ,and then the hash type to use.
 char_vec REQUEST_SIGN{'R','E','Q','U','E','S','T', '_','S','I','G','N'};
 
 // Used to request verification services from the local daemon.
-// Should be follow by the set, version, signature, data ,and hash type to use.
+// Should be followed by the set, version, signature, data, and then hash type 
+// to use.
 char_vec REQUEST_VERIFY{'R','E','Q','U','E','S','T','_','V','E','R','I','F','Y'};
 
 // The return value if a query is invalid for some reason. For example:

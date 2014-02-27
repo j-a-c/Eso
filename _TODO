@@ -4,7 +4,7 @@ bugs:
 	- after creating a cred, page says does not exist. refreshing page shows it does exist
 
 current:
-	- message_config update protocol
+	- change char_vec to uchar_vec
 
  	- move rsa encrpyt / decrypt methods to header
 
