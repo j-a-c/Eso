@@ -1,8 +1,11 @@
 #ifndef ESO_CRYPTO_BASE64
 #define ESO_CRYPTO_BASE64
 
+#include <cstring>
 #include <stdlib.h>
 #include <string.h>
+
+#include "../global_config/types.h"
 
 /*
  * Base64 encode and decode implementations that were slightly modified from 
@@ -15,19 +18,25 @@ static char b64table[65] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 /* 
  * Accepts a binary buffer with an associated size.
- * Returns a base64 encoded, NULL-terminated string.
- * The result is a NULL-terminated string allocated internally via malloc().
- * 
+ * Returns a base64 encoded, uchar_v.
+ * The return is empty if there was an error.
  */
-unsigned char *base64_encode(unsigned char *input, size_t len)
+uchar_vec base64_encode(uchar_vec v_input)
 {
+    int len = v_input.size();
+
+    unsigned char *input = &v_input[0];
+
     unsigned char *output, *p;
     size_t i = 0, mod = len % 3, toalloc;
     toalloc = (len / 3) * 4 + (3 - mod) % 3 + 1;
 
 
     p = output = (unsigned char *)malloc(((len / 3) + (mod ? 1 : 0)) * 4 + 1);
-    if (!p) return 0;
+    if (!p)
+    {
+        return uchar_vec{};
+    }
 
     while (i < len - mod) 
     {
@@ -41,7 +50,13 @@ unsigned char *base64_encode(unsigned char *input, size_t len)
     if (!mod) 
     {
         *p = 0;
-        return output;
+        
+        // Set the result and free the allocated memory.
+        int final_len = strlen((const char *) output);
+        uchar_vec result{&output[0], &output[0] + final_len};
+        free((void*) secure_memset(output, 0, final_len));
+        
+        return result;
     } 
     else 
     {
@@ -52,7 +67,13 @@ unsigned char *base64_encode(unsigned char *input, size_t len)
             *p++ = '=';
             *p++ = '=';
             *p = 0;
-            return output;
+
+            // Set the result and free the allocated memory.
+            int final_len = strlen((const char *) output);
+            uchar_vec result{&output[0], &output[0] + final_len};
+            free((void*) secure_memset(output, 0, final_len));
+
+            return result;
 
         } 
         else 
@@ -61,7 +82,13 @@ unsigned char *base64_encode(unsigned char *input, size_t len)
             *p++ = '=';
 
             *p = 0;
-            return output;
+
+            // Set the result and free the allocated memory.
+            int final_len = strlen((const char *) output);
+            uchar_vec result{&output[0], &output[0] + final_len};
+            free((void*) secure_memset(output, 0, final_len));
+
+            return result;
         }
     }
 }

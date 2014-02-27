@@ -28,7 +28,7 @@ class Example
         // Sample set name, a secret message, and key version.
         String setName = "com.joshuac.test.sym";
         String message = "Hello World!";
-        int version = 2;
+        int version = 3;
 
         // Print the original message.
         System.out.println("Original message: " + message);

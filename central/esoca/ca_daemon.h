@@ -194,35 +194,32 @@ int CADaemon::work() const
                 uchar_vec pri_key = std::get<1>(key_store);
 
                 // Encode keys
-                unsigned char *pubKey_enc = base64_encode(&pub_key[0], pub_key.size());
-                unsigned char *priKey_enc = base64_encode(&pri_key[0], pri_key.size());
+                uchar_vec pubKey_enc = base64_encode(pub_key);
+                uchar_vec priKey_enc = base64_encode(pri_key);
 
-                cred.pubKey = std::string{(char*) pubKey_enc};
-                cred.priKey = std::string{(char*) priKey_enc};
+                cred.pubKey = to_string(pubKey_enc);
+                cred.priKey = to_string(priKey_enc);
 
                 // Add to query
                 // TODO encrypt + mac
-                // Free keys
-                free((void*)secure_memset(pubKey_enc, 0, 
-                            strlen(reinterpret_cast<const char *>(pubKey_enc))));
-                free((void*)secure_memset(priKey_enc, 0, 
-                            strlen(reinterpret_cast<const char *>(priKey_enc))));
+                // Wipe keys
+                secure_memset(&pubKey_enc[0], 0, pubKey_enc.size()); 
+                secure_memset(&priKey_enc[0], 0, priKey_enc.size());
             }
             else if (cred.type == SYMMETRIC)
             {
                 int size = cred.size;
 
                 // Get key and encode.
-                unsigned char * key = get_new_AES_key(size);
-                unsigned char * enc = base64_encode(key, size/8);
+                uchar_vec key = get_new_AES_key(size);
+                uchar_vec enc = base64_encode(key);
 
                 // TODO encrypt + mac
-                cred.symKey = std::string{(char*) enc};
+                cred.symKey = to_string(enc);
 
                 // Securely erase key and free
-                free((void*)secure_memset(key, 0, size/8)); // size is in bits
-                free((void*)secure_memset(enc, 0, 
-                            strlen(reinterpret_cast<const char *>(enc))));
+                secure_memset(&key[0], 0, key.size());
+                secure_memset(&enc[0], 0, enc.size());
             }
 
             // Update esoca's database.
