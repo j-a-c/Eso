@@ -4,13 +4,13 @@ bugs:
 	- after creating a cred, page says does not exist. refreshing page shows it does exist
 	- padding error when asymmetric / symmetric key is decrypted
 		- I think it is a transportation prob
+	- does hmac work? it is returning different values..
 
 current:
 	- esolocal.cpp - send message in parts?
 
 	- message_config update protocol
 
-	- rsa encrypt/decrypt no longer need b64 before/after
  	- move rsa encrpyt / decrypt methods to header
 
 	- sign/verify/hmac - add more algos

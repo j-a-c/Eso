@@ -456,17 +456,8 @@ void LocalDaemon::handleUDS() const
                     Logger::log("Error: encrypted_length was not valid.", LogLevel::Error);
                 }
 
-                // TODO
-                // We send the base64 encoded message due to transportation
-                // problems.
-                unsigned char *bcipher = base64_encode(cipher, encrypted_length);
-
-                // Send the encrypted message. We do not need to send the
-                // length since the return for RSA_public_encrypt is 
-                // RSA_size(rsa).
-                //uds_stream.send(char_vec{&cipher[0], &cipher[0]+encrypted_length});
-                uds_stream.send(std::string{(char*)bcipher});
-
+                // Send the encrypted message.
+                uds_stream.send(char_vec{&cipher[0], &cipher[0]+encrypted_length});
 
                 // Securely zero out memory.
                 // TODO Debug secure_memset calls.
@@ -476,7 +467,6 @@ void LocalDaemon::handleUDS() const
                 // Free memory.
                 RSA_free(public_key);
                 free(public_store);
-                free(bcipher);
                 delete[] cipher;
 
             // This ends the asymmetric encrypt case.
@@ -564,14 +554,8 @@ void LocalDaemon::handleUDS() const
                 // Will contain the original message.
                 unsigned char* orig = new unsigned char[RSA_size(private_key)];
 
-                // TODO
-                // We receive the base64 encoded message due to transportation
-                // problems.
-                int mlen;
-                unsigned char *msg = base64_decode((unsigned char*) &data[0], (size_t *) &mlen);
-
                 // Decrypt.
-                int orig_size = RSA_private_decrypt(mlen, msg, orig, private_key, RSA_PKCS1_OAEP_PADDING);
+                int orig_size = RSA_private_decrypt(data.size(), (unsigned char *) &data[0], orig, private_key, RSA_PKCS1_OAEP_PADDING);
 
                 // Send the decrypted messge.
                 uds_stream.send(char_vec{&orig[0], &orig[0]+orig_size});
@@ -584,7 +568,6 @@ void LocalDaemon::handleUDS() const
                 // Free memory.
                 RSA_free(private_key);
                 free(private_store);
-                free(msg);
                 delete[] orig;
             // This ends the asymmetric decrypt case.
             }
