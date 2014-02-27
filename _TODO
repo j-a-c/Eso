@@ -13,9 +13,12 @@ current:
 		- db encryption
 
 	- store keys as binary in db? and not use std:string type w/ them?
+		- currently they are stored in base64 form
 
 	- change exits to exceptions
 		- current: uds connect
+
+	- rewrite base64_decode to use uchar_vec
 
 All:
 	- authenticated communication
