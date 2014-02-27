@@ -123,12 +123,9 @@ JNIEXPORT jbyteArray JNICALL Java_EsoLocal_EsoLocal_decrypt
         env->GetByteArrayRegion(in_data, 0, len, reinterpret_cast<jbyte*>(data));
 
         // Send decryption parameters.
-        std::string msg{set_name};
-        msg += MSG_DELIMITER;
-        msg += std::to_string((int) version);
-        msg += MSG_DELIMITER;
-        msg += std::string{(char*)data};
-        uds_stream.send(msg);
+        uds_stream.send(set_name);
+        uds_stream.send(std::to_string(version));
+        uds_stream.send(char_vec{&data[0], &data[0]+len});
 
         // Receive the decrypted data.
         char_vec decryption = uds_stream.recv();
@@ -178,15 +175,10 @@ JNIEXPORT jbyteArray JNICALL Java_EsoLocal_EsoLocal_hmac
         env->GetByteArrayRegion(in_data, 0, len, reinterpret_cast<jbyte*>(data));
 
         // Send HMAC parameters.
-        std::string msg{set_name};
-        msg += MSG_DELIMITER;
-        msg += std::to_string((int) version);
-        msg += MSG_DELIMITER;
-        msg += std::string{(char*)data};
-        msg += MSG_DELIMITER;
-        msg += std::to_string((int) hash);
-
-        uds_stream.send(msg);
+        uds_stream.send(set_name);
+        uds_stream.send(std::to_string((int) version));
+        uds_stream.send(char_vec{&data[0], &data[0]+len});
+        uds_stream.send(std::to_string((int) hash));
 
         // Receive the HMAC'd data.
         char_vec hmac = uds_stream.recv();

@@ -485,19 +485,18 @@ void LocalDaemon::handleUDS() const
         }
         else if (recv_msg == REQUEST_DECRYPT)
         {
+            // Receive parameters.
             recv_msg = uds_stream.recv();
+            std::string set_name = std::string{recv_msg.begin(), recv_msg.end()};
 
-            std::string log_msg{"esol: Decrypt msg: "};
-            log_msg += std::string{recv_msg.begin(), recv_msg.end()};
-            Logger::log(log_msg, LogLevel::Debug);
+            recv_msg = uds_stream.recv();
+            int version = std::stol(std::string{recv_msg.begin(), recv_msg.end()});
 
-            // According to message_config.h, we should receive:
-            // set_name;version;data_to_encrypt.
-            auto values = split_string(recv_msg, MSG_DELIMITER);
+            char_vec data = uds_stream.recv();
+
             Credential cred;
-            cred.set_name = values[0];
-            cred.version = std::stol(values[1]);
-            std::string data_to_decrypt = values[2];
+            cred.set_name = set_name;
+            cred.version = version;
 
             // Check permissions to see if encrypt is allowed.
             // If the entity does not have permission, we will send an empty
@@ -525,19 +524,18 @@ void LocalDaemon::handleUDS() const
             }
             else if (cred.type == SYMMETRIC)
             {
-                unsigned char *decyption;
                 len = cred.symKey.length();
                 // Base64 decode the returned symmetric key.
                 // TODO Error check len because base64_decode might fail.
                 unsigned char *key = base64_decode((unsigned char *)cred.symKey.c_str(), (size_t *)&len);
-                // We add 1 to data_to_encrypt.length() because we want to
-                // preserve the null terminator.
-                len = data_to_decrypt.length() + 1;
-                decyption = 
+
+                // Decrypt the data.
+                int data_len = data.size();
+                char_vec decryption = 
                     aes_decrypt(key, 
-                            (unsigned char *) data_to_decrypt.c_str(), 
-                            &len, cred.size);
-                uds_stream.send(std::string{(char*)decyption});
+                            (unsigned char *) &data[0], &data_len, 
+                            cred.size);
+                uds_stream.send(decryption);
 
                 Logger::log("esol: Clearing decryption data", LogLevel::Debug);
                 // Securely zero out memory.
@@ -545,10 +543,8 @@ void LocalDaemon::handleUDS() const
                 //Logger::log("esol: Zeroing key.", LogLevel::Debug);
                 //secure_memset(key, 0, cred.symKey.length());
                 Logger::log("esol: Zeroing msg.", LogLevel::Debug);
-                secure_memset(decyption, 0, data_to_decrypt.length());
+                secure_memset(&decryption[0], 0, decryption.size());
                 // Free memory.
-                Logger::log("esol: Freeing msg.", LogLevel::Debug);
-                free(decyption);
                 Logger::log("esol: Freeing key.", LogLevel::Debug);
                 free(key);
                 Logger::log("esol: Done clearing decryption data.", LogLevel::Debug);
@@ -572,20 +568,13 @@ void LocalDaemon::handleUDS() const
                 // We receive the base64 encoded message due to transportation
                 // problems.
                 int mlen;
-                unsigned char *msg = base64_decode((unsigned char*) data_to_decrypt.c_str(), (size_t *) &mlen);
+                unsigned char *msg = base64_decode((unsigned char*) &data[0], (size_t *) &mlen);
 
                 // Decrypt.
                 int orig_size = RSA_private_decrypt(mlen, msg, orig, private_key, RSA_PKCS1_OAEP_PADDING);
-                /*
-                int orig_size = RSA_private_decrypt(data_to_decrypt.length(), 
-                        reinterpret_cast<unsigned char *>(const_cast<char *>(data_to_decrypt.c_str())), 
-                        orig, private_key, RSA_PKCS1_OAEP_PADDING);
-                */
 
                 // Send the decrypted messge.
-                // We preserved the null terminator so there is no need to
-                // specify a size.
-                uds_stream.send(std::string{(char*)orig});
+                uds_stream.send(char_vec{&orig[0], &orig[0]+orig_size});
 
                 // Securely zero out memory.
                 // TODO Debug secure_memset calls.
@@ -604,20 +593,21 @@ void LocalDaemon::handleUDS() const
         }
         else if (recv_msg == REQUEST_HMAC)
         {
+            // Receive a parameters.
             recv_msg = uds_stream.recv();
+            std::string set_name{recv_msg.begin(), recv_msg.end()};
 
-            std::string log_msg{"esol: HMAC msg: "};
-            log_msg += std::string{recv_msg.begin(), recv_msg.end()};
-            Logger::log(log_msg, LogLevel::Debug);
+            recv_msg = uds_stream.recv();
+            int version = std::stol(std::string{recv_msg.begin(), recv_msg.end()});
 
-            // According to message_config.h, we should receive:
-            // set_name;version;data;hash
-            auto values = split_string(recv_msg, MSG_DELIMITER);
+            char_vec data = uds_stream.recv();
+
+            recv_msg = uds_stream.recv();
+            int hash = std::stol(std::string{recv_msg.begin(), recv_msg.end()});
+
             Credential cred;
-            cred.set_name = values[0];
-            cred.version = std::stol(values[1]);
-            std::string data = values[2];
-            int hash = std::stol(values[3]);
+            cred.set_name = set_name;
+            cred.version = version;
 
             // Check permissions to see if encrypt is allowed.
             // If the entity does not have permission, we will send an empty
@@ -645,7 +635,7 @@ void LocalDaemon::handleUDS() const
             }
             else if (cred.type == SYMMETRIC)
             {
-                std::string hmac_data = hmac(cred.symKey, data, hash);
+                char_vec hmac_data = hmac(cred.symKey, data, hash);
                 uds_stream.send(hmac_data);
             }
             else if (cred.type == ASYMMETRIC)

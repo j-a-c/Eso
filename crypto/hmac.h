@@ -5,6 +5,7 @@
 #include <openssl/hmac.h>
 
 #include "constants.h"
+#include "../global_config/types.h"
 
 /**
  * Implements HMAC-*, where * is one of the allowable modes specified above. If
@@ -17,23 +18,10 @@
  * @param data  The data to hash.
  * @param hash  The hash to use.
  *
-    std::string key{"012345678910"};
-    std::string data{"Hello World!"};
-
-    std::string mac = hmac(key, data, SHA1);
-    
-    unsigned char *result = (unsigned char *)mac.c_str();
-
-    for (int i = 0; i != mac.length(); i++)
-        printf("%02x", result[i]);
-    printf("\n");
  */
-std::string hmac(const std::string key, const std::string data, 
+char_vec hmac(const std::string key, const char_vec data, 
         const int hash) 
 {
-    // The result to return.
-    std::string res{};
-
     // Initialize HMAC context.
     HMAC_CTX ctx;
     HMAC_CTX_init(&ctx);
@@ -57,12 +45,13 @@ std::string hmac(const std::string key, const std::string data,
     result = (unsigned char*)malloc(sizeof(char) * len);
 
     // Hash data. 
-    HMAC_Update(&ctx, (unsigned char*)data.c_str(), data.length());
+    HMAC_Update(&ctx, (unsigned char*) &data[0], data.size());
     HMAC_Final(&ctx, result, &len);
     HMAC_CTX_cleanup(&ctx);
 
-    // Set our return value and free the old one.
-    res.append(reinterpret_cast<const char*>(result), len);
+    // We are going to return a char_vec.
+    char_vec res{&result[0], &result[0]+len};
+    // Free the allocated memory.
     free(result);
 
     return res;

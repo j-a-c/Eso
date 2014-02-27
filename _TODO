@@ -8,6 +8,8 @@ bugs:
 current:
 	- esolocal.cpp - send message in parts?
 
+	- message_config update protocol
+
 	- rsa encrypt/decrypt no longer need b64 before/after
  	- move rsa encrpyt / decrypt methods to header
 
@@ -21,6 +23,8 @@ current:
 		- retrieve
 	- esol
 		- db encryption
+
+	- store keys as binary in db? and not use std:string type w/ them?
 
 	- change exits to exceptions
 		- current: uds connect

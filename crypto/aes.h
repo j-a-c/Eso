@@ -4,6 +4,7 @@
 #include <openssl/aes.h>
 #include <openssl/evp.h>
 #include <openssl/rand.h>
+#include "../global_config/types.h"
 
 /*
  * Uses the method from NIST.SP.800-133 where the key = U ^ V. In this case, 
@@ -84,11 +85,10 @@ unsigned char *aes_encrypt(unsigned char *key, unsigned char *plaintext,
 
 /*
  * This will decrypt *len bytes of ciphertext using AES-CBC mode.
- * The return value has been malloc'd and must be freed after use.
  *
  * @param size The size of the key in bits.
  */
-unsigned char *aes_decrypt(unsigned char *key, unsigned char *ciphertext, 
+char_vec aes_decrypt(unsigned char *key, unsigned char *ciphertext, 
         int *len, int size)
 {
     EVP_CIPHER_CTX e;
@@ -117,7 +117,12 @@ unsigned char *aes_decrypt(unsigned char *key, unsigned char *ciphertext,
 
     EVP_CIPHER_CTX_cleanup(&e);
 
-    return plaintext;
+    char_vec ret{&plaintext[0], &plaintext[0]+*len};
+
+    // Free allocated memory.
+    free(plaintext);
+
+    return ret;
 }
 
 #endif
