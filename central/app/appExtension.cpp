@@ -28,7 +28,7 @@
  * @param msg_type The type of the message (ex: NEW_CRED).
  * @param msg The actual message to send.
  */
-int request_daemon(char_vec msg_type, std::string msg)
+int request_daemon(uchar_vec msg_type, std::string msg)
 {
     // Socket to the CA daemon.
     UDS_Socket uds_socket{std::string{ESOCA_SOCKET_PATH}};

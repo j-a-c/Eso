@@ -10,6 +10,7 @@
 #include "../../daemon/daemon.h"
 #include "../../global_config/global_config.h"
 #include "../../global_config/message_config.h"
+#include "../../global_config/types.h"
 #include "../../logger/logger.h"
 #include "../../socket/tcp_socket.h"
 #include "../../socket/tcp_stream.h"
@@ -94,9 +95,8 @@ int DistroDaemon::work() const
         TCP_Stream incoming_stream = tcp_in_socket.accept();
         Logger::log("esod accepted new TCP connection.", LogLevel::Debug);
 
-        char_vec recv_msg = incoming_stream.recv();
-        Logger::log(std::string{"Requested from esod: "} + 
-                std::string{recv_msg.begin(), recv_msg.end()});
+        uchar_vec recv_msg = incoming_stream.recv();
+        Logger::log(std::string{"Requested from esod: "} + to_string(recv_msg));
 
         /*
          * Occurs when the CA sends an updated Permission to this distribution
@@ -105,8 +105,7 @@ int DistroDaemon::work() const
         if (recv_msg == UPDATE_PERM)
         {
             recv_msg = incoming_stream.recv();
-            Logger::log(std::string{"esod received: "} + 
-                    std::string{recv_msg.begin(), recv_msg.end()});
+            Logger::log(std::string{"esod received: "} + to_string(recv_msg));
 
             Permission perm = Permission{recv_msg};
 

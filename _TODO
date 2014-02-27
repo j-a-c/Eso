@@ -13,6 +13,8 @@ current:
 
 	- switch unsigned char * stuff to char_vec (crypto methods)
 		- params and rets
+		- unsigned char * mallocs
+		- rsa der endcode / decodes
 
 	- java api
 		- retrieve

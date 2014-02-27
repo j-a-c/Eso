@@ -17,7 +17,8 @@ public:
     Permission();
     // Creates a Permission from a serialized Permission.
     Permission(std::string);
-    Permission(char_vec);
+    // Creates a Permission from a uchar_vec.
+    Permission(uchar_vec);
     // Returns the serialized form of this Permission.
     std::string serialize() const;
 
@@ -66,8 +67,8 @@ Permission::Permission(std::string serialization)
  * constructor. This constructor was introduced during when sockets were
  * changed.
  */
-Permission::Permission(char_vec c)
-    : Permission(std::string{c.begin(), c.end()})
+Permission::Permission(uchar_vec c)
+    : Permission(to_string(c))
 {
 
 }

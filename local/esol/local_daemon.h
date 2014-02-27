@@ -86,15 +86,13 @@ void LocalDaemon::handleTCP() const
         TCP_Stream incoming_stream = tcp_socket.accept();
         Logger::log("esol accepted new TCP connection.", LogLevel::Debug);
 
-        char_vec recv_msg = incoming_stream.recv();
-        Logger::log(std::string{"Requested from esol: "} + 
-                std::string{recv_msg.begin(), recv_msg.end()});
+        uchar_vec recv_msg = incoming_stream.recv();
+        Logger::log(std::string{"Requested from esol: "} + to_string(recv_msg));
 
         if (recv_msg == UPDATE_PERM)
         {
             recv_msg = incoming_stream.recv();
-            Logger::log(std::string{"esol received: "} + 
-                    std::string{recv_msg.begin(), recv_msg.end()});
+            Logger::log(std::string{"esol received: "} + to_string(recv_msg));
 
             Permission perm = Permission{recv_msg};
 
@@ -105,8 +103,7 @@ void LocalDaemon::handleTCP() const
         else if (recv_msg == DELETE_PERM)
         {
             recv_msg = incoming_stream.recv();
-            Logger::log(std::string{"esol received: "} + 
-                    std::string{recv_msg.begin(), recv_msg.end()});
+            Logger::log(std::string{"esol received: "} + to_string(recv_msg));
 
             Permission perm = Permission{recv_msg};
 
@@ -168,7 +165,7 @@ Credential LocalDaemon::get_credential(const Credential in_cred) const
             tcp_stream.send(GET_CRED);
             tcp_stream.send(req_cred.serialize());
 
-            char_vec tcp_received = tcp_stream.recv();
+            uchar_vec tcp_received = tcp_stream.recv();
             // Our request was successful. Update our database.
             if (tcp_received != INVALID_REQUEST)
             {
@@ -232,7 +229,7 @@ Permission LocalDaemon::get_permission(Permission in_perm) const
             tcp_stream.send(GET_PERM);
             tcp_stream.send(req_perm.serialize());
 
-            char_vec tcp_received = tcp_stream.recv();
+            uchar_vec tcp_received = tcp_stream.recv();
             // Our request was successful. Update our database.
             if (tcp_received != INVALID_REQUEST)
             {
@@ -345,9 +342,8 @@ void LocalDaemon::handleUDS() const
 
         // Implement protocol
 
-        char_vec recv_msg = uds_stream.recv();
-        Logger::log(std::string{"Requested from esol: "} + 
-                std::string{recv_msg.begin(), recv_msg.end()});
+        uchar_vec recv_msg = uds_stream.recv();
+        Logger::log(std::string{"Requested from esol: "} + to_string(recv_msg));
 
         if (recv_msg == PING)
         {
@@ -357,12 +353,12 @@ void LocalDaemon::handleUDS() const
         {
             // Receive parameters.
             recv_msg = uds_stream.recv();
-            std::string set_name = std::string{recv_msg.begin(), recv_msg.end()};
+            std::string set_name = to_string(recv_msg);
 
             recv_msg = uds_stream.recv();
-            int version = std::stol(std::string{recv_msg.begin(), recv_msg.end()});
+            int version = std::stol(to_string(recv_msg));
 
-            char_vec data = uds_stream.recv();
+            uchar_vec data = uds_stream.recv();
 
             Credential cred;
             cred.set_name = set_name;
@@ -401,7 +397,7 @@ void LocalDaemon::handleUDS() const
                 unsigned char *key = base64_decode((unsigned char *)cred.symKey.c_str(), (size_t *)&len);
                 
                 // Encrypt data.
-                char_vec encryption = 
+                uchar_vec encryption = 
                     aes_encrypt(key, data, cred.size);
                 
                 // Send data.
@@ -438,8 +434,7 @@ void LocalDaemon::handleUDS() const
 
                 // TODO seed PRNG
                 // Encrypt msg using the public key.
-                int encrypted_length = RSA_public_encrypt(data.size(), 
-                        (unsigned char *) &data[0], 
+                int encrypted_length = RSA_public_encrypt(data.size(), &data[0],
                         cipher, public_key, RSA_PKCS1_OAEP_PADDING);
 
                 if (!encrypted_length)
@@ -448,7 +443,7 @@ void LocalDaemon::handleUDS() const
                 }
 
                 // Send the encrypted message.
-                uds_stream.send(char_vec{&cipher[0], &cipher[0]+encrypted_length});
+                uds_stream.send(uchar_vec{&cipher[0], &cipher[0]+encrypted_length});
 
                 // Securely zero out memory.
                 // TODO Debug secure_memset calls.
@@ -468,12 +463,12 @@ void LocalDaemon::handleUDS() const
         {
             // Receive parameters.
             recv_msg = uds_stream.recv();
-            std::string set_name = std::string{recv_msg.begin(), recv_msg.end()};
+            std::string set_name = to_string(recv_msg);
 
             recv_msg = uds_stream.recv();
-            int version = std::stol(std::string{recv_msg.begin(), recv_msg.end()});
+            int version = std::stol(to_string(recv_msg));
 
-            char_vec data = uds_stream.recv();
+            uchar_vec data = uds_stream.recv();
 
             Credential cred;
             cred.set_name = set_name;
@@ -484,7 +479,7 @@ void LocalDaemon::handleUDS() const
             // string and continue.
             if (!has_permission_to(curr_user, cred.set_name, DECRYPT_OP))
             {
-                uds_stream.send(std::string{});
+                uds_stream.send(uchar_vec{});
                 continue; 
             }
 
@@ -511,7 +506,7 @@ void LocalDaemon::handleUDS() const
                 unsigned char *key = base64_decode((unsigned char *)cred.symKey.c_str(), (size_t *)&len);
 
                 // Decrypt the data.
-                char_vec decryption = aes_decrypt(key, data, cred.size);
+                uchar_vec decryption = aes_decrypt(key, data, cred.size);
                 // Send the decryption.
                 uds_stream.send(decryption);
 
@@ -543,10 +538,10 @@ void LocalDaemon::handleUDS() const
                 unsigned char* orig = new unsigned char[RSA_size(private_key)];
 
                 // Decrypt.
-                int orig_size = RSA_private_decrypt(data.size(), (unsigned char *) &data[0], orig, private_key, RSA_PKCS1_OAEP_PADDING);
+                int orig_size = RSA_private_decrypt(data.size(), &data[0], orig, private_key, RSA_PKCS1_OAEP_PADDING);
 
                 // Send the decrypted messge.
-                uds_stream.send(char_vec{&orig[0], &orig[0]+orig_size});
+                uds_stream.send(uchar_vec{&orig[0], &orig[0]+orig_size});
 
                 // Securely zero out memory.
                 // TODO Debug secure_memset calls.
@@ -566,15 +561,15 @@ void LocalDaemon::handleUDS() const
         {
             // Receive a parameters.
             recv_msg = uds_stream.recv();
-            std::string set_name{recv_msg.begin(), recv_msg.end()};
+            std::string set_name = to_string(recv_msg);
 
             recv_msg = uds_stream.recv();
-            int version = std::stol(std::string{recv_msg.begin(), recv_msg.end()});
+            int version = std::stol(to_string(recv_msg));
 
-            char_vec data = uds_stream.recv();
+            uchar_vec data = uds_stream.recv();
 
             recv_msg = uds_stream.recv();
-            int hash = std::stol(std::string{recv_msg.begin(), recv_msg.end()});
+            int hash = std::stol(to_string(recv_msg));
 
             Credential cred;
             cred.set_name = set_name;
@@ -585,7 +580,7 @@ void LocalDaemon::handleUDS() const
             // string and continue.
             if (!has_permission_to(curr_user, cred.set_name, HMAC_OP))
             {
-                uds_stream.send(std::string{});
+                uds_stream.send(uchar_vec{});
                 continue; 
             }
 
@@ -596,7 +591,7 @@ void LocalDaemon::handleUDS() const
             // Check if the credential has expired.
             if (is_expired(cred))
             {
-                uds_stream.send(std::string{});
+                uds_stream.send(uchar_vec{});
                 continue; 
             }
 
@@ -606,7 +601,7 @@ void LocalDaemon::handleUDS() const
             }
             else if (cred.type == SYMMETRIC)
             {
-                char_vec hmac_data = hmac(cred.symKey, data, hash);
+                uchar_vec hmac_data = hmac(cred.symKey, data, hash);
                 uds_stream.send(hmac_data);
             }
             else if (cred.type == ASYMMETRIC)
@@ -619,15 +614,15 @@ void LocalDaemon::handleUDS() const
         {
             // Receive parameters.
             recv_msg = uds_stream.recv();
-            std::string set_name{recv_msg.begin(), recv_msg.end()};
+            std::string set_name = to_string(recv_msg);
 
             recv_msg= uds_stream.recv();
-            int version = std::stol(std::string{recv_msg.begin(), recv_msg.end()});
+            int version = std::stol(to_string(recv_msg));
 
-            char_vec data = uds_stream.recv();
+            uchar_vec data = uds_stream.recv();
 
             recv_msg= uds_stream.recv();
-            int hash = std::stol(std::string{recv_msg.begin(), recv_msg.end()});
+            int hash = std::stol(to_string(recv_msg));
 
             Credential cred;
             cred.set_name = set_name;
@@ -638,7 +633,7 @@ void LocalDaemon::handleUDS() const
             // string and continue.
             if (!has_permission_to(curr_user, cred.set_name, SIGN_OP))
             {
-                uds_stream.send(char_vec{});
+                uds_stream.send(uchar_vec{});
                 continue; 
             }
 
@@ -649,7 +644,7 @@ void LocalDaemon::handleUDS() const
             // Check if the credential has expired.
             if (is_expired(cred))
             {
-                uds_stream.send(char_vec{});
+                uds_stream.send(uchar_vec{});
                 continue; 
             }
 
@@ -663,7 +658,7 @@ void LocalDaemon::handleUDS() const
                 RSA *private_key = DER_decode_RSA_private(private_store, len);
 
                 // Compute the signature.
-                char_vec sig = rsa_sign(private_key, data, hash);
+                uchar_vec sig = rsa_sign(private_key, data, hash);
 
                 // Free allocated material.
                 RSA_free(private_key);
@@ -679,16 +674,16 @@ void LocalDaemon::handleUDS() const
         else if (recv_msg == REQUEST_VERIFY)
         {
             recv_msg = uds_stream.recv();
-            std::string set_name{recv_msg.begin(), recv_msg.end()};
+            std::string set_name = to_string(recv_msg);
 
             recv_msg= uds_stream.recv();
-            int version = std::stol(std::string{recv_msg.begin(), recv_msg.end()});
+            int version = std::stol(to_string(recv_msg));
 
-            char_vec sig = uds_stream.recv();
-            char_vec data = uds_stream.recv();
+            uchar_vec sig = uds_stream.recv();
+            uchar_vec data = uds_stream.recv();
 
             recv_msg= uds_stream.recv();
-            int hash = std::stol(std::string{recv_msg.begin(), recv_msg.end()});
+            int hash = std::stol(to_string(recv_msg));
 
             Credential cred;
             cred.set_name = set_name;
@@ -699,7 +694,7 @@ void LocalDaemon::handleUDS() const
             // string and continue.
             if (!has_permission_to(curr_user, cred.set_name, VERIFY_OP))
             {
-                uds_stream.send(char_vec{});
+                uds_stream.send(uchar_vec{});
                 continue; 
             }
 
@@ -710,7 +705,7 @@ void LocalDaemon::handleUDS() const
             // Check if the credential has expired.
             if (is_expired(cred))
             {
-                uds_stream.send(char_vec{});
+                uds_stream.send(uchar_vec{});
                 continue; 
             }
 
@@ -731,7 +726,7 @@ void LocalDaemon::handleUDS() const
                 free(public_store);
 
                 // Send validity.
-                char_vec ret_msg{};
+                uchar_vec ret_msg{};
                 ret_msg.push_back(validity);
                 uds_stream.send(ret_msg);
             }
@@ -746,7 +741,7 @@ void LocalDaemon::handleUDS() const
             // TODO 
             // Invalid request.
             std::string log_msg{"esol invalid request: "};
-            log_msg += std::string{recv_msg.begin(), recv_msg.end()};
+            log_msg += to_string(recv_msg);
             Logger::log(log_msg);
         }
         Logger::log("esol is closing UDS connection.");

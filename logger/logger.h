@@ -14,7 +14,7 @@ class Logger
 {
 public:
     static void log(std::string msg, LogLevel level = LogLevel::Info);
-    static void log(char_vec msg, LogLevel level = LogLevel::Info);
+    static void log(uchar_vec msg, LogLevel level = LogLevel::Info);
 
 private: 
     Logger();
@@ -54,9 +54,9 @@ void Logger::log(std::string msg, LogLevel level)
  * Delegates to another logging method.
  * Added to support logging char_vec's.
  */
-void Logger::log(char_vec msg, LogLevel level)
+void Logger::log(uchar_vec msg, LogLevel level)
 {
-    Logger::log(std::string{msg.begin(), msg.end()}, level);
+    Logger::log(to_string(msg), level);
 }
 
 #endif

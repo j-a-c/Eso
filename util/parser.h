@@ -37,7 +37,7 @@ std::vector<std::string> split_string(std::string to_split, char delimiter)
  * Delegates to split_string(std::string, char).
  * Added for forward compatibility.
  */
-std::vector<std::string> split_string(char_vec to_split, char delimiter)
+std::vector<std::string> split_string(uchar_vec to_split, char delimiter)
 {
     return split_string(std::string{to_split.begin(), to_split.end()}, delimiter);
 }

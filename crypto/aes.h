@@ -43,7 +43,7 @@ unsigned char *get_new_AES_key(int size)
  * 
  * @param size The size of the key in bits.
  */
-char_vec aes_encrypt(unsigned char *key, char_vec plaintext, int size)
+uchar_vec aes_encrypt(unsigned char *key, uchar_vec plaintext, int size)
 {
     // Used to keep track of the length of the ciphertext.
     int l = plaintext.size();
@@ -73,7 +73,7 @@ char_vec aes_encrypt(unsigned char *key, char_vec plaintext, int size)
 
     // Update ciphertext, c_len is filled with the length of ciphertext 
     // generated, *len is the size of plaintext in bytes.
-    EVP_EncryptUpdate(&e, ciphertext, &c_len, (unsigned char *) &plaintext[0], *len);
+    EVP_EncryptUpdate(&e, ciphertext, &c_len, &plaintext[0], *len);
 
     // update ciphertext with the final remaining bytes.
     EVP_EncryptFinal_ex(&e, ciphertext+c_len, &f_len);
@@ -83,7 +83,7 @@ char_vec aes_encrypt(unsigned char *key, char_vec plaintext, int size)
     EVP_CIPHER_CTX_cleanup(&e);
 
     // Construct the return value.
-    char_vec ret{&ciphertext[0], &ciphertext[0]+l};
+    uchar_vec ret{&ciphertext[0], &ciphertext[0]+l};
 
     // Free allocated memory.
     free(ciphertext);
@@ -96,7 +96,7 @@ char_vec aes_encrypt(unsigned char *key, char_vec plaintext, int size)
  *
  * @param size The size of the key in bits.
  */
-char_vec aes_decrypt(unsigned char *key, char_vec ciphertext, int size)
+uchar_vec aes_decrypt(unsigned char *key, uchar_vec ciphertext, int size)
 {
     // Used to keep track of the length of the ciphertext.
     int l = ciphertext.size();
@@ -121,14 +121,14 @@ char_vec aes_decrypt(unsigned char *key, char_vec ciphertext, int size)
 
     // TODO Check these params.
     EVP_DecryptInit_ex(&e, NULL, NULL, NULL, NULL);
-    EVP_DecryptUpdate(&e, plaintext, &p_len, (unsigned char *) &ciphertext[0], *len);
+    EVP_DecryptUpdate(&e, plaintext, &p_len, &ciphertext[0], *len);
     EVP_DecryptFinal_ex(&e, plaintext+p_len, &f_len);
 
     *len = p_len + f_len;
 
     EVP_CIPHER_CTX_cleanup(&e);
 
-    char_vec ret{&plaintext[0], &plaintext[0]+*len};
+    uchar_vec ret{&plaintext[0], &plaintext[0]+*len};
 
     // Free allocated memory.
     free(plaintext);

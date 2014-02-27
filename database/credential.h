@@ -19,7 +19,8 @@ public:
     Credential();
     // Create a credential from a string returned from serialize().
     Credential(std::string);
-    Credential(char_vec);
+    // Create a Credential from a uchar_vec.
+    Credential(uchar_vec);
     // Serialize the credential.
     std::string serialize() const;
 
@@ -87,8 +88,8 @@ Credential::Credential(std::string serialization)
  * constructor. This constructor was introduced during when sockets were
  * changed.
  */
-Credential::Credential(char_vec c) 
-    : Credential(std::string{c.begin(), c.end()})
+Credential::Credential(uchar_vec c) 
+    : Credential(to_string(c))
 {
 
 }

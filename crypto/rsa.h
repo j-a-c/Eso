@@ -117,14 +117,14 @@ std::tuple<unsigned char *, int, unsigned char *, int> get_new_RSA_pair(int bits
  *
  * @return The signature or an empty char_vec{} if something went wrong.
  */
-char_vec rsa_sign(RSA *private_key, char_vec msg, int algo)
+uchar_vec rsa_sign(RSA *private_key, uchar_vec msg, int algo)
 {
     // Allocate the EVP signing key.
     EVP_PKEY *signing_key = EVP_PKEY_new();
     if (!signing_key)
     {
         Logger::log("Error allocating mem for signing_key ", LogLevel::Error);
-        return char_vec{};
+        return uchar_vec{};
     }
 
     // Set the signing key.
@@ -135,7 +135,7 @@ char_vec rsa_sign(RSA *private_key, char_vec msg, int algo)
 
         EVP_PKEY_free(signing_key);
     
-        return char_vec{};
+        return uchar_vec{};
     }
 
     EVP_MD_CTX *ctx = EVP_MD_CTX_create();
@@ -153,7 +153,7 @@ char_vec rsa_sign(RSA *private_key, char_vec msg, int algo)
             break;
         default:
             EVP_PKEY_free(signing_key);
-            return char_vec{};
+            return uchar_vec{};
     }
 
     // Check to ensure we have obtained the message algorithm.
@@ -165,7 +165,7 @@ char_vec rsa_sign(RSA *private_key, char_vec msg, int algo)
         EVP_MD_CTX_cleanup(ctx);
         EVP_MD_CTX_destroy(ctx);
 
-        return char_vec{};
+        return uchar_vec{};
     }
 
     // Initalize the EVP sign.
@@ -178,11 +178,11 @@ char_vec rsa_sign(RSA *private_key, char_vec msg, int algo)
         EVP_MD_CTX_cleanup(ctx);
         EVP_MD_CTX_destroy(ctx);
 
-        return char_vec{};
+        return uchar_vec{};
     } 
 
     // Update the signature with the message.
-    if (!EVP_SignUpdate(ctx, (unsigned char*) &msg[0], msg.size()))
+    if (!EVP_SignUpdate(ctx, &msg[0], msg.size()))
     {
         Logger::log("EVP_SignUpdate: failed.", LogLevel::Error);
 
@@ -191,7 +191,7 @@ char_vec rsa_sign(RSA *private_key, char_vec msg, int algo)
         EVP_MD_CTX_cleanup(ctx);
         EVP_MD_CTX_destroy(ctx);
 
-        return char_vec{};
+        return uchar_vec{};
     }
 
     // Will hold the signature and length.
@@ -210,7 +210,7 @@ char_vec rsa_sign(RSA *private_key, char_vec msg, int algo)
         EVP_MD_CTX_cleanup(ctx);
         EVP_MD_CTX_destroy(ctx);
 
-        return char_vec{};
+        return uchar_vec{};
     }
 
     // Retrieve the signature.
@@ -224,7 +224,7 @@ char_vec rsa_sign(RSA *private_key, char_vec msg, int algo)
         EVP_MD_CTX_cleanup(ctx);
         EVP_MD_CTX_destroy(ctx);
 
-        return char_vec{};
+        return uchar_vec{};
     }
 
     // Clean up EVP context.
@@ -236,7 +236,7 @@ char_vec rsa_sign(RSA *private_key, char_vec msg, int algo)
     // Free allocated material.
     free(sig);
 
-    return char_vec{&sig[0], &sig[0]+siglen};
+    return uchar_vec{&sig[0], &sig[0]+siglen};
 }
 
 /**
@@ -250,7 +250,7 @@ char_vec rsa_sign(RSA *private_key, char_vec msg, int algo)
  * @return True if the signature is verified, false otherwise or if an error
  * occurred.
  */
-bool rsa_verify(RSA *public_key, char_vec sig, char_vec msg, int algo)
+bool rsa_verify(RSA *public_key, uchar_vec sig, uchar_vec msg, int algo)
 {
     EVP_PKEY *verify_key = EVP_PKEY_new();
 
@@ -327,7 +327,7 @@ bool rsa_verify(RSA *public_key, char_vec sig, char_vec msg, int algo)
     }
 
     // Update the context with our data.
-    if(!EVP_VerifyUpdate(ctx, (unsigned char*) &msg[0], msg.size()))
+    if(!EVP_VerifyUpdate(ctx, &msg[0], msg.size()))
     {
         Logger::log("Error update verify.", LogLevel::Error);
 
@@ -343,7 +343,7 @@ bool rsa_verify(RSA *public_key, char_vec sig, char_vec msg, int algo)
     bool ret = false;
     
     // Verify the signature.
-    if(EVP_VerifyFinal(ctx, (unsigned char*) &sig[0], sig.size(), verify_key))
+    if(EVP_VerifyFinal(ctx, &sig[0], sig.size(), verify_key))
     {
         ret = true;
     }

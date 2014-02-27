@@ -5,6 +5,7 @@
 #include <string>
 
 #include "../global_config/message_config.h"
+#include "../global_config/types.h"
 
 /*
  * Wrapper for a TCP stream.
@@ -15,9 +16,9 @@ public:
     TCP_Stream(int con_fd); 
     ~TCP_Stream();
     // Send data.
-    void send(char_vec msg) const;
+    void send(uchar_vec msg) const;
     void send(std::string msg) const;
-    char_vec recv();
+    uchar_vec recv();
 private:
     int _con_fd;
     // Max length of data we will read in at a time.
@@ -25,7 +26,7 @@ private:
     // Size of the message header. Contains the size of the following message.
     int MSG_HEADER_SIZE = 2;
     // Buffer holding partially constructed messages.
-    char_vec msg_buffer{};
+    uchar_vec msg_buffer{};
 };
 
 TCP_Stream::TCP_Stream(int con_fd) : _con_fd{con_fd}
@@ -41,16 +42,16 @@ TCP_Stream::~TCP_Stream()
 /**
  * Send data. The first two chars are the message size.
  */
-void TCP_Stream::send(char_vec msg) const
+void TCP_Stream::send(uchar_vec msg) const
 {
     // Position in buffer.
-    char *pos = &msg[0];
+    unsigned char *pos = &msg[0];
     // Length of data to send
     size_t len = msg.size();
     // Number of characters sent.
     ssize_t n;
 
-    char msg_header[MSG_HEADER_SIZE];
+    unsigned char msg_header[MSG_HEADER_SIZE];
     msg_header[0] = len >> 8;   // Upper 8 bits.
     msg_header[1] = len & 0xFF; // Lower 8 bits.
     ::send(_con_fd, msg_header, MSG_HEADER_SIZE, 0);
@@ -71,19 +72,19 @@ void TCP_Stream::send(char_vec msg) const
 
 /**
  * Included for backwards compatibility. 
- * Delegates to send(char_vec).
+ * Delegates to send(uchar_vec).
  */
 void TCP_Stream::send(std::string msg) const
 {
-    TCP_Stream::send(char_vec{msg.begin(), msg.end()});
+    TCP_Stream::send(uchar_vec{msg.begin(), msg.end()});
 }
 
 /**
  * Returns a completed message. The first two chars should be the message size.
  */
-char_vec TCP_Stream::recv()
+uchar_vec TCP_Stream::recv()
 {
-    char recv_msg[MAX_LENGTH];
+    unsigned char recv_msg[MAX_LENGTH];
     // The total message size and the amount we have left to read.
     int total, remaining;
 
@@ -105,7 +106,7 @@ char_vec TCP_Stream::recv()
 
     // Compute the message size.
     total = remaining = (msg_buffer[0] << 8) + msg_buffer[1];
-    msg_buffer = char_vec{msg_buffer.begin()+2, msg_buffer.end()};
+    msg_buffer = uchar_vec{msg_buffer.begin()+2, msg_buffer.end()};
     remaining -= msg_buffer.size();
 
     // Read until we find a complete message.
@@ -125,10 +126,10 @@ char_vec TCP_Stream::recv()
     }
 
     // Return message.
-    char_vec ret_msg = char_vec{msg_buffer.begin(), msg_buffer.begin()+total};
+    uchar_vec ret_msg = uchar_vec{msg_buffer.begin(), msg_buffer.begin()+total};
 
     // Update message buffer to exclude return message.
-    msg_buffer = char_vec{msg_buffer.begin()+total, msg_buffer.end()};
+    msg_buffer = uchar_vec{msg_buffer.begin()+total, msg_buffer.end()};
 
     return ret_msg;
 }

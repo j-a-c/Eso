@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "../global_config/message_config.h"
+#include "../global_config/types.h"
 #include "../logger/logger.h"
 
 /*
@@ -19,10 +20,10 @@ public:
     UDS_Stream(int con_fd, sockaddr_un remote, int remote_len);
     ~UDS_Stream();
     // Send data.
-    void send(char_vec msg) const;
+    void send(uchar_vec msg) const;
     void send(std::string msg) const;
     // Receive data.
-    char_vec recv();
+    uchar_vec recv();
     // Set the user we are currenting corresponding with.
     std::string get_user() const;
 private:
@@ -34,7 +35,7 @@ private:
     // Size of the message header. Contains the size of the following message.
     int MSG_HEADER_SIZE = 2;
     // Buffer holding partially constructed messages.
-    char_vec msg_buffer{};
+    uchar_vec msg_buffer{};
     // The user we are corresponding with.
     std::string _user;
 };
@@ -54,16 +55,16 @@ UDS_Stream::~UDS_Stream()
  * Send data. Includes MSG_END to allow the receiver to distinguish between 
  * messages.
  */
-void UDS_Stream::send(char_vec msg) const
+void UDS_Stream::send(uchar_vec msg) const
 {
     // Position in buffer.
-    char *pos = &msg[0];
+    unsigned char *pos = &msg[0];
     // Length of data to send
     size_t len = msg.size();
     // Number of characters sent.
     ssize_t n;
 
-    char msg_header[MSG_HEADER_SIZE];
+    unsigned char msg_header[MSG_HEADER_SIZE];
     msg_header[0] = len >> 8;   // Upper 8 bits.
     msg_header[1] = len & 0xFF; // Lower 8 bits.
     ::send(_con_fd, msg_header, MSG_HEADER_SIZE, 0);
@@ -84,19 +85,19 @@ void UDS_Stream::send(char_vec msg) const
 
 /**
  * Included for backwards compatibility.
- * Delegates to send(char_vec).
+ * Delegates to send(uchar_vec).
  */
 void UDS_Stream::send(std::string msg) const
 {
-    UDS_Stream::send(char_vec{msg.begin(), msg.end()});
+    UDS_Stream::send(uchar_vec{msg.begin(), msg.end()});
 }
 
 /** 
  * Returns a completed message, not including the MSG_END character.
  */
-char_vec UDS_Stream::recv()
+uchar_vec UDS_Stream::recv()
 {
-    char recv_msg[MAX_LENGTH];
+    unsigned char recv_msg[MAX_LENGTH];
     // The total message size and the amount we have left to read.
     int total, remaining;
 
@@ -118,7 +119,7 @@ char_vec UDS_Stream::recv()
 
     // Compute the message size.
     total = remaining = (msg_buffer[0] << 8) + msg_buffer[1];
-    msg_buffer = char_vec{msg_buffer.begin()+2, msg_buffer.end()};
+    msg_buffer = uchar_vec{msg_buffer.begin()+2, msg_buffer.end()};
     remaining -= msg_buffer.size();
 
     // Read until we find a complete message.
@@ -138,10 +139,10 @@ char_vec UDS_Stream::recv()
     }
 
     // Return message.
-    char_vec ret_msg = char_vec{msg_buffer.begin(), msg_buffer.begin()+total};
+    uchar_vec ret_msg = uchar_vec{msg_buffer.begin(), msg_buffer.begin()+total};
 
     // Update message buffer to exclude return message.
-    msg_buffer = char_vec{msg_buffer.begin()+total, msg_buffer.end()};
+    msg_buffer = uchar_vec{msg_buffer.begin()+total, msg_buffer.end()};
 
     return ret_msg;
 }
@@ -151,7 +152,7 @@ char_vec UDS_Stream::recv()
  */
 std::string UDS_Stream::get_user() const
 {
-    return _user;
+    return std::string{_user};
 }
 
 #endif

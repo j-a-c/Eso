@@ -70,10 +70,10 @@ JNIEXPORT jbyteArray JNICALL Java_EsoLocal_EsoLocal_encrypt(JNIEnv *env,
         // Send encryption parameters.
         uds_stream.send(set_name);
         uds_stream.send(std::to_string(version));
-        uds_stream.send(char_vec{&data[0], &data[0]+len});
+        uds_stream.send(uchar_vec{&data[0], &data[0]+len});
 
         // Receive the encrypted data.
-        char_vec encryption = uds_stream.recv();
+        uchar_vec encryption = uds_stream.recv();
 
         // Convert encryption from native to Java.
         len = encryption.size();
@@ -122,10 +122,10 @@ JNIEXPORT jbyteArray JNICALL Java_EsoLocal_EsoLocal_decrypt
         // Send decryption parameters.
         uds_stream.send(set_name);
         uds_stream.send(std::to_string(version));
-        uds_stream.send(char_vec{&data[0], &data[0]+len});
+        uds_stream.send(uchar_vec{&data[0], &data[0]+len});
 
         // Receive the decrypted data.
-        char_vec decryption = uds_stream.recv();
+        uchar_vec decryption = uds_stream.recv();
 
         // Convert decryption from native to Java.
         len = decryption.size();
@@ -174,11 +174,11 @@ JNIEXPORT jbyteArray JNICALL Java_EsoLocal_EsoLocal_hmac
         // Send HMAC parameters.
         uds_stream.send(set_name);
         uds_stream.send(std::to_string((int) version));
-        uds_stream.send(char_vec{&data[0], &data[0]+len});
+        uds_stream.send(uchar_vec{&data[0], &data[0]+len});
         uds_stream.send(std::to_string((int) hash));
 
         // Receive the HMAC'd data.
-        char_vec hmac = uds_stream.recv();
+        uchar_vec hmac = uds_stream.recv();
 
         // Convert decryption from native to Java.
         len = hmac.size();
@@ -228,11 +228,11 @@ JNIEXPORT jbyteArray JNICALL Java_EsoLocal_EsoLocal_sign
         // Send sign parameters.
         uds_stream.send(set_name);
         uds_stream.send(std::to_string((int)version));
-        uds_stream.send(char_vec{&buf[0], &buf[0]+len});
+        uds_stream.send(uchar_vec{&buf[0], &buf[0]+len});
         uds_stream.send(std::to_string((int)hash));
 
         // Receive the signed data.
-        char_vec signature = uds_stream.recv();
+        uchar_vec signature = uds_stream.recv();
 
         // Convert signature from native to Java.
         len = signature.size();
@@ -286,12 +286,12 @@ JNIEXPORT jboolean JNICALL Java_EsoLocal_EsoLocal_verify
         // Send verification parameters.
         uds_stream.send(set_name);
         uds_stream.send(std::to_string((int)version));
-        uds_stream.send(char_vec{&sigbuf[0], &sigbuf[0]+siglen});
-        uds_stream.send(char_vec{&databuf[0], &databuf[0]+datalen});
+        uds_stream.send(uchar_vec{&sigbuf[0], &sigbuf[0]+siglen});
+        uds_stream.send(uchar_vec{&databuf[0], &databuf[0]+datalen});
         uds_stream.send(std::to_string((int)hash));
 
         // Receive the validity.
-        char_vec valid_msg = uds_stream.recv();
+        uchar_vec valid_msg = uds_stream.recv();
 
         // Release the set_name.
         env->ReleaseStringUTFChars(in_set, set_name);
