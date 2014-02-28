@@ -76,5 +76,4 @@ Client API:
 Crypto:
 	- aes.h
 		- use IV
-	- hmac.h
-		- add more hash types
+
