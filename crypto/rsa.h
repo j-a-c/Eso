@@ -201,8 +201,14 @@ uchar_vec rsa_sign(RSA *private_key, uchar_vec msg, int algo)
     // Try to obtain the message digest algorithm.
     switch (algo)
     {
+        case SHA1:
+            md = EVP_get_digestbyname("sha1");
+            break;
         case SHA256:
             md = EVP_get_digestbyname("sha256");
+            break;
+        case SHA512:
+            md = EVP_get_digestbyname("sha512");
             break;
         default:
             EVP_PKEY_free(signing_key);
@@ -332,8 +338,14 @@ bool rsa_verify(RSA *public_key, uchar_vec sig, uchar_vec msg, int algo)
     // Try to obtain the message digest algorithm.
     switch (algo)
     {
+        case SHA1:
+            md = EVP_get_digestbyname("sha1");
+            break;
         case SHA256:
             md = EVP_get_digestbyname("sha256");
+            break;
+        case SHA512:
+            md = EVP_get_digestbyname("sha512");
             break;
         default:
             EVP_PKEY_free(verify_key);

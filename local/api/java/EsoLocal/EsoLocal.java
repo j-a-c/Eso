@@ -17,7 +17,7 @@ public class EsoLocal
      */
     public static enum Hash
     {
-        DEFAULT, SHA1, SHA256;
+        DEFAULT, SHA1, SHA256, SHA512;
     }
 
     // A little hack to find the dynamic library.

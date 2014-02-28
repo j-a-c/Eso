@@ -32,6 +32,14 @@ uchar_vec hmac(const std::string key, const uchar_vec data,
     // TODO Implement more hashes.
     switch(hash)
     {
+        case (SHA256):
+            len = 64;
+            HMAC_Init_ex(&ctx, key.c_str(), key.length(), EVP_sha256(), nullptr);
+            break;
+        case (SHA512):
+            len = 128;
+            HMAC_Init_ex(&ctx, key.c_str(), key.length(), EVP_sha512(), nullptr);
+            break;
         case(SHA1):
         default:
             len = 20;
