@@ -3,6 +3,8 @@ grep -r TODO *
 bugs:
 	- after creating a cred, page says does not exist. refreshing page shows it does exist
 
+	- sockets should throw exception on errors (instead of writing to log)
+
 current:
 	- sign/verify/hmac - add more algos
 		- add sha256 to hmac
@@ -25,14 +27,12 @@ All:
 		- tcp
     - cronjob to keep deamons alive
 	- randomize distribution server check in esol
-	- using '!' as message terminator means we cannot send 'hello world!'...
 
 Central Auth:
 
     - web interface
         - create new set
 			- query to see if cred/perm already exists
-			- create user/pass set
         - view current set
 			- add/edit perm: error handling, string cleaning
 	- daemon
