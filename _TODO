@@ -3,9 +3,15 @@ grep -r TODO *
 bugs:
 	- after creating a cred, page says does not exist. refreshing page shows it does exist
 
+	- deleting a permission should also delete corresponding credentials from that machine
+
 	- sockets should throw exception on errors (instead of writing to log)
 
 current:
+
+	- generate key
+		- sudo lshw | grep serial
+		- sudo lshw | grep uuid
 
 	- java api
 		- retrieve

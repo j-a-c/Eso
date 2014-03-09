@@ -51,9 +51,9 @@ public class EsoLocal
      * Encrypts the data given using the specified version of the credentials
      * found at the given set.
      *
-     * @param set The set containing the credentials.
-     * @param data The data to encrypt.
+     * @param set The name of the set containing the credentials.
      * @param version The version of the credentials to use.
+     * @param data The data to encrypt.
      *
      * @return The encrypted data.
      */
@@ -63,9 +63,9 @@ public class EsoLocal
      * Decrypts the data given using the specified version of the credentials
      * found at the given set.
      *
-     * @param set The set containing the credentials.
-     * @param data The data to decrypt.
+     * @param set The name of the set containing the credentials.
      * @param version The version of the credentials to use.
+     * @param data The data to decrypt.
      *
      * @return The decrypted data.
      */
@@ -77,10 +77,10 @@ public class EsoLocal
      * function. This function should only be called from the corresponding
      * wrapper function.
      *
-     * @param set The set containing the credentials.
+     * @param set The name of the set containing the credentials.
      * @param version The version of the credentials to use.
      * @param data The data to compute the HMAC for.
-     * @param hash The hash function to use.
+     * @param hash An indicator of which Eso-supported hash function to use.
      *
      * @return The HMAC.
      *
@@ -91,10 +91,10 @@ public class EsoLocal
      * Wrapper around the native method because it is easier to pass the
      * ordinal of the enum than the enum itself.
      *
-     * @param set The set containing the credentials.
+     * @param set The name of the set containing the credentials.
      * @param version The version of the credentials to use.
      * @param data The data to compute the HMAC for.
-     * @param hash The hash function to use.
+     * @param hash An indicator of which Eso-supported hash function to use.
      *
      * @return The HMAC.
      */
@@ -106,10 +106,10 @@ public class EsoLocal
     /**
      * Computes the signaure of the data using the specified algorithm.
      *
-     * @param set The set containing the credentials.
+     * @param set The name of the set containing the credentials.
      * @param version The version of the credentials to use.
      * @param data The data to sign.
-     * @param algo The hash function to use.
+     * @param algo An indicator of which Eso-supported hash function to use.
      *
      * @return The signature.
      */
@@ -119,10 +119,10 @@ public class EsoLocal
      * Wrapper around the native method because it is easier to pass the
      * ordinal of the enum than the enum itself.
      *
-     * @param set The set containing the credentials.
+     * @param set The name of the set containing the credentials.
      * @param version The version of the credentials to use.
      * @param data The data to sign.
-     * @param algo The hash function to use.
+     * @param algo An indicator of which Eso-supported hash function to use.
      *
      * @return The signature.
      */
@@ -135,11 +135,11 @@ public class EsoLocal
     /**
      * Verifies the signature.
      * 
-     * @param set The set containing the credentials.
+     * @param set The name of the set containing the credentials.
      * @param version The version of the credentials to use.
      * @param sig The signature to verify.
      * @param data The data to compare against.
-     * @param algo The hash function to use.
+     * @param algo An indicator of which Eso-supported hash function to use.
      *
      * @return True if the signature was verified, false otherwise.
      */
@@ -149,11 +149,11 @@ public class EsoLocal
      * Wrapper around the native method because it is easier to pass the
      * ordinal of the enum that the enum itself.
      *
-     * @param set The set containing the credentials.
+     * @param set The name of the set containing the credentials.
      * @param version The version of the credentials to use.
      * @param sig The signature to verify.
      * @param data The data to compare against.
-     * @param algo The hash function to use.
+     * @param algo an indicator of which Eso-supported hash function to use.
      *
      * @return True if the signature was verified, false otherwise.
      */
