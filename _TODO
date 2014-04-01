@@ -8,6 +8,9 @@ bugs:
 	- sockets should throw exception on errors (instead of writing to log)
 
 current:
+	- credential REVOVACTION
+
+	- authenticated nonlocal communication
 
 	- generate key
 		- sudo lshw | grep serial
