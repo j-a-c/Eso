@@ -46,7 +46,7 @@ int CADaemon::start() const
 const char * CADaemon::lock_path() const
 {
     // TODO create config file?
-    std::string path = "/home/bose/Desktop/eso/central/esoca/esoca_lock";
+    std::string path = "/home/jac/Desktop/eso/central/esoca/esoca_lock";
     return path.c_str();
 }
 
@@ -61,7 +61,7 @@ void CADaemon::propagate(const uchar_vec msg_type, const std::string msg) const
     // Read conifg file for distribution locations.
     // Send distribution_msg to all distribution servers.
     // TODO config this location somewhere
-    std::ifstream input( "/home/bose/Desktop/eso/global_config/locations_config" );
+    std::ifstream input( "/home/jac/Desktop/eso/global_config/locations_config" );
     for (std::string line; getline(input, line); )
     {
         auto values = split_string(line, LOC_DELIMITER);

@@ -40,7 +40,7 @@ int DistroDaemon::start() const
 const char * DistroDaemon::lock_path() const
 {
     // TODO create config file?
-    std::string path = "/home/bose/Desktop/eso/distribution/esod/esod_lock";
+    std::string path = "/home/jac/Desktop/eso/distribution/esod/esod_lock";
     return path.c_str();
 }
 
@@ -56,7 +56,7 @@ int DistroDaemon::work() const
 
     // Read conifg file for distribution locations.
     // TODO config this location somewhere
-    std::ifstream input( "/home/bose/Desktop/eso/global_config/locations_config" );
+    std::ifstream input( "/home/jac/Desktop/eso/global_config/locations_config" );
     for (std::string line; getline(input, line); )
     {
         auto values = split_string(line, LOC_DELIMITER);

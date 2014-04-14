@@ -38,6 +38,9 @@
 			<td>{{cred[1]}}</td>
 			<td>{{cred[2]}}</td>
 			<td>{{cred[3]}}</td>
+			{% if canModify %}
+			<td><button>Revoke</button></td>
+			{% endif %}
 		</tr>
 		{% endfor %}
 		</table>

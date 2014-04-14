@@ -5,6 +5,6 @@
  * Config file for the daemon.
  */
 
-const char* ESOCA_SOCKET_PATH = "/home/bose/Desktop/eso/central/esoca/esoca_socket";
+const char* ESOCA_SOCKET_PATH = "/home/jac/Desktop/eso/central/esoca/esoca_socket";
 
 #endif

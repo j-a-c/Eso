@@ -31,7 +31,7 @@ void Logger::log(std::string msg, LogLevel level)
 {
     // The logger output location.
     // TODO Configure.
-    std::string log_loc{"/home/bose/Desktop/eso/default.log"};
+    std::string log_loc{"/home/jac/Desktop/eso/default.log"};
 
     std::ofstream out;
     out.open(log_loc, 

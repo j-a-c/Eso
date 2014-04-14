@@ -60,7 +60,7 @@ int LocalDaemon::start() const
 const char * LocalDaemon::lock_path() const
 {
     // TODO create config file?
-    std::string path = "/home/bose/Desktop/eso/local/esol/esol_lock";
+    std::string path = "/home/jac/Desktop/eso/local/esol/esol_lock";
     return path.c_str();
 }
 
@@ -143,7 +143,7 @@ Credential LocalDaemon::get_credential(const Credential in_cred) const
         // Try requesting all distribution locations.
         // Read config file for distribution locations.
         // TODO config this location somewhere
-        std::ifstream input( "/home/bose/Desktop/eso/global_config/locations_config" );
+        std::ifstream input( "/home/jac/Desktop/eso/global_config/locations_config" );
         for (std::string line; getline(input, line); )
         {
             auto dist_info = split_string(line, LOC_DELIMITER);
@@ -206,7 +206,7 @@ Permission LocalDaemon::get_permission(Permission in_perm) const
         // Try requesting all distribution locations.
         // Read config file for distribution locations.
         // TODO config this location somewhere
-        std::ifstream input( "/home/bose/Desktop/eso/global_config/locations_config" );
+        std::ifstream input( "/home/jac/Desktop/eso/global_config/locations_config" );
         for (std::string line; getline(input, line); )
         {
             auto dist_info = split_string(line, LOC_DELIMITER);
