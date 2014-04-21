@@ -1,5 +1,6 @@
 package EsoLocal;
 
+import java.lang.AutoCloseable;
 import java.lang.reflect.Field;
 
 /**
@@ -8,7 +9,7 @@ import java.lang.reflect.Field;
  * The local Eso service. This service is used when the client does not have
  * permission to retrieve the credentials.
  */
-public class EsoLocal
+public class EsoLocal implements AutoCloseable
 {
     /**
      * Allowable hashes. The ordinal values of the enums correspond to their
@@ -185,5 +186,15 @@ public class EsoLocal
     public static EsoLocal getService() throws EsoLocalConnectionException
     {
         return new EsoLocal();
+    }
+
+    /**
+     * Overriden from AutoCloseable. We override this method to allow EsoLocal
+     * to be used with try-with-resources syntax.
+     */
+    @Override
+    public void close()
+    {
+        // We have no resources to close.
     }
 }
